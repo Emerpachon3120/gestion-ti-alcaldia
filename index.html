@@ -1051,7 +1051,7 @@ async function cargarDatosDesdeSheets() {
     }));
 
     if (!equipos.length) {
-      equipos = DB_STATIC.equipos_static.map(e=>{...e});
+      equipos = DB_STATIC.equipos_static.map(e=>Object.assign({},e));
     }
 
     // Mantenimientos: Sheets es fuente de verdad, localStorage guarda firmas/fotos
@@ -1994,7 +1994,7 @@ async function guardarMantto() {
 
 function renderMant(filter='todos') {
   currentMantFilter=filter;
-  let data=[...mantenimientos].reverse();
+  let data=mantenimientos.slice().reverse();
   if(filter==='pendiente') data=data.filter(m=>!m.firmado);
   if(filter==='firmado')   data=data.filter(m=>m.firmado);
   if(filter==='preventivo') data=data.filter(m=>m.tipo?.includes('Preventivo'));
@@ -2120,7 +2120,7 @@ function guardarBackup() {
 
 function renderBackups(filter='todos') {
   currentBackupFilter=filter;
-  let data=[...backups].reverse();
+  let data=backups.slice().reverse();
   if(filter==='pendiente') data=data.filter(b=>!b.firmado);
   if(filter==='firmado')   data=data.filter(b=>b.firmado);
   if(currentBkFechaDesde) {
@@ -2294,7 +2294,7 @@ function cerrarIncidencia(id) {
 
 function renderIncidencias(filter='todas') {
   currentIncFilter = filter;
-  let data = [...incidencias].reverse();
+  let data = incidencias.slice().reverse();
   if (filter==='alta')   data = data.filter(i=>i.prioridad==='alta'||i.prioridad==='crítica');
   if (filter==='media')  data = data.filter(i=>i.prioridad==='media');
   if (filter==='baja')   data = data.filter(i=>i.prioridad==='baja');
@@ -2431,7 +2431,7 @@ async function guardarEquipo() {
 
 function renderInventario(depId='todas') {
   currentDepFilter=depId;
-  let equips=[...equipos];
+  let equips=equipos.slice();
   if(currentInvSearch) {
     const q=currentInvSearch.toLowerCase();
     equips=equips.filter(e=>{
