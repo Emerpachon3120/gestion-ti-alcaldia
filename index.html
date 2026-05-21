@@ -949,12 +949,13 @@ async function apiPost(sheet, action, data, keyField, keyValue) {
 async function cargarDatosDesdeSheets() {
   mostrarCargando(true);
   try {
-    const [deps, ofs, pers, eqs, mantsSheet] = await Promise.all([
+    const [deps, ofs, pers, eqs, mantsSheet, bksSheet] = await Promise.all([
       apiGet('Dependencias'),
       apiGet('Oficinas'),
       apiGet('Personas'),
       apiGet('Equipos'),
       apiGet('Mantenimientos'),
+      apiGet('Backups'),
     ]);
 
     // Dependencias
@@ -995,15 +996,33 @@ async function cargarDatosDesdeSheets() {
     // Mantenimientos desde Sheets → sincroniza con localStorage
     const mantsFromSheet = mantsSheet.map(r => ({
       id:          String(r['ID']),
-      serial:      String(r['Serial']),
-      tipo:        r['Tipo']          || '',
-      frecuencia:  r['Frecuencia']    || '',
-      fecha:       r['Fecha']         || '',
-      firmado:     r['Firmado'] === 'Sí',
-      responsable: r['Responsable']   || '',
-      obs:         r['Observaciones'] || '',
+      serial:      String(r['EquipoID'] || r['Serial'] || ''),
+      tipo:        r['Tipo']            || '',
+      frecuencia:  r['Frecuencia']      || '',
+      fecha:       r['Fecha_Ultima']    || r['Fecha'] || '',
+      firmado:     r['Firmado'] === 'TRUE' || r['Firmado'] === 'Sí',
+      responsable: r['Responsable']     || '',
+      obs:         r['Observaciones']   || '',
       firma:       null,
       fotos:       [],
+    }));
+
+    // Backups desde Sheets → sincroniza con localStorage
+    const bksFromSheet = bksSheet.map(r => ({
+      id:        String(r['ID']),
+      serial:    String(r['EquipoID']           || ''),
+      tipo:      r['Tipo']                      || 'Backup completo',
+      destino:   r['Ubicacion']                 || '',
+      fecha:     r['Fecha_Ultima']              || '',
+      frecuencia:r['Frecuencia']                || '',
+      firmado:   r['Firmado'] === 'TRUE' || r['Firmado'] === 'Sí',
+      personaId: '',
+      obs:       r['Observaciones']             || '',
+      responsable: r['Responsable']             || '',
+      responsableEquipo: r['Responsable_Equipo']|| '',
+      evidencia: r['Evidencia_1']               || '',
+      firma:     null,
+      fotos:     [],
     }));
 
     // Equipos: si localStorage vacío → cargar desde Sheets
@@ -1022,6 +1041,20 @@ async function cargarDatosDesdeSheets() {
         firmaObs:   localMantMap[m.id].firmaObs,
         firmaFecha: localMantMap[m.id].firmaFecha,
         fotos:      localMantMap[m.id].fotos,
+      } : {}),
+    }));
+
+    // Backups: mezcla Sheets + localStorage (localStorage gana para firmas/fotos)
+    const localBkMap = {};
+    backups.forEach(b => { localBkMap[b.id] = b; });
+    backups = bksFromSheet.map(b => ({
+      ...b,
+      ...(localBkMap[b.id] ? {
+        firmado:    localBkMap[b.id].firmado,
+        firma:      localBkMap[b.id].firma,
+        firmaObs:   localBkMap[b.id].firmaObs,
+        firmaFecha: localBkMap[b.id].firmaFecha,
+        fotos:      localBkMap[b.id].fotos,
       } : {}),
     }));
 
