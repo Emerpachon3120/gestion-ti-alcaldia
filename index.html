@@ -1113,27 +1113,41 @@ async function cargarDatosDesdeSheets() {
 
 async function cargarIncidenciasFormsSheet() {
   try {
-    const rows = await apiGet(FORMS_SHEET_NAME, `&sheetId=${encodeURIComponent(FORMS_SHEET_ID)}`);
-    const formIds = new Set(incidencias.filter(i=>i.fromForm).map(i=>i.id));
+    const rows = await apiGet('Incidencias');
+    const existingIds = new Set(incidencias.map(i => i.ticket));
     rows.forEach(r => {
-      const fid = String(r['ID']||r['Marca temporal']||'');
-      if (fid && !formIds.has(fid)) {
-        incidencias.push({
-          id: fid, fromForm:true,
-          personaId: '', serial: r['Serial']||r['Equipo']||'',
-          tipo: r['Tipo']||'Otro', prioridad: (r['Prioridad']||'media').toLowerCase(),
-          desc: r['Descripción']||r['Descripcion']||r['Observaciones']||'',
-          estado: 'abierta', fecha: r['Fecha']||new Date().toISOString().split('T')[0],
-          fotos:[], nombreFuncionario: r['Nombre']||r['Funcionario']||'',
-        });
-      }
+      const ticket = String(r['Ticket'] || '');
+      if (!ticket || existingIds.has(ticket)) return;
+      incidencias.push({
+        id:          ticket,
+        ticket:      ticket,
+        fromForm:    true,
+        fecha:       r['Marca temporal'] || '',
+        secretaria:  r['Secretaria'] || '',
+        oficina:     r['Oficina'] || '',
+        nombre:      r['Nombre completo del funcionario'] || '',
+        cargo:       r['Cargo'] || '',
+        correo:      r['Correo institucional'] || '',
+        telefono:    r['Teléfono'] || '',
+        tipo:        r['Tipo de incidencia'] || '',
+        desc:        r['Descripción del problema'] || '',
+        prioridad:   (r['Grado de importancia']||'media').toLowerCase(),
+        estado:      (r['Estado']||'Abierto').toLowerCase() === 'finalizado' ? 'cerrada' : 'abierta',
+        observacion: r['Observación'] || '',
+        personaId:   '',
+        serial:      '',
+        fotos:       [],
+      });
+      existingIds.add(ticket);
     });
-  } catch(e) { console.warn('Forms sheet:', e.message); }
+    save();
+    renderIncidencias(currentIncFilter);
+    updateStats();
+    renderAlertas();
+  } catch(err) {
+    console.warn('Forms incidencias:', err.message);
+  }
 }
-
-// ============================================================
-// UI: CARGANDO / ERROR
-// ============================================================
 function mostrarCargando(visible) {
   let el = document.getElementById('loading-overlay');
   if (!el) {
@@ -2194,68 +2208,140 @@ function eliminarIncidencia(id) {
   });
 }
 
-function guardarIncidencia() {
-  const personaId=getSearchSelectValue('inc-persona-ss');
-  const serial=getSearchSelectValue('inc-equipo-ss');
-  const tipo=document.getElementById('inc-tipo').value;
-  const prioridad=document.getElementById('inc-prioridad').value;
-  const desc=document.getElementById('inc-desc').value;
-  const editId=document.getElementById('inc-edit-id').value;
-  if(!serial||!desc) { showToast('⚠️ Completa equipo y descripción','var(--yellow)'); return; }
-  if(editId) {
-    const i=incidencias.find(x=>x.id===editId);
-    if(i) { i.personaId=personaId; i.serial=serial; i.tipo=tipo; i.prioridad=prioridad; i.desc=desc; i.fotos=incFotos; }
+async function guardarIncidencia() {
+  const personaId  = getSearchSelectValue('inc-persona-ss') || '';
+  const serial     = getSearchSelectValue('inc-equipo-ss')  || '';
+  const tipo       = document.getElementById('inc-tipo').value;
+  const prioridad  = document.getElementById('inc-prioridad').value;
+  const desc       = document.getElementById('inc-desc').value;
+  const secretaria = document.getElementById('inc-secretaria')?.value || '';
+  const oficina    = document.getElementById('inc-oficina-txt')?.value || '';
+  const cargo      = document.getElementById('inc-cargo')?.value || '';
+  const editId     = document.getElementById('inc-edit-id').value;
+
+  if (!desc) { showToast('⚠️ Describe el problema'); return; }
+
+  const persona = getPersona(personaId);
+  const eq      = getEquipo(serial);
+  const of      = eq ? getOficina(eq.oficina) : null;
+
+  if (editId) {
+    const i = incidencias.find(x => x.id === editId);
+    if (i) {
+      i.personaId = personaId; i.serial = serial; i.tipo = tipo;
+      i.prioridad = prioridad; i.desc = desc;
+      i.nombre = persona?.nombre || i.nombre;
+      i.fotos = incFotos;
+    }
+    apiPost('Incidencias','update',{
+      'Tipo de incidencia': tipo,
+      'Descripción del problema': desc,
+      'Grado de importancia': prioridad.charAt(0).toUpperCase()+prioridad.slice(1),
+    },'Ticket', editId).catch(e=>console.warn(e));
     showToast('✅ Incidencia actualizada');
   } else {
-    incidencias.push({id:uid(),personaId,serial,tipo,prioridad,desc,estado:'abierta',fecha:new Date().toISOString().split('T')[0],fotos:incFotos});
-    showToast('🚨 Incidencia reportada');
+    const now    = new Date();
+    const pad    = n => String(n).padStart(2,'0');
+    const ticket = `TI-${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}-${Math.floor(Math.random()*9000)+1000}`;
+    const newInc = {
+      id: ticket, ticket, fromForm: false,
+      fecha: now.toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric'}),
+      secretaria, oficina: oficina || of?.nombre || '',
+      nombre: persona?.nombre || '', cargo,
+      correo: '', telefono: '',
+      tipo, desc, prioridad,
+      estado: 'abierta', observacion: '',
+      personaId, serial, fotos: incFotos,
+    };
+    incidencias.push(newInc);
+    // Escribir en Sheets
+    apiPost('Incidencias','insert',{
+      'Marca temporal': newInc.fecha,
+      'Secretaria': secretaria,
+      'Oficina': newInc.oficina,
+      'Nombre completo del funcionario': newInc.nombre,
+      'Cargo': cargo,
+      'Correo institucional': '',
+      'Teléfono': '',
+      'Tipo de incidencia': tipo,
+      'Descripción del problema': desc,
+      'Grado de importancia': prioridad.charAt(0).toUpperCase()+prioridad.slice(1),
+      'Estado': 'Abierto',
+      'Observación': '',
+      'Ticket': ticket,
+      'id': '',
+    }).then(res => {
+      showToast(`✅ Incidencia registrada — Ticket: ${ticket}`);
+    }).catch(e=>console.warn(e));
+    showToast(`🚨 Incidencia creada — ${ticket}`);
   }
-  save(); cerrarModal('modal-incidencia'); renderIncidencias(currentIncFilter); updateStats(); renderAlertas();
+  save();
+  cerrarModal('modal-incidencia');
+  renderIncidencias(currentIncFilter);
+  updateStats();
+  renderAlertas();
 }
-
 function cerrarIncidencia(id) {
   const i=incidencias.find(x=>x.id===id);
   if(i) { i.estado='cerrada'; save(); renderIncidencias(currentIncFilter); updateStats(); renderAlertas(); showToast('✅ Incidencia resuelta'); }
 }
 
 function renderIncidencias(filter='todas') {
-  currentIncFilter=filter;
-  let data=[...incidencias].reverse();
-  if(filter==='alta')   data=data.filter(i=>i.prioridad==='alta');
-  if(filter==='media')  data=data.filter(i=>i.prioridad==='media');
-  if(filter==='baja')   data=data.filter(i=>i.prioridad==='baja');
-  if(filter==='abierta') data=data.filter(i=>i.estado==='abierta');
-  const container=document.getElementById('inc-list');
-  if(!data.length) {
-    container.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><p>Sin incidencias</p></div>`;
+  currentIncFilter = filter;
+  let data = [...incidencias].reverse();
+  if (filter==='alta')   data = data.filter(i=>i.prioridad==='alta'||i.prioridad==='crítica');
+  if (filter==='media')  data = data.filter(i=>i.prioridad==='media');
+  if (filter==='baja')   data = data.filter(i=>i.prioridad==='baja');
+  if (filter==='abierta')data = data.filter(i=>i.estado==='abierta');
+  if (filter==='cerrada')data = data.filter(i=>i.estado==='cerrada');
+  const container = document.getElementById('inc-list');
+  if (!data.length) {
+    container.innerHTML = `<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><p>Sin incidencias</p></div>`;
     return;
   }
-  container.innerHTML=data.map(i=>{
-    const pColor={alta:'var(--red)',media:'var(--yellow)',baja:'var(--green)'}[i.prioridad];
-    const p=DB_STATIC.personas.find(x=>x.id===i.personaId);
-    const fotos=i.fotos||[];
-    const diasAbierta=i.estado==='abierta'&&i.fecha?Math.floor((new Date()-parseFecha(i.fecha))/86400000):0;
+  const prioColor = {alta:'var(--red)',crítica:'var(--red)',media:'var(--yellow)',baja:'var(--green)'};
+  container.innerHTML = data.map(i => {
+    const pColor  = prioColor[i.prioridad] || 'var(--text3)';
+    const isForm  = i.fromForm;
+    const fotos   = i.fotos || [];
+    const nombre  = i.nombre || (getPersona(i.personaId)?.nombre) || '—';
+    const ofNombre= i.oficina || (getOficina(getEquipo(i.serial)?.oficina)?.nombre) || '—';
     return `<div class="card" style="margin-bottom:10px;">
-      <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-        <div style="display:flex;align-items:center;gap:8px;"><div style="width:8px;height:8px;border-radius:50%;background:${pColor};flex-shrink:0"></div><span style="font-size:13px;font-weight:600">${i.tipo}</span></div>
-        <div style="display:flex;gap:6px;align-items:center;"><span class="badge ${i.estado==='abierta'?'badge-red':'badge-green'}">${i.estado==='abierta'?'Abierta':'Cerrada'}</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:8px;">
+        <div style="display:flex;align-items:center;gap:8px;flex:1;">
+          <div style="width:8px;height:8px;border-radius:50%;background:${pColor};flex-shrink:0;margin-top:3px;"></div>
+          <div>
+            <div style="font-size:13px;font-weight:600">${i.tipo}</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px;">
+              👤 ${nombre}
+              ${i.cargo ? `<span style="color:var(--text3)"> · ${i.cargo}</span>` : ''}
+            </div>
+            ${ofNombre !== '—' ? `<div style="font-size:11px;color:var(--text3);">🏢 ${ofNombre}</div>` : ''}
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <span class="badge ${i.estado==='abierta'?'badge-red':'badge-green'}">${i.estado==='abierta'?'Abierta':'Cerrada'}</span>
+          ${isForm?'<div style="font-size:10px;color:var(--accent2);margin-top:3px;">📋 Forms</div>':''}
+        </div>
       </div>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:4px;">👤 ${p?.nombre||i.nombreFuncionario||'—'} · 🖥️ <span class="mono">${i.serial}</span></div>
-      ${i.estado==='abierta'&&diasAbierta>=3?`<div style="font-size:11px;color:var(--red);margin-bottom:4px;">⚠️ Abierta hace ${diasAbierta} días</div>`:''}
-      <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.5">${i.desc}</div>
-      ${buildCarousel(fotos,i.id,'incidencia')}
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <span class="tag">📅 ${formatDate(i.fecha)}</span>
-        ${fotos.length>0?`<span class="tag">📸 ${fotos.length} foto${fotos.length>1?'s':''}</span>`:''}
-        ${i.estado==='abierta'?`<button onclick="cerrarIncidencia('${i.id}')" style="margin-left:auto;background:var(--green);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Space Grotesk',sans-serif;">✅ Resolver</button>`:''}</div>
-      <div class="card-actions">
+      ${i.ticket ? `<div style="font-size:11px;color:var(--text3);margin-bottom:6px;">🎫 <span class="mono">${i.ticket}</span></div>` : ''}
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px;line-height:1.5;padding:6px 8px;background:var(--card2);border-radius:5px;">${i.desc}</div>
+      ${i.observacion ? `<div style="font-size:11px;color:var(--text3);font-style:italic;margin-bottom:6px;">💬 ${i.observacion}</div>` : ''}
+      ${buildCarousel(fotos, i.id, 'incidencia')}
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px;">
+        <span class="tag">📅 ${parseFecha(i.fecha)||i.fecha||'—'}</span>
+        <span class="tag" style="color:${pColor}">${i.prioridad}</span>
+        ${i.serial ? `<span class="tag">🖥️ <span class="mono">${i.serial}</span></span>` : ''}
+        ${fotos.length>0 ? `<span class="tag">📸 ${fotos.length}</span>` : ''}
+        ${i.estado==='abierta' ? `<button onclick="cerrarIncidencia('${i.id}')" style="margin-left:auto;background:var(--green);color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Space Grotesk',sans-serif;">✅ Resolver</button>` : ''}
+      </div>
+      ${!isForm ? `<div class="card-actions">
         <button class="action-btn" onclick="editarIncidencia('${i.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Editar</button>
         <button class="action-btn del" onclick="eliminarIncidencia('${i.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>Eliminar</button>
-      </div>
+      </div>` : ''}
     </div>`;
   }).join('');
 }
-
 function filtrarInc(f,btn) { document.querySelectorAll('#page-incidencias .filter-tab').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); renderIncidencias(f); }
 
 // ============================================================
