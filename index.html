@@ -1119,7 +1119,7 @@ async function cargarDatosDesdeSheets() {
 
 async function cargarIncidenciasFormsSheet() {
   try {
-    const rows = await apiGet(FORMS_SHEET_NAME);
+    const rows = await apiGet(FORMS_SHEET_NAME, `&formSpreadId=${FORMS_SPREAD_ID}`);
     const existingIds = new Set(incidencias.map(i => i.ticket));
     rows.forEach(r => {
       const ticket = String(r['Ticket'] || '');
