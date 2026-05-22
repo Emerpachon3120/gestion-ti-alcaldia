@@ -620,6 +620,73 @@
   <div id="inc-list"></div>
 </div>
 
+
+<!-- ===================== PAGE ANALYTICS ===================== -->
+<div class="page" id="page-analytics">
+  <div class="page-header">
+    <h1>📊 Analytics</h1>
+    <p>Dashboard de incidencias TI</p>
+  </div>
+  <div id="analytics-content">
+    <div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg><p>Cargando analytics...</p></div>
+  </div>
+</div>
+
+<!-- ===================== PAGE REPORTES ===================== -->
+<div class="page" id="page-reportes">
+  <div class="page-header">
+    <h1>📋 Reportes</h1>
+    <p>Informes y exportaciones</p>
+  </div>
+
+  <div class="section-title">🔍 Búsqueda global</div>
+  <div class="search-wrap" style="margin-bottom:16px;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input class="search-input" id="global-search" placeholder="Buscar serial, funcionario, ticket, fecha..." oninput="busquedaGlobal(this.value)"/>
+  </div>
+  <div id="global-results"></div>
+
+  <div class="section-title" style="margin-top:20px;">📤 Exportar datos</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+    <button class="btn btn-primary" style="margin:0" onclick="exportarExcel('mantenimientos')">📊 Mantenimientos</button>
+    <button class="btn btn-primary" style="margin:0" onclick="exportarExcel('backups')">📊 Backups</button>
+    <button class="btn btn-primary" style="margin:0" onclick="exportarExcel('inventario')">📊 Inventario</button>
+    <button class="btn btn-primary" style="margin:0" onclick="exportarExcel('incidencias')">📊 Incidencias</button>
+  </div>
+
+  <div class="section-title">📄 Informe mensual PDF</div>
+  <div class="card" style="margin-bottom:10px;">
+    <div class="form-group">
+      <label class="form-label">Mes del informe</label>
+      <input type="month" class="form-input" id="informe-mes"/>
+    </div>
+    <button class="btn btn-primary" onclick="generarInformeMensual()">🖨️ Generar informe mensual</button>
+  </div>
+
+  <div class="section-title">👤 Perfil de funcionario</div>
+  <div class="card">
+    <div class="form-group" style="margin-bottom:8px;">
+      <div id="perfil-persona-ss"></div>
+    </div>
+    <button class="btn btn-secondary" onclick="verPerfilFuncionario()">👁️ Ver perfil completo</button>
+  </div>
+</div>
+
+<!-- ===================== PAGE CALENDARIO ===================== -->
+<div class="page" id="page-calendario">
+  <div class="page-header">
+    <h1>📅 Calendario</h1>
+    <p>Mantenimientos y backups programados</p>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+    <button onclick="cambiarMesCalendario(-1)" style="background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:7px 14px;cursor:pointer;font-size:16px;">‹</button>
+    <div id="cal-titulo" style="font-size:15px;font-weight:700;color:var(--text);"></div>
+    <button onclick="cambiarMesCalendario(1)" style="background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:7px 14px;cursor:pointer;font-size:16px;">›</button>
+  </div>
+  <div id="calendario-grid"></div>
+  <div id="cal-eventos-dia" style="margin-top:12px;"></div>
+</div>
+
 <button class="fab" id="fab-btn" onclick="showFabAction()">+</button>
 
 <!-- ===================== NAV ===================== -->
@@ -638,11 +705,23 @@
   </button>
   <button class="nav-btn" onclick="gotoPage('inventario')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-    <span>Inventario</span>
+    <span>Inv</span>
   </button>
   <button class="nav-btn" onclick="gotoPage('incidencias')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-    <span>Incidencias</span>
+    <span>Inc</span>
+  </button>
+  <button class="nav-btn" onclick="gotoPage('analytics')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+    <span>Stats</span>
+  </button>
+  <button class="nav-btn" onclick="gotoPage('reportes')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    <span>Report</span>
+  </button>
+  <button class="nav-btn" onclick="gotoPage('calendario')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <span>Agenda</span>
   </button>
 </nav>
 
@@ -1000,7 +1079,7 @@ const FIRMA_TI   = 'data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1
 // ============================================================
 let DB_STATIC = { dependencias:[], oficinas:[], personas:[], equipos_static:[] };
 // Versión de caché — incrementar fuerza reload desde Sheets
-const CACHE_VERSION = '2.4';
+const CACHE_VERSION = '2.5';
 if (localStorage.getItem('cache_version') !== CACHE_VERSION) {
   ['equipos','mantenimientos','backups','incidencias'].forEach(k => localStorage.removeItem(k));
   localStorage.setItem('cache_version', CACHE_VERSION);
@@ -1453,10 +1532,14 @@ function gotoPage(page) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
-  const pages=['inicio','mantenimientos','backups','inventario','incidencias'];
+  const pages=['inicio','mantenimientos','backups','inventario','incidencias','analytics','reportes','calendario'];
   const idx=pages.indexOf(page);
   if(idx>=0) document.querySelectorAll('.nav-btn')[idx].classList.add('active');
   currentPage=page; updateFab(); window.scrollTo(0,0);
+  // Render on demand
+  if(page==='analytics') renderAnalytics();
+  if(page==='reportes') { renderBusquedaGlobal(''); buildSearchSelect('perfil-persona-ss',DB_STATIC.personas.map(p=>({id:p.id,label:p.nombre})),'Buscar funcionario...',()=>{}); }
+  if(page==='calendario') renderCalendario();
 }
 function updateFab() {
   document.getElementById('fab-btn').style.display = currentPage==='inicio'?'none':'flex';
@@ -2548,6 +2631,484 @@ function inicializarApp() {
 
   renderMant(); renderBackups(); renderInventario(); renderIncidencias();
   renderDepTabs(); updateStats(); renderProximos(); renderAlertas(); updateFab();
+}
+
+// ============================================================
+// ANALYTICS
+// ============================================================
+async function cargarTodosIncidencias() {
+  try {
+    const rows = await apiGet(FORMS_SHEET_NAME, `&formSpreadId=${FORMS_SPREAD_ID}`);
+    return rows;
+  } catch(e) { console.warn('Analytics fetch:', e); return []; }
+}
+
+function parseFechaAnalitica(str) {
+  if(!str) return null;
+  str = String(str).trim();
+  const m1 = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if(m1) return new Date(+m1[3],+m1[2]-1,+m1[1]);
+  const m2 = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m2) return new Date(+m2[1],+m2[2]-1,+m2[3]);
+  const d = new Date(str);
+  return isNaN(d)?null:d;
+}
+
+async function renderAnalytics() {
+  const el = document.getElementById('analytics-content');
+  el.innerHTML = '<div class="empty"><p>⏳ Cargando datos...</p></div>';
+  
+  const allInc = await cargarTodosIncidencias();
+  if(!allInc.length) { el.innerHTML='<div class="empty"><p>Sin datos de incidencias</p></div>'; return; }
+
+  // ── Stats generales ──────────────────────────────────────────────────────
+  const total      = allInc.length;
+  const finalizados= allInc.filter(r=>(r['Estado']||'').toLowerCase()==='finalizado').length;
+  const pendientes = total - finalizados;
+  const criticos   = allInc.filter(r=>(r['Grado de importancia']||'').toLowerCase()==='crítica').length;
+
+  // ── Por tipo ─────────────────────────────────────────────────────────────
+  const byTipo = {};
+  allInc.forEach(r=>{ const t=r['Tipo de incidencia']||'Otro'; byTipo[t]=(byTipo[t]||0)+1; });
+  const topTipos = Object.entries(byTipo).sort((a,b)=>b[1]-a[1]).slice(0,8);
+
+  // ── Por secretaría ────────────────────────────────────────────────────────
+  const bySec = {};
+  allInc.forEach(r=>{ const s=(r['Secretaria (Secretaria de la que depende)']||r['Secretaria']||'Otra').split(',')[0].trim().substring(0,25); bySec[s]=(bySec[s]||0)+1; });
+  const topSec = Object.entries(bySec).sort((a,b)=>b[1]-a[1]).slice(0,8);
+
+  // ── Por estado ────────────────────────────────────────────────────────────
+  const byEstado = {};
+  allInc.forEach(r=>{ const e=r['Estado']||'Sin estado'; byEstado[e]=(byEstado[e]||0)+1; });
+
+  // ── Por grado ─────────────────────────────────────────────────────────────
+  const byGrado = {};
+  allInc.forEach(r=>{ const g=r['Grado de importancia']||'Sin grado'; byGrado[g]=(byGrado[g]||0)+1; });
+
+  // ── Por mes ────────────────────────────────────────────────────────────────
+  const byMes = {};
+  allInc.forEach(r=>{
+    const d=parseFechaAnalitica(r['Marca temporal']);
+    if(!d) return;
+    const k=d.toLocaleDateString('es-CO',{month:'short',year:'numeric'});
+    byMes[k]=(byMes[k]||0)+1;
+  });
+  const meses = Object.entries(byMes).slice(-6);
+
+  const COLORS = ['#c0392b','#27ae60','#2980b9','#e67e22','#8e44ad','#16a085','#f39c12','#7f8c8d'];
+
+  function barChart(data, maxVal) {
+    return data.map(([label,val],i)=>{
+      const pct = Math.round((val/maxVal)*100);
+      return `<div style="margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;">
+          <span style="color:var(--text2);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${label}</span>
+          <span style="font-weight:700;color:var(--text);">${val}</span>
+        </div>
+        <div style="background:var(--bg2);border-radius:4px;height:8px;overflow:hidden;">
+          <div style="width:${pct}%;height:100%;background:${COLORS[i%COLORS.length]};border-radius:4px;transition:width .6s ease;"></div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function estadoRow(label, val, color, pct) {
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="width:10px;height:10px;border-radius:50%;background:${color};"></div>
+        <span style="font-size:13px;color:var(--text2);">${label}</span>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:18px;font-weight:700;color:var(--text);">${val}</div>
+        <div style="font-size:10px;color:var(--text3);">${pct}%</div>
+      </div>
+    </div>`;
+  }
+
+  const estadoColors = {Finalizado:'#27ae60','En proceso':'#2980b9','En pausa':'#e67e22','No iniciada':'#95a5a6',Abierto:'#c0392b'};
+
+  el.innerHTML = `
+    <!-- KPIs -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+      <div class="stat-card"><div class="stat-num" style="color:#2980b9;">${total}</div><div class="stat-label">Total tickets</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:#27ae60;">${finalizados}</div><div class="stat-label">Finalizados (${Math.round(finalizados/total*100)}%)</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:#e67e22;">${pendientes}</div><div class="stat-label">Pendientes</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:#c0392b;">${criticos}</div><div class="stat-label">Críticos (${Math.round(criticos/total*100)}%)</div></div>
+    </div>
+
+    <!-- Tipo de incidencia -->
+    <div class="card" style="margin-bottom:12px;">
+      <div class="section-title" style="margin-top:0;">Tipo de incidencia</div>
+      ${barChart(topTipos, topTipos[0]?.[1]||1)}
+    </div>
+
+    <!-- Por secretaría -->
+    <div class="card" style="margin-bottom:12px;">
+      <div class="section-title" style="margin-top:0;">Por secretaría</div>
+      ${barChart(topSec, topSec[0]?.[1]||1)}
+    </div>
+
+    <!-- Estado y Grado lado a lado -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+      <div class="card">
+        <div class="section-title" style="margin-top:0;">Estado</div>
+        ${Object.entries(byEstado).map(([k,v])=>estadoRow(k,v,estadoColors[k]||'#95a5a6',Math.round(v/total*100))).join('')}
+      </div>
+      <div class="card">
+        <div class="section-title" style="margin-top:0;">Importancia</div>
+        ${Object.entries(byGrado).map(([k,v],i)=>estadoRow(k,v,COLORS[i],Math.round(v/total*100))).join('')}
+      </div>
+    </div>
+
+    <!-- Por mes -->
+    <div class="card" style="margin-bottom:12px;">
+      <div class="section-title" style="margin-top:0;">Tickets por mes (últimos 6)</div>
+      ${barChart(meses, Math.max(...meses.map(m=>m[1]),1))}
+    </div>
+  `;
+}
+
+// ============================================================
+// BÚSQUEDA GLOBAL
+// ============================================================
+function busquedaGlobal(q) {
+  const el = document.getElementById('global-results');
+  if(!q || q.length < 2) { el.innerHTML = ''; return; }
+  q = q.toLowerCase();
+  const results = [];
+
+  // Buscar en equipos
+  equipos.forEach(e=>{
+    const p=getPersona(e.usuarioId);
+    const of=getOficina(e.oficina);
+    if(e.serial.toLowerCase().includes(q)||(p?.nombre||'').toLowerCase().includes(q)||(of?.nombre||'').toLowerCase().includes(q)||(e.so||'').toLowerCase().includes(q)) {
+      results.push({tipo:'equipo',titulo:e.serial,sub:p?.nombre||'Sin usuario',detalle:of?.nombre||'',icon:'💻',action:`gotoPage('inventario')`});
+    }
+  });
+
+  // Buscar en mantenimientos
+  mantenimientos.forEach(m=>{
+    const p=getEquipoPersona(m.serial);
+    if(m.serial.toLowerCase().includes(q)||(p?.nombre||'').toLowerCase().includes(q)||m.id.toLowerCase().includes(q)||(m.obs||'').toLowerCase().includes(q)) {
+      results.push({tipo:'mantto',titulo:m.serial,sub:m.tipo,detalle:formatDate(m.fecha),icon:'🔧',action:`gotoPage('mantenimientos')`});
+    }
+  });
+
+  // Buscar en backups
+  backups.forEach(b=>{
+    const resp=b.responsableEquipo||DB_STATIC.personas.find(x=>x.id===b.personaId)?.nombre||'';
+    if(b.serial.toLowerCase().includes(q)||resp.toLowerCase().includes(q)||b.id.toLowerCase().includes(q)) {
+      results.push({tipo:'backup',titulo:b.serial,sub:b.tipo,detalle:resp,icon:'💾',action:`gotoPage('backups')`});
+    }
+  });
+
+  // Buscar en incidencias
+  incidencias.forEach(i=>{
+    if((i.ticket||'').toLowerCase().includes(q)||(i.nombre||'').toLowerCase().includes(q)||(i.desc||'').toLowerCase().includes(q)||(i.tipo||'').toLowerCase().includes(q)||(i.oficina||'').toLowerCase().includes(q)) {
+      results.push({tipo:'incidencia',titulo:i.ticket||i.id,sub:i.tipo,detalle:i.nombre||'',icon:'🚨',action:`gotoPage('incidencias')`});
+    }
+  });
+
+  // Buscar en personas
+  DB_STATIC.personas.forEach(p=>{
+    if(p.nombre.toLowerCase().includes(q)) {
+      const eq=equipos.find(e=>e.usuarioId===p.id);
+      results.push({tipo:'persona',titulo:p.nombre,sub:eq?`Equipo: ${eq.serial}`:'Sin equipo asignado',detalle:'',icon:'👤',action:`verPerfilPersona('${p.id}')`});
+    }
+  });
+
+  if(!results.length) { el.innerHTML='<div class="empty" style="padding:24px;"><p>Sin resultados para "'+q+'"</p></div>'; return; }
+
+  el.innerHTML = results.slice(0,20).map(r=>`
+    <div class="card" style="margin-bottom:8px;cursor:pointer;" onclick="${r.action}">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:20px;">${r.icon}</span>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:600;color:var(--text);">${r.titulo}</div>
+          <div style="font-size:11px;color:var(--text3);">${r.sub}${r.detalle?' · '+r.detalle:''}</div>
+        </div>
+        <span class="badge badge-${r.tipo==='incidencia'?'red':r.tipo==='mantto'?'yellow':r.tipo==='backup'?'blue':r.tipo==='persona'?'purple':'green'}">${r.tipo}</span>
+      </div>
+    </div>`).join('');
+}
+function renderBusquedaGlobal(q) { busquedaGlobal(q); }
+
+// ============================================================
+// EXPORTAR EXCEL (CSV descargable)
+// ============================================================
+function exportarExcel(tipo) {
+  let rows=[], headers=[], filename='';
+  if(tipo==='mantenimientos') {
+    headers=['ID','Serial','Tipo','Frecuencia','Fecha','Firmado','Responsable','Observaciones'];
+    rows=mantenimientos.map(m=>[m.id,m.serial,m.tipo,m.frecuencia,m.fecha,m.firmado?'Sí':'No',m.responsable||'',m.obs||'']);
+    filename='Mantenimientos';
+  } else if(tipo==='backups') {
+    headers=['ID','Serial','Tipo','Frecuencia','Fecha','Firmado','Destino','Responsable Equipo','Observaciones'];
+    rows=backups.map(b=>[b.id,b.serial,b.tipo,b.frecuencia||'',b.fecha,b.firmado?'Sí':'No',b.destino||'',b.responsableEquipo||'',b.obs||'']);
+    filename='Backups';
+  } else if(tipo==='inventario') {
+    headers=['Serial','Oficina','Dependencia','SO','Office','Disco','Capacidad','RAM','Usuario','Observaciones'];
+    rows=equipos.map(e=>{
+      const of=getOficina(e.oficina);
+      const dep=of?getDependencia(of.depId):null;
+      const p=getPersona(e.usuarioId);
+      return [e.serial,of?.nombre||e.oficina,dep?.nombre||'',e.so,e.office,e.disco,e.cap,e.ram,p?.nombre||'',e.obs||''];
+    });
+    filename='Inventario';
+  } else if(tipo==='incidencias') {
+    headers=['Ticket','Fecha','Secretaria','Oficina','Funcionario','Cargo','Tipo','Descripcion','Importancia','Estado'];
+    rows=incidencias.map(i=>[i.ticket||i.id,i.fecha,i.secretaria||'',i.oficina||'',i.nombre||'',i.cargo||'',i.tipo,i.desc,i.prioridad,i.estadoTexto||i.estado]);
+    filename='Incidencias';
+  }
+
+  const BOM='﻿';
+  const csv=BOM+[headers,...rows].map(r=>r.map(c=>'"'+(String(c||'').replace(/"/g,'""'))+'"').join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=filename+'_'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click(); URL.revokeObjectURL(url);
+  showToast('📊 Archivo descargado: '+filename+'.csv');
+}
+
+// ============================================================
+// PERFIL DE FUNCIONARIO
+// ============================================================
+function verPerfilFuncionario() {
+  const personaId = getSearchSelectValue('perfil-persona-ss');
+  if(!personaId) { showToast('⚠️ Selecciona un funcionario'); return; }
+  verPerfilPersona(personaId);
+}
+
+function verPerfilPersona(personaId) {
+  const p=getPersona(personaId);
+  if(!p) return;
+  const eq=equipos.find(e=>e.usuarioId===personaId);
+  const of=eq?getOficina(eq.oficina):null;
+  const dep=of?getDependencia(of.depId):null;
+  const mants=mantenimientos.filter(m=>m.serial===eq?.serial);
+  const bks=backups.filter(b=>b.serial===eq?.serial||b.personaId===personaId);
+  const incs=incidencias.filter(i=>i.personaId===personaId||i.nombre===p.nombre);
+
+  const win=window.open('','_blank');
+  if(!win) { showToast('⚠️ Activa los popups'); return; }
+  
+  const fechaDoc=new Date().toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'});
+
+  win.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<title>Perfil — ${p.nombre}</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Arial,sans-serif;font-size:12pt;color:#111;background:#fff;padding:30px 40px;}
+h1{font-size:18pt;color:#c0392b;margin-bottom:4px;}
+.sub{color:#666;font-size:11pt;margin-bottom:20px;}
+.sec{font-weight:bold;font-size:12pt;color:#c0392b;margin:16px 0 8px;border-bottom:2px solid #c0392b;padding-bottom:4px;}
+table{width:100%;border-collapse:collapse;margin-bottom:12px;font-size:11pt;}
+td,th{padding:6px 8px;border:1px solid #e0e0e0;text-align:left;}
+th{background:#fef2f2;font-weight:600;color:#333;}
+tr:nth-child(even) td{background:#fafafa;}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10pt;font-weight:600;}
+.ok{background:#d1fae5;color:#065f46;}.pend{background:#fee2e2;color:#991b1b;}
+.info{background:#f5f5f5;border:1px solid #e0e0e0;padding:10px;border-radius:6px;margin-bottom:12px;}
+.info p{margin-bottom:4px;} .info b{color:#333;}
+@media print{@page{size:letter;margin:15mm 20mm;}.no-print{display:none;}}
+</style></head><body>
+<h1>👤 ${p.nombre}</h1>
+<div class="sub">Perfil TI — Alcaldía Municipal de Nemocón · ${fechaDoc}</div>
+
+<div class="info">
+  <p><b>Oficina:</b> ${of?.nombre||'No asignada'}</p>
+  <p><b>Dependencia:</b> ${dep?.nombre||'—'}</p>
+  <p><b>Equipo asignado:</b> ${eq?`<span class="badge ok">${eq.serial}</span> — ${eq.so} | ${eq.ram} | ${eq.disco} ${eq.cap}`:'<span class="badge pend">Sin equipo</span>'}</p>
+</div>
+
+<div class="sec">🔧 Mantenimientos (${mants.length})</div>
+${mants.length?`<table><tr><th>ID</th><th>Tipo</th><th>Fecha</th><th>Estado</th></tr>${mants.map(m=>`<tr><td class="mono">${m.id}</td><td>${m.tipo}</td><td>${formatDate(m.fecha)}</td><td><span class="badge ${m.firmado?'ok':'pend'}">${m.firmado?'Firmado':'Pendiente'}</span></td></tr>`).join('')}</table>`:'<p style="color:#aaa;font-size:11pt;">Sin mantenimientos registrados</p>'}
+
+<div class="sec">💾 Copias de seguridad (${bks.length})</div>
+${bks.length?`<table><tr><th>ID</th><th>Tipo</th><th>Fecha</th><th>Destino</th><th>Estado</th></tr>${bks.map(b=>`<tr><td class="mono">${b.id}</td><td>${b.tipo}</td><td>${formatDate(b.fecha)}</td><td>${b.destino||'—'}</td><td><span class="badge ${b.firmado?'ok':'pend'}">${b.firmado?'Firmado':'Pendiente'}</span></td></tr>`).join('')}</table>`:'<p style="color:#aaa;font-size:11pt;">Sin backups registrados</p>'}
+
+<div class="sec">🚨 Incidencias (${incs.length})</div>
+${incs.length?`<table><tr><th>Ticket</th><th>Tipo</th><th>Fecha</th><th>Importancia</th><th>Estado</th></tr>${incs.map(i=>`<tr><td class="mono">${i.ticket||i.id}</td><td>${i.tipo}</td><td>${i.fecha||'—'}</td><td>${i.prioridad}</td><td>${i.estadoTexto||i.estado}</td></tr>`).join('')}</table>`:'<p style="color:#aaa;font-size:11pt;">Sin incidencias registradas</p>'}
+
+<div class="no-print" style="margin-top:24px;text-align:center;">
+  <button onclick="window.print()" style="background:#c0392b;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:13px;cursor:pointer;font-weight:bold;margin-right:8px;">🖨️ Imprimir</button>
+  <button onclick="window.close()" style="background:#555;color:#fff;border:none;padding:10px 16px;border-radius:6px;font-size:13px;cursor:pointer;">✕ Cerrar</button>
+</div>
+</body></html>`);
+  win.document.close();
+}
+
+// ============================================================
+// INFORME MENSUAL PDF
+// ============================================================
+function generarInformeMensual() {
+  const mes=document.getElementById('informe-mes').value;
+  if(!mes) { showToast('⚠️ Selecciona el mes'); return; }
+  const [year,month]=mes.split('-').map(Number);
+  const nombreMes=new Date(year,month-1,1).toLocaleDateString('es-CO',{month:'long',year:'numeric'});
+
+  const mantsDelMes=mantenimientos.filter(m=>{
+    const d=parseFecha(m.fecha); return d&&d.getFullYear()===year&&d.getMonth()===month-1;
+  });
+  const bksDelMes=backups.filter(b=>{
+    const d=parseFecha(b.fecha); return d&&d.getFullYear()===year&&d.getMonth()===month-1;
+  });
+  const incsDelMes=incidencias.filter(i=>{
+    const d=parseFecha(i.fecha); return d&&d.getFullYear()===year&&d.getMonth()===month-1;
+  });
+
+  const win=window.open('','_blank');
+  if(!win) { showToast('⚠️ Activa los popups'); return; }
+  
+  const fechaDoc=new Date().toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'});
+
+  win.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<title>Informe ${nombreMes}</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Arial,sans-serif;font-size:11.5pt;color:#111;background:#fff;padding:30px 40px;}
+.header-doc{border-bottom:3px solid #c0392b;padding-bottom:12px;margin-bottom:20px;}
+h1{font-size:16pt;font-weight:bold;color:#c0392b;margin-bottom:4px;}
+.sub{color:#666;font-size:11pt;}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.kpi{background:#f9f9f9;border:1px solid #e0e0e0;border-radius:8px;padding:12px;text-align:center;}
+.kpi-num{font-size:24pt;font-weight:bold;color:#c0392b;}
+.kpi-label{font-size:9.5pt;color:#666;margin-top:4px;}
+.sec{font-weight:bold;font-size:12pt;color:#c0392b;margin:16px 0 8px;border-left:4px solid #c0392b;padding-left:8px;}
+table{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:10.5pt;}
+td,th{padding:6px 8px;border:1px solid #e0e0e0;text-align:left;}
+th{background:#fef2f2;font-weight:600;}
+tr:nth-child(even) td{background:#fafafa;}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:9.5pt;font-weight:600;}
+.ok{background:#d1fae5;color:#065f46;}.pend{background:#fee2e2;color:#991b1b;}.alta{background:#fee2e2;color:#991b1b;}.media{background:#fef3c7;color:#92400e;}.baja{background:#d1fae5;color:#065f46;}
+.firma-grid{display:flex;gap:60px;margin-top:40px;}
+.fbox{flex:1;text-align:center;}
+.flinea{border-top:1pt solid #333;padding-top:6px;margin-top:40px;}
+.fnombre{font-weight:bold;font-size:11.5pt;}
+.fcargo{font-size:10pt;color:#555;}
+@media print{@page{size:letter;margin:15mm 20mm;}.no-print{display:none;}}
+</style></head><body>
+<div class="header-doc">
+  <h1>📋 Informe Mensual de Gestión TI</h1>
+  <div class="sub">Período: ${nombreMes} · Alcaldía Municipal de Nemocón · NIT: 899999366-1</div>
+  <div class="sub">Generado: ${fechaDoc} · Responsable: Emerson Pachon — Ingeniero de Sistemas</div>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi"><div class="kpi-num">${mantsDelMes.length}</div><div class="kpi-label">Mantenimientos</div></div>
+  <div class="kpi"><div class="kpi-num" style="color:#27ae60;">${mantsDelMes.filter(m=>m.firmado).length}</div><div class="kpi-label">Firmados</div></div>
+  <div class="kpi"><div class="kpi-num" style="color:#e67e22;">${bksDelMes.length}</div><div class="kpi-label">Backups</div></div>
+  <div class="kpi"><div class="kpi-num" style="color:#8e44ad;">${incsDelMes.length}</div><div class="kpi-label">Incidencias</div></div>
+</div>
+
+<div class="sec">🔧 Mantenimientos realizados (${mantsDelMes.length})</div>
+${mantsDelMes.length?`<table><tr><th>Serial</th><th>Tipo</th><th>Fecha</th><th>Responsable equipo</th><th>Firma</th></tr>
+${mantsDelMes.map(m=>{const p=getEquipoPersona(m.serial);return`<tr><td>${m.serial}</td><td>${m.tipo}</td><td>${formatDate(m.fecha)}</td><td>${p?.nombre||'—'}</td><td><span class="badge ${m.firmado?'ok':'pend'}">${m.firmado?'✅ Firmado':'⏳ Pendiente'}</span></td></tr>`;}).join('')}</table>`:'<p style="color:#aaa;">Ninguno este mes.</p>'}
+
+<div class="sec">💾 Copias de seguridad (${bksDelMes.length})</div>
+${bksDelMes.length?`<table><tr><th>Serial</th><th>Fecha</th><th>Responsable</th><th>Ubicación</th><th>Firma</th></tr>
+${bksDelMes.map(b=>{const resp=b.responsableEquipo||DB_STATIC.personas.find(x=>x.id===b.personaId)?.nombre||'—';return`<tr><td>${b.serial}</td><td>${formatDate(b.fecha)}</td><td>${resp}</td><td>${b.destino||'—'}</td><td><span class="badge ${b.firmado?'ok':'pend'}">${b.firmado?'✅ Firmado':'⏳ Pendiente'}</span></td></tr>`;}).join('')}</table>`:'<p style="color:#aaa;">Ninguna este mes.</p>'}
+
+<div class="sec">🚨 Incidencias atendidas (${incsDelMes.length})</div>
+${incsDelMes.length?`<table><tr><th>Ticket</th><th>Tipo</th><th>Funcionario</th><th>Secretaría</th><th>Importancia</th><th>Estado</th></tr>
+${incsDelMes.map(i=>`<tr><td>${i.ticket||i.id}</td><td>${i.tipo}</td><td>${i.nombre||'—'}</td><td>${i.secretaria||'—'}</td><td><span class="badge ${i.prioridad}">${i.prioridad}</span></td><td>${i.estadoTexto||i.estado}</td></tr>`).join('')}</table>`:'<p style="color:#aaa;">Ninguna este mes.</p>'}
+
+<div class="firma-grid">
+  <div class="fbox"><div class="flinea"><div class="fnombre">Emerson Pachon</div><div class="fcargo">Ingeniero de Sistemas — TI</div><div class="fcargo">Alcaldía Municipal de Nemocón</div></div></div>
+  <div class="fbox"><div class="flinea"><div class="fnombre">___________________________</div><div class="fcargo">Revisado por</div><div class="fcargo">Alcaldía Municipal de Nemocón</div></div></div>
+</div>
+
+<div class="no-print" style="margin-top:24px;text-align:center;">
+  <button onclick="window.print()" style="background:#c0392b;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:13px;cursor:pointer;font-weight:bold;margin-right:8px;">🖨️ Imprimir / Guardar PDF</button>
+  <button onclick="window.close()" style="background:#555;color:#fff;border:none;padding:10px 16px;border-radius:6px;font-size:13px;cursor:pointer;">✕ Cerrar</button>
+</div>
+</body></html>`);
+  win.document.close();
+}
+
+// ============================================================
+// CALENDARIO
+// ============================================================
+let calFecha = new Date();
+
+function cambiarMesCalendario(dir) {
+  calFecha.setMonth(calFecha.getMonth()+dir);
+  renderCalendario();
+}
+
+function renderCalendario() {
+  const year=calFecha.getFullYear(), month=calFecha.getMonth();
+  document.getElementById('cal-titulo').textContent=
+    new Date(year,month,1).toLocaleDateString('es-CO',{month:'long',year:'numeric'}).toUpperCase();
+
+  const primerDia=new Date(year,month,1).getDay();
+  const diasMes=new Date(year,month+1,0).getDate();
+  const hoy=new Date();
+
+  // Recopilar eventos del mes
+  const eventos={};
+  mantenimientos.forEach(m=>{
+    const d=parseFecha(m.fecha);
+    if(d&&d.getFullYear()===year&&d.getMonth()===month) {
+      const k=d.getDate(); eventos[k]=eventos[k]||[];
+      eventos[k].push({tipo:'mant',color:'#e67e22',label:m.serial});
+    }
+  });
+  backups.forEach(b=>{
+    const d=parseFecha(b.fecha);
+    if(d&&d.getFullYear()===year&&d.getMonth()===month) {
+      const k=d.getDate(); eventos[k]=eventos[k]||[];
+      eventos[k].push({tipo:'backup',color:'#2980b9',label:b.serial});
+    }
+  });
+  incidencias.forEach(i=>{
+    const d=parseFecha(i.fecha);
+    if(d&&d.getFullYear()===year&&d.getMonth()===month) {
+      const k=d.getDate(); eventos[k]=eventos[k]||[];
+      eventos[k].push({tipo:'inc',color:'#c0392b',label:i.ticket||i.tipo});
+    }
+  });
+
+  const dias=['Do','Lu','Ma','Mi','Ju','Vi','Sa'];
+  let html=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;background:var(--border);border-radius:10px;overflow:hidden;">`;
+  html+=dias.map(d=>`<div style="background:var(--bg2);text-align:center;padding:8px 4px;font-size:11px;font-weight:700;color:var(--text3);">${d}</div>`).join('');
+
+  // Empty cells before first day
+  for(let i=0;i<(primerDia===0?6:primerDia-1);i++) {
+    html+=`<div style="background:#fff;padding:6px;min-height:52px;"></div>`;
+  }
+
+  for(let d=1;d<=diasMes;d++) {
+    const esHoy=hoy.getFullYear()===year&&hoy.getMonth()===month&&hoy.getDate()===d;
+    const evs=eventos[d]||[];
+    html+=`<div onclick="mostrarEventosDia(${d},${year},${month})" style="background:#fff;padding:5px;min-height:52px;cursor:pointer;transition:background .15s;${esHoy?'border:2px solid #c0392b;':''}">
+      <div style="font-size:11px;font-weight:${esHoy?'700':'500'};color:${esHoy?'#c0392b':'var(--text)'};margin-bottom:3px;">${d}</div>
+      ${evs.slice(0,3).map(e=>`<div style="width:100%;height:4px;background:${e.color};border-radius:2px;margin-bottom:2px;"></div>`).join('')}
+      ${evs.length>3?`<div style="font-size:9px;color:var(--text3);">+${evs.length-3}</div>`:''}
+    </div>`;
+  }
+  html+='</div>';
+  document.getElementById('calendario-grid').innerHTML=html;
+  document.getElementById('cal-eventos-dia').innerHTML='';
+}
+
+function mostrarEventosDia(d, year, month) {
+  const fecha=new Date(year,month,d);
+  const fechaStr=fecha.toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long'});
+  
+  const mants=mantenimientos.filter(m=>{const f=parseFecha(m.fecha);return f&&f.getDate()===d&&f.getMonth()===month&&f.getFullYear()===year;});
+  const bks=backups.filter(b=>{const f=parseFecha(b.fecha);return f&&f.getDate()===d&&f.getMonth()===month&&f.getFullYear()===year;});
+  const incs=incidencias.filter(i=>{const f=parseFecha(i.fecha);return f&&f.getDate()===d&&f.getMonth()===month&&f.getFullYear()===year;});
+
+  if(!mants.length&&!bks.length&&!incs.length) return;
+
+  let html=`<div class="card"><div class="section-title" style="margin-top:0;">📅 ${fechaStr}</div>`;
+  mants.forEach(m=>{const p=getEquipoPersona(m.serial);html+=`<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;"><span style="color:#e67e22;font-weight:600;">🔧</span> <b>${m.serial}</b> — ${m.tipo} · ${p?.nombre||'—'}</div>`;});
+  bks.forEach(b=>{html+=`<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;"><span style="color:#2980b9;font-weight:600;">💾</span> <b>${b.serial}</b> — ${b.tipo} · ${b.destino||'—'}</div>`;});
+  incs.forEach(i=>{html+=`<div style="padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;"><span style="color:#c0392b;font-weight:600;">🚨</span> <b>${i.ticket||i.id}</b> — ${i.tipo} · ${i.nombre||'—'}</div>`;});
+  html+='</div>';
+  document.getElementById('cal-eventos-dia').innerHTML=html;
 }
 
 // Arranque
