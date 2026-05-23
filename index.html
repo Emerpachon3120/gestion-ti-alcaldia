@@ -78,14 +78,18 @@
     background: #fff;
     border-top: 1px solid var(--border);
     padding: 6px 4px 10px;
-    position: sticky;
+    position: fixed;
     bottom: 0;
+    left: 0;
+    right: 0;
     z-index: 100;
     box-shadow: 0 -2px 12px rgba(0,0,0,0.07);
     display: flex;
     flex-direction: row;
     justify-content: space-around;
     align-items: center;
+    max-width: 680px;
+    margin: 0 auto;
   }
   nav ul {
     display: flex; flex-direction: row;
@@ -990,12 +994,12 @@
 <!-- ===================== CONFIRM DIALOG ===================== -->
 <div class="confirm-overlay" id="confirm-overlay">
   <div class="confirm-box">
-    <div style="font-size:32px;margin-bottom:12px;">🗑️</div>
-    <div style="font-size:15px;font-weight:600;margin-bottom:8px;">¿Eliminar registro?</div>
-    <p id="confirm-msg">Esta acción no se puede deshacer.</p>
-    <div class="confirm-actions">
-      <button class="btn btn-secondary" style="flex:1" onclick="cerrarConfirm()">Cancelar</button>
-      <button class="btn btn-danger" style="flex:1" id="confirm-ok-btn">Eliminar</button>
+    <div style="font-size:32px;margin-bottom:12px;" id="confirm-icon">❓</div>
+    <div style="font-size:15px;font-weight:600;margin-bottom:8px;" id="confirm-title">Confirmar</div>
+    <p id="confirm-msg" class="confirm-msg"></p>
+    <div class="confirm-btns" style="margin-top:16px;">
+      <button class="btn btn-secondary" style="flex:1" id="confirm-cancel-btn" onclick="cerrarConfirm()">Cancelar</button>
+      <button class="btn btn-danger" style="flex:1" id="confirm-ok-btn">Aceptar</button>
     </div>
   </div>
 </div>
@@ -1512,10 +1516,15 @@ document.querySelectorAll('.modal-overlay').forEach(m=>{
 // ============================================================
 // CONFIRM DIALOG
 // ============================================================
-function confirmar(msg,callback) {
+function confirmar(msg,callbackOk,callbackCancel) {
   document.getElementById('confirm-msg').textContent=msg;
-  document.getElementById('confirm-ok-btn').onclick=()=>{ cerrarConfirm(); callback(); };
+  document.getElementById('confirm-ok-btn').onclick=()=>{ cerrarConfirm(); if(callbackOk) callbackOk(); };
+  document.getElementById('confirm-cancel-btn').onclick=()=>{ cerrarConfirm(); if(callbackCancel) callbackCancel(); };
   document.getElementById('confirm-overlay').classList.add('open');
+}
+
+function cerrarConfirm() {
+  document.getElementById('confirm-overlay').classList.remove('open');
 }
 
 
@@ -1585,14 +1594,21 @@ function verDocumento(tipo,itemId) {
   const item=tipo==='mant'?mantenimientos.find(x=>x.id===itemId):backups.find(x=>x.id===itemId);
   if(!item) { showToast('⚠️ Registro no encontrado'); return; }
   if(!item.firma) {
-    // Sin firma: preguntar si quiere solicitar firma ahora o ver sin firma
-    confirmar('Este registro no tiene firma del funcionario.\n¿Deseas solicitar la firma ahora?', 
-      () => abrirFirma(tipo, itemId),
-      () => {
-        const blank='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
-        generarDocumento(tipo,item,blank);
-      }
-    );
+    // Sin firma: ofrecer firmar ahora o ver sin firma
+    const conf=document.getElementById('confirm-overlay');
+    document.getElementById('confirm-icon').textContent='✍️';
+    document.getElementById('confirm-title').textContent='Sin firma del funcionario';
+    document.getElementById('confirm-msg').textContent='Este registro no tiene firma. ¿Deseas solicitar la firma ahora o ver el documento sin firma?';
+    document.getElementById('confirm-ok-btn').textContent='✍️ Solicitar firma';
+    document.getElementById('confirm-ok-btn').className='btn btn-primary';
+    document.getElementById('confirm-cancel-btn').textContent='📄 Ver sin firma';
+    document.getElementById('confirm-ok-btn').onclick=()=>{ cerrarConfirm(); abrirFirma(tipo,itemId); };
+    document.getElementById('confirm-cancel-btn').onclick=()=>{
+      cerrarConfirm();
+      const blank='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+      generarDocumento(tipo,item,blank);
+    };
+    conf.classList.add('open');
     return;
   }
   generarDocumento(tipo,item,item.firma);
@@ -1982,7 +1998,12 @@ function editarMantto(id) {
 }
 
 function eliminarMantto(id) {
-  confirmar('¿Eliminar este mantenimiento?',()=>{
+  document.getElementById('confirm-icon').textContent='🗑️';
+  document.getElementById('confirm-title').textContent='¿Eliminar registro?';
+  document.getElementById('confirm-ok-btn').textContent='Eliminar';
+  document.getElementById('confirm-ok-btn').className='btn btn-danger';
+  document.getElementById('confirm-cancel-btn').textContent='Cancelar';
+  confirmar('¿Eliminar este mantenimiento? Esta acción no se puede deshacer.',()=>{
     mantenimientos=mantenimientos.filter(m=>m.id!==id);
     save(); renderMant(currentMantFilter); updateStats();
     showToast('🗑️ Mantenimiento eliminado','var(--red)');
@@ -2106,7 +2127,12 @@ function editarBackup(id) {
 }
 
 function eliminarBackup(id) {
-  confirmar('¿Eliminar este backup?',()=>{
+  document.getElementById('confirm-icon').textContent='🗑️';
+  document.getElementById('confirm-title').textContent='¿Eliminar registro?';
+  document.getElementById('confirm-ok-btn').textContent='Eliminar';
+  document.getElementById('confirm-ok-btn').className='btn btn-danger';
+  document.getElementById('confirm-cancel-btn').textContent='Cancelar';
+  confirmar('¿Eliminar este backup? Esta acción no se puede deshacer.',()=>{
     backups=backups.filter(b=>b.id!==id);
     save(); renderBackups(currentBackupFilter); updateStats();
     showToast('🗑️ Backup eliminado','var(--red)');
@@ -2235,7 +2261,12 @@ function editarIncidencia(id) {
   abrirModal('modal-incidencia');
 }
 function eliminarIncidencia(id) {
-  confirmar('¿Eliminar esta incidencia?',()=>{
+  document.getElementById('confirm-icon').textContent='🗑️';
+  document.getElementById('confirm-title').textContent='¿Eliminar registro?';
+  document.getElementById('confirm-ok-btn').textContent='Eliminar';
+  document.getElementById('confirm-ok-btn').className='btn btn-danger';
+  document.getElementById('confirm-cancel-btn').textContent='Cancelar';
+  confirmar('¿Eliminar esta incidencia? Esta acción no se puede deshacer.',()=>{
     incidencias=incidencias.filter(i=>i.id!==id);
     save(); renderIncidencias(currentIncFilter); updateStats();
     showToast('🗑️ Incidencia eliminada','var(--red)');
@@ -2439,7 +2470,12 @@ function editarEquipo(serial) {
 }
 
 function eliminarEquipo(serial) {
-  confirmar(`¿Eliminar el equipo ${serial}?`,()=>{
+  document.getElementById('confirm-icon').textContent='🗑️';
+  document.getElementById('confirm-title').textContent='¿Eliminar equipo?';
+  document.getElementById('confirm-ok-btn').textContent='Eliminar';
+  document.getElementById('confirm-ok-btn').className='btn btn-danger';
+  document.getElementById('confirm-cancel-btn').textContent='Cancelar';
+  confirmar(`¿Eliminar el equipo ${serial}? Esta acción no se puede deshacer.`,()=>{
     const idx=equipos.findIndex(e=>e.serial===serial);
     if(idx>=0) equipos.splice(idx,1);
     save(); renderInventario(currentDepFilter); updateStats();
