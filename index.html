@@ -401,6 +401,26 @@
 
   /* ── CONFIRM ── */
   .confirm-overlay { display: none; position: fixed; inset: 0; z-index: 800; background: rgba(15,20,30,0.45); backdrop-filter: blur(4px); align-items: center; justify-content: center; }
+
+  /* ── VISOR DOCUMENTO FULLSCREEN ── */
+  #doc-viewer-overlay {
+    display: none; position: fixed; inset: 0; z-index: 900;
+    background: #2a2a2a; flex-direction: column;
+  }
+  #doc-viewer-overlay.open { display: flex; }
+  #doc-viewer-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px; background: #1a1a1a; flex-shrink: 0;
+    gap: 10px;
+  }
+  #doc-viewer-title { color: #fff; font-size: 13px; font-weight: 600; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #doc-viewer-iframe { flex: 1; border: none; width: 100%; background: #fff; }
+  .doc-viewer-btn {
+    border: none; border-radius: 7px; padding: 8px 14px; font-size: 12px;
+    font-weight: 600; cursor: pointer; font-family: inherit; white-space: nowrap; flex-shrink: 0;
+  }
+  .doc-viewer-btn-print { background: #c0392b; color: #fff; }
+  .doc-viewer-btn-close { background: #444; color: #fff; }
   .confirm-overlay.open { display: flex; }
   .confirm-box { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; width: calc(100% - 40px); max-width: 320px; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.12); }
   .confirm-msg { font-size: 14px; color: var(--text); margin-bottom: 16px; line-height: 1.5; }
@@ -1066,6 +1086,16 @@
       <button class="btn btn-danger" style="flex:1" id="confirm-ok-btn">Aceptar</button>
     </div>
   </div>
+</div>
+
+<!-- ===================== VISOR DOCUMENTO ===================== -->
+<div id="doc-viewer-overlay">
+  <div id="doc-viewer-toolbar">
+    <div id="doc-viewer-title">Documento</div>
+    <button class="doc-viewer-btn doc-viewer-btn-print" onclick="docViewerPrint()">🖨️ Imprimir / PDF</button>
+    <button class="doc-viewer-btn doc-viewer-btn-close" onclick="cerrarDocViewer()">✕ Cerrar</button>
+  </div>
+  <iframe id="doc-viewer-iframe" title="Vista previa del documento"></iframe>
 </div>
 
 <!-- ===================== LIGHTBOX ===================== -->
@@ -1855,22 +1885,9 @@ html,body{background:#e8e8e8;font-family:Arial,sans-serif;font-size:10.5pt;color
 
 <span id="firma-script-placeholder"></span>
 
-<div class="no-print" style="position:fixed;bottom:0;left:0;right:0;
-  text-align:center;padding:10px;background:#f0f0f0;border-top:1px solid #ccc;z-index:999;">
-  <button onclick="window.print()"
-    style="background:#8B1318;color:#fff;border:none;padding:10px 28px;
-    border-radius:6px;font-size:13px;cursor:pointer;font-weight:bold;margin-right:8px;">
-    🖨️ Imprimir / Guardar PDF
-  </button>
-  <button onclick="window.close()"
-    style="background:#555;color:#fff;border:none;padding:10px 16px;
-    border-radius:6px;font-size:13px;cursor:pointer;">✕ Cerrar</button>
-</div>
 </body></html>`;
 
-  const win=window.open('','_blank');
-  if(win){win.document.write(docHTML);win.document.close();}
-  else showToast('⚠️ Activa los popups para generar el documento');
+  abrirDocViewer(docHTML, 'Documento TI');
 }
 
 
@@ -2012,22 +2029,9 @@ html,body{background:#e8e8e8;font-family:Arial,sans-serif;font-size:10.5pt;color
   <div class="footer"><img src="${FOOTER_B64}" alt="Pie de página"/></div>
 </div>
 
-<div class="no-print" style="position:fixed;bottom:0;left:0;right:0;
-  text-align:center;padding:10px;background:#f0f0f0;border-top:1px solid #ccc;z-index:999;">
-  <button onclick="window.print()"
-    style="background:#8B1318;color:#fff;border:none;padding:10px 28px;
-    border-radius:6px;font-size:13px;cursor:pointer;font-weight:bold;margin-right:8px;">
-    🖨️ Imprimir / Guardar PDF
-  </button>
-  <button onclick="window.close()"
-    style="background:#555;color:#fff;border:none;padding:10px 16px;
-    border-radius:6px;font-size:13px;cursor:pointer;">✕ Cerrar</button>
-</div>
 </body></html>`;
 
-  const win=window.open('','_blank');
-  if(win){win.document.write(histHTML);win.document.close();}
-  else showToast('⚠️ Activa los popups','var(--yellow)');
+  abrirDocViewer(histHTML, 'Historial del equipo');
 }
 
 
@@ -3008,12 +3012,9 @@ function verPerfilPersona(personaId) {
   const bks=backups.filter(b=>b.serial===eq?.serial||b.personaId===personaId);
   const incs=incidencias.filter(i=>i.personaId===personaId||i.nombre===p.nombre);
 
-  const win=window.open('','_blank');
-  if(!win) { showToast('⚠️ Activa los popups'); return; }
-  
   const fechaDoc=new Date().toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'});
 
-  win.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+  const _perfilHTML = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
 <title>Perfil — ${p.nombre}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -3050,11 +3051,10 @@ ${bks.length?`<table><tr><th>ID</th><th>Tipo</th><th>Fecha</th><th>Destino</th><
 ${incs.length?`<table><tr><th>Ticket</th><th>Tipo</th><th>Fecha</th><th>Importancia</th><th>Estado</th></tr>${incs.map(i=>`<tr><td class="mono">${i.ticket||i.id}</td><td>${i.tipo}</td><td>${i.fecha||'—'}</td><td>${i.prioridad}</td><td>${i.estadoTexto||i.estado}</td></tr>`).join('')}</table>`:'<p style="color:#aaa;font-size:11pt;">Sin incidencias registradas</p>'}
 
 <div class="no-print" style="margin-top:24px;text-align:center;">
-  <button onclick="window.print()" style="background:#c0392b;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:13px;cursor:pointer;font-weight:bold;margin-right:8px;">🖨️ Imprimir</button>
-  <button onclick="window.close()" style="background:#555;color:#fff;border:none;padding:10px 16px;border-radius:6px;font-size:13px;cursor:pointer;">✕ Cerrar</button>
+
 </div>
-</body></html>`);
-  win.document.close();
+</body></html>`;
+  abrirDocViewer(_perfilHTML, 'Perfil — ' + p.nombre);
 }
 
 // ============================================================
@@ -3076,11 +3076,9 @@ function generarInformeMensual() {
     const d=parseFecha(i.fecha); return d&&d.getFullYear()===year&&d.getMonth()===month-1;
   });
 
-  const win=window.open('','_blank');
-  if(!win) { showToast('⚠️ Activa los popups'); return; }
   const fechaDoc=new Date().toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'});
 
-  win.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+  const _docHTML_informe = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
 <title>Informe Mensual ${nombreMes}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -3196,19 +3194,8 @@ tr:nth-child(even) td{background:#f7f7f7;}
   <div class="footer"><img src="${FOOTER_B64}" alt="Pie de página"/></div>
 </div>
 
-<div class="no-print" style="position:fixed;bottom:0;left:0;right:0;
-  text-align:center;padding:10px;background:#f0f0f0;border-top:1px solid #ccc;z-index:999;">
-  <button onclick="window.print()"
-    style="background:#8B1318;color:#fff;border:none;padding:10px 28px;
-    border-radius:6px;font-size:13px;cursor:pointer;font-weight:bold;margin-right:8px;">
-    🖨️ Imprimir / Guardar PDF
-  </button>
-  <button onclick="window.close()"
-    style="background:#555;color:#fff;border:none;padding:10px 16px;
-    border-radius:6px;font-size:13px;cursor:pointer;">✕ Cerrar</button>
-</div>
-</body></html>`);
-  win.document.close();
+</body></html>`;
+  abrirDocViewer(_docHTML_informe, 'Informe Mensual ' + nombreMes);
 }
 
 // ============================================================
@@ -3335,10 +3322,7 @@ function _generarActaHTML(tipo, depId, fechaIni, fechaFin, obsExtra) {
   });
   const jefeDep = primerPersona?.nombre || `Representante ${depNombreCorto}`;
 
-  const win=window.open('','_blank');
-  if(!win){ showToast('⚠️ Activa los popups'); return; }
-
-  win.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+  const _actaHTML = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
 <title>${actaTitulo}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -3452,21 +3436,50 @@ tr:nth-child(even) td{background:#f7f7f7;}
   <div class="footer"><img src="${FOOTER_B64}" alt="Pie de página"/></div>
 </div>
 
-<div class="no-print" style="position:fixed;bottom:0;left:0;right:0;
-  text-align:center;padding:10px;background:#f0f0f0;border-top:1px solid #ccc;z-index:999;">
-  <button onclick="window.print()"
-    style="background:#8B1318;color:#fff;border:none;padding:10px 28px;
-    border-radius:6px;font-size:13px;cursor:pointer;font-weight:bold;margin-right:8px;">
-    🖨️ Imprimir / Guardar PDF
-  </button>
-  <button onclick="window.close()"
-    style="background:#555;color:#fff;border:none;padding:10px 16px;
-    border-radius:6px;font-size:13px;cursor:pointer;">✕ Cerrar</button>
-</div>
-</body></html>`);
-  win.document.close();
+</body></html>`;
+  const _depNombreFmt = dep.nombre.replace('Secretaría de ','').replace('Secretaria de ','');
+  abrirDocViewer(_actaHTML, actaTitulo + ' — ' + _depNombreFmt);
 }
 
+
+// ============================================================
+// VISOR DOCUMENTO (reemplaza window.open para evitar bloqueo popups)
+// ============================================================
+function abrirDocViewer(htmlContent, titulo) {
+  const overlay = document.getElementById('doc-viewer-overlay');
+  const iframe  = document.getElementById('doc-viewer-iframe');
+  const titleEl = document.getElementById('doc-viewer-title');
+  titleEl.textContent = titulo || 'Documento';
+
+  // Usar blob URL para evitar restricciones de srcdoc con imágenes base64 grandes
+  if (window._docViewerBlobURL) {
+    URL.revokeObjectURL(window._docViewerBlobURL);
+    window._docViewerBlobURL = null;
+  }
+  const blob = new Blob([htmlContent], { type: 'text/html; charset=utf-8' });
+  window._docViewerBlobURL = URL.createObjectURL(blob);
+  iframe.src = window._docViewerBlobURL;
+
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function cerrarDocViewer() {
+  document.getElementById('doc-viewer-overlay').classList.remove('open');
+  const iframe = document.getElementById('doc-viewer-iframe');
+  iframe.src = 'about:blank';
+  if (window._docViewerBlobURL) {
+    URL.revokeObjectURL(window._docViewerBlobURL);
+    window._docViewerBlobURL = null;
+  }
+  document.body.style.overflow = '';
+}
+
+function docViewerPrint() {
+  const iframe = document.getElementById('doc-viewer-iframe');
+  iframe.contentWindow.focus();
+  iframe.contentWindow.print();
+}
 
 // ============================================================
 // CRONOGRAMA
