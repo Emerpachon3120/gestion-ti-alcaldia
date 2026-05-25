@@ -627,6 +627,22 @@
     <button class="btn btn-primary" onclick="generarInformeMensual()">🖨️ Generar informe mensual</button>
   </div>
 
+  <div class="section-title">📝 Actas por dependencia</div>
+  <div class="card" style="margin-bottom:10px;">
+    <p style="font-size:12.5px;color:var(--text3);margin-bottom:12px;line-height:1.5;">
+      Genera un acta oficial conectada con los registros del sistema,
+      filtrada por dependencia y fecha.
+    </p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <button class="btn btn-primary" style="margin:0;background:#c0392b;" onclick="generarActaDependencia('mantenimiento')">
+        🔧 Acta Mantenimiento
+      </button>
+      <button class="btn btn-primary" style="margin:0;background:#2980b9;" onclick="generarActaDependencia('backup')">
+        💾 Acta Backup
+      </button>
+    </div>
+  </div>
+
   <div class="section-title">👤 Perfil de funcionario</div>
   <div class="card">
     <div class="form-group" style="margin-bottom:8px;">
@@ -3038,72 +3054,388 @@ function generarInformeMensual() {
 
   const win=window.open('','_blank');
   if(!win) { showToast('⚠️ Activa los popups'); return; }
-  
   const fechaDoc=new Date().toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'});
 
   win.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
-<title>Informe ${nombreMes}</title>
+<title>Informe Mensual ${nombreMes}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:Arial,sans-serif;font-size:11.5pt;color:#111;background:#fff;padding:30px 40px;}
-.header-doc{border-bottom:3px solid #c0392b;padding-bottom:12px;margin-bottom:20px;}
-h1{font-size:16pt;font-weight:bold;color:#c0392b;margin-bottom:4px;}
-.sub{color:#666;font-size:11pt;}
-.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
-.kpi{background:#f9f9f9;border:1px solid #e0e0e0;border-radius:8px;padding:12px;text-align:center;}
-.kpi-num{font-size:24pt;font-weight:bold;color:#c0392b;}
-.kpi-label{font-size:9.5pt;color:#666;margin-top:4px;}
-.sec{font-weight:bold;font-size:12pt;color:#c0392b;margin:16px 0 8px;border-left:4px solid #c0392b;padding-left:8px;}
-table{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:10.5pt;}
-td,th{padding:6px 8px;border:1px solid #e0e0e0;text-align:left;}
-th{background:#fef2f2;font-weight:600;}
-tr:nth-child(even) td{background:#fafafa;}
-.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:9.5pt;font-weight:600;}
-.ok{background:#d1fae5;color:#065f46;}.pend{background:#fee2e2;color:#991b1b;}.alta{background:#fee2e2;color:#991b1b;}.media{background:#fef3c7;color:#92400e;}.baja{background:#d1fae5;color:#065f46;}
-.firma-grid{display:flex;gap:60px;margin-top:40px;}
+html,body{background:#e8e8e8;font-family:Arial,sans-serif;font-size:10.5pt;color:#111;}
+.pagina{
+  position:relative;width:21.59cm;min-height:33.02cm;
+  margin:0.8cm auto;background:#fff;
+  display:flex;flex-direction:column;
+  box-shadow:0 4px 24px rgba(0,0,0,0.18);
+}
+.header img,.footer img{width:100%;display:block;}
+.body-wrap{flex:1;padding:0.4cm 1.8cm 0.3cm;display:flex;flex-direction:column;}
+.doc-titulo{text-align:center;font-size:13pt;font-weight:bold;text-transform:uppercase;
+  margin:0.35cm 0 0.1cm;letter-spacing:0.4px;}
+.doc-sub{text-align:center;font-size:9.5pt;color:#555;margin-bottom:0.35cm;}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:0.3cm 0;}
+.kpi{background:#f9f9f9;border:1px solid #e0e0e0;border-radius:6px;padding:10px;text-align:center;}
+.kpi-num{font-size:20pt;font-weight:bold;color:#8B0000;}
+.kpi-num.green{color:#16a34a;}
+.kpi-num.orange{color:#d97706;}
+.kpi-num.purple{color:#7c3aed;}
+.kpi-label{font-size:8.5pt;color:#666;margin-top:3px;}
+.sec{font-weight:bold;font-size:10.5pt;margin:0.35cm 0 0.15cm;text-transform:uppercase;
+  border-left:3px solid #8B0000;padding-left:7px;color:#8B0000;}
+table{width:100%;border-collapse:collapse;margin-bottom:0.3cm;font-size:9.5pt;}
+td,th{padding:5px 8px;vertical-align:top;border:1px solid #e0e0e0;text-align:left;}
+th{background:#f0f0f0;font-weight:bold;}
+tr:nth-child(even) td{background:#f7f7f7;}
+.badge-g{color:#16a34a;background:#dcfce7;padding:1px 7px;border-radius:10px;font-size:8.5pt;font-weight:bold;}
+.badge-y{color:#d97706;background:#fef3c7;padding:1px 7px;border-radius:10px;font-size:8.5pt;font-weight:bold;}
+.badge-r{color:#dc2626;background:#fee2e2;padding:1px 7px;border-radius:10px;font-size:8.5pt;font-weight:bold;}
+.firma-preview{display:flex;gap:1.5cm;align-items:flex-end;margin-top:0.4cm;}
 .fbox{flex:1;text-align:center;}
-.flinea{border-top:1pt solid #333;padding-top:6px;margin-top:40px;}
-.fnombre{font-weight:bold;font-size:11.5pt;}
-.fcargo{font-size:10pt;color:#555;}
-@media print{@page{size:letter;margin:15mm 20mm;}.no-print{display:none;}}
+.fbox img{height:1.6cm;object-fit:contain;display:block;margin:0 auto 3px;max-width:5cm;}
+.flinea{border-top:1pt solid #111;padding-top:4px;line-height:1.45;}
+.fnombre{font-weight:bold;font-size:10.5pt;}
+.fcargo{font-size:9.5pt;color:#333;}
+.fentidad{font-size:9pt;color:#555;}
+.spacer{flex:1;min-height:0.4cm;}
+.empty-msg{color:#888;font-size:9.5pt;margin-bottom:0.3cm;}
+@media print{
+  @page{size:8.5in 13in;margin:0;}
+  html,body{background:#fff;width:8.5in;}
+  .pagina{width:8.5in;min-height:13in;margin:0;box-shadow:none;}
+  .no-print{display:none!important;}
+  body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+}
 </style></head><body>
-<div class="header-doc">
-  <h1>📋 Informe Mensual de Gestión TI</h1>
-  <div class="sub">Período: ${nombreMes} · Alcaldía Municipal de Nemocón · NIT: 899999366-1</div>
-  <div class="sub">Generado: ${fechaDoc} · Responsable: Emerson Pachon — Ingeniero de Sistemas</div>
+<div class="pagina">
+  <div class="header"><img src="${HEADER_B64}" alt="Encabezado"/></div>
+  <div class="body-wrap">
+    <div class="doc-titulo">Informe Mensual de Gestión TI</div>
+    <div class="doc-sub">Período: ${nombreMes.charAt(0).toUpperCase()+nombreMes.slice(1)} · Alcaldía Municipal de Nemocón · NIT: 899999366-1<br>Generado: ${fechaDoc} · Responsable: Emerson Pachon — Ingeniero de Sistemas</div>
+
+    <div class="kpi-grid">
+      <div class="kpi"><div class="kpi-num">${mantsDelMes.length}</div><div class="kpi-label">Mantenimientos</div></div>
+      <div class="kpi"><div class="kpi-num green">${mantsDelMes.filter(m=>m.firmado).length}</div><div class="kpi-label">Firmados</div></div>
+      <div class="kpi"><div class="kpi-num orange">${bksDelMes.length}</div><div class="kpi-label">Backups</div></div>
+      <div class="kpi"><div class="kpi-num purple">${incsDelMes.length}</div><div class="kpi-label">Incidencias</div></div>
+    </div>
+
+    <div class="sec">Mantenimientos realizados (${mantsDelMes.length})</div>
+    ${mantsDelMes.length?`<table>
+      <tr><th>Serial</th><th>Funcionario</th><th>Dependencia</th><th>Tipo</th><th>Fecha</th><th>Estado</th></tr>
+      ${mantsDelMes.map(m=>{
+        const eq=getEquipo(m.serial);
+        const p=eq?getPersona(eq.usuarioId):null;
+        const of=eq?getOficina(eq.oficina):null;
+        const dep=of?getDependencia(of.depId):null;
+        return`<tr><td>${m.serial}</td><td>${p?.nombre||'—'}</td><td>${dep?.nombre?.replace('Secretaría de ','Sec. ')||of?.nombre||'—'}</td><td>${m.tipo}</td><td>${formatDate(m.fecha)}</td><td><span class="badge-${m.firmado?'g':'y'}">${m.firmado?'Firmado':'Pendiente'}</span></td></tr>`;
+      }).join('')}
+    </table>`:'<p class="empty-msg">Ninguno este mes.</p>'}
+
+    <div class="sec">Copias de seguridad (${bksDelMes.length})</div>
+    ${bksDelMes.length?`<table>
+      <tr><th>Serial</th><th>Funcionario</th><th>Dependencia</th><th>Tipo</th><th>Fecha</th><th>Destino</th><th>Estado</th></tr>
+      ${bksDelMes.map(b=>{
+        const eq=getEquipo(b.serial);
+        const of=eq?getOficina(eq.oficina):null;
+        const dep=of?getDependencia(of.depId):null;
+        const resp=b.responsableEquipo||DB_STATIC.personas.find(x=>x.id===b.personaId)?.nombre||'—';
+        return`<tr><td>${b.serial}</td><td>${resp}</td><td>${dep?.nombre?.replace('Secretaría de ','Sec. ')||of?.nombre||'—'}</td><td>${b.tipo||'—'}</td><td>${formatDate(b.fecha)}</td><td>${b.destino||'—'}</td><td><span class="badge-${b.firmado?'g':'y'}">${b.firmado?'Firmado':'Pendiente'}</span></td></tr>`;
+      }).join('')}
+    </table>`:'<p class="empty-msg">Ninguna este mes.</p>'}
+
+    <div class="sec">Incidencias atendidas (${incsDelMes.length})</div>
+    ${incsDelMes.length?`<table>
+      <tr><th>Ticket</th><th>Tipo</th><th>Funcionario</th><th>Dependencia</th><th>Prioridad</th><th>Estado</th></tr>
+      ${incsDelMes.map(i=>`<tr><td>${i.ticket||i.id}</td><td>${i.tipo}</td><td>${i.nombre||'—'}</td><td>${i.secretaria||'—'}</td><td><span class="badge-${i.prioridad==='alta'?'r':i.prioridad==='media'?'y':'g'}">${i.prioridad||'—'}</span></td><td>${i.estadoTexto||i.estado||'—'}</td></tr>`).join('')}
+    </table>`:'<p class="empty-msg">Ninguna este mes.</p>'}
+
+    <div class="spacer"></div>
+    <div class="firma-preview">
+      <div class="fbox">
+        <img src="${FIRMA_TI_B64}" alt="Firma Emerson Pachon"/>
+        <div class="flinea">
+          <div class="fnombre">Emerson Pachon</div>
+          <div class="fcargo">Ingeniero de Sistemas — TI</div>
+          <div class="fentidad">Alcaldía Municipal de Nemocón</div>
+          <div class="fcargo">${fechaDoc}</div>
+        </div>
+      </div>
+      <div class="fbox">
+        <div style="height:1.6cm;"></div>
+        <div class="flinea">
+          <div class="fnombre">___________________________</div>
+          <div class="fcargo">Revisado por</div>
+          <div class="fentidad">Alcaldía Municipal de Nemocón</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><img src="${FOOTER_B64}" alt="Pie de página"/></div>
 </div>
 
-<div class="kpi-grid">
-  <div class="kpi"><div class="kpi-num">${mantsDelMes.length}</div><div class="kpi-label">Mantenimientos</div></div>
-  <div class="kpi"><div class="kpi-num" style="color:#27ae60;">${mantsDelMes.filter(m=>m.firmado).length}</div><div class="kpi-label">Firmados</div></div>
-  <div class="kpi"><div class="kpi-num" style="color:#e67e22;">${bksDelMes.length}</div><div class="kpi-label">Backups</div></div>
-  <div class="kpi"><div class="kpi-num" style="color:#8e44ad;">${incsDelMes.length}</div><div class="kpi-label">Incidencias</div></div>
-</div>
-
-<div class="sec">🔧 Mantenimientos realizados (${mantsDelMes.length})</div>
-${mantsDelMes.length?`<table><tr><th>Serial</th><th>Tipo</th><th>Fecha</th><th>Responsable equipo</th><th>Firma</th></tr>
-${mantsDelMes.map(m=>{const p=getEquipoPersona(m.serial);return`<tr><td>${m.serial}</td><td>${m.tipo}</td><td>${formatDate(m.fecha)}</td><td>${p?.nombre||'—'}</td><td><span class="badge ${m.firmado?'ok':'pend'}">${m.firmado?'✅ Firmado':'⏳ Pendiente'}</span></td></tr>`;}).join('')}</table>`:'<p style="color:#aaa;">Ninguno este mes.</p>'}
-
-<div class="sec">💾 Copias de seguridad (${bksDelMes.length})</div>
-${bksDelMes.length?`<table><tr><th>Serial</th><th>Fecha</th><th>Responsable</th><th>Ubicación</th><th>Firma</th></tr>
-${bksDelMes.map(b=>{const resp=b.responsableEquipo||DB_STATIC.personas.find(x=>x.id===b.personaId)?.nombre||'—';return`<tr><td>${b.serial}</td><td>${formatDate(b.fecha)}</td><td>${resp}</td><td>${b.destino||'—'}</td><td><span class="badge ${b.firmado?'ok':'pend'}">${b.firmado?'✅ Firmado':'⏳ Pendiente'}</span></td></tr>`;}).join('')}</table>`:'<p style="color:#aaa;">Ninguna este mes.</p>'}
-
-<div class="sec">🚨 Incidencias atendidas (${incsDelMes.length})</div>
-${incsDelMes.length?`<table><tr><th>Ticket</th><th>Tipo</th><th>Funcionario</th><th>Secretaría</th><th>Importancia</th><th>Estado</th></tr>
-${incsDelMes.map(i=>`<tr><td>${i.ticket||i.id}</td><td>${i.tipo}</td><td>${i.nombre||'—'}</td><td>${i.secretaria||'—'}</td><td><span class="badge ${i.prioridad}">${i.prioridad}</span></td><td>${i.estadoTexto||i.estado}</td></tr>`).join('')}</table>`:'<p style="color:#aaa;">Ninguna este mes.</p>'}
-
-<div class="firma-grid">
-  <div class="fbox"><div class="flinea"><div class="fnombre">Emerson Pachon</div><div class="fcargo">Ingeniero de Sistemas — TI</div><div class="fcargo">Alcaldía Municipal de Nemocón</div></div></div>
-  <div class="fbox"><div class="flinea"><div class="fnombre">___________________________</div><div class="fcargo">Revisado por</div><div class="fcargo">Alcaldía Municipal de Nemocón</div></div></div>
-</div>
-
-<div class="no-print" style="margin-top:24px;text-align:center;">
-  <button onclick="window.print()" style="background:#c0392b;color:#fff;border:none;padding:10px 24px;border-radius:6px;font-size:13px;cursor:pointer;font-weight:bold;margin-right:8px;">🖨️ Imprimir / Guardar PDF</button>
-  <button onclick="window.close()" style="background:#555;color:#fff;border:none;padding:10px 16px;border-radius:6px;font-size:13px;cursor:pointer;">✕ Cerrar</button>
+<div class="no-print" style="position:fixed;bottom:0;left:0;right:0;
+  text-align:center;padding:10px;background:#f0f0f0;border-top:1px solid #ccc;z-index:999;">
+  <button onclick="window.print()"
+    style="background:#8B1318;color:#fff;border:none;padding:10px 28px;
+    border-radius:6px;font-size:13px;cursor:pointer;font-weight:bold;margin-right:8px;">
+    🖨️ Imprimir / Guardar PDF
+  </button>
+  <button onclick="window.close()"
+    style="background:#555;color:#fff;border:none;padding:10px 16px;
+    border-radius:6px;font-size:13px;cursor:pointer;">✕ Cerrar</button>
 </div>
 </body></html>`);
   win.document.close();
 }
+
+// ============================================================
+// ACTA POR DEPENDENCIA
+// ============================================================
+function generarActaDependencia(tipo) {
+  // tipo = 'mantenimiento' | 'backup'
+  // Pedir dependencia y fecha al usuario usando el confirm modal
+  const deps = DB_STATIC.dependencias;
+  if (!deps || deps.length === 0) { showToast('⚠️ No hay dependencias cargadas'); return; }
+
+  // Construir selector de dependencias + fecha
+  const selOpts = deps.map(d=>`<option value="${d.id}">${d.nombre}</option>`).join('');
+  const hoy = new Date().toISOString().split('T')[0];
+
+  // Usar un modal inline
+  const overlay = document.getElementById('confirm-overlay');
+  document.getElementById('confirm-icon').textContent = tipo==='mantenimiento'?'🔧':'💾';
+  document.getElementById('confirm-title').textContent = 'Generar Acta por Dependencia';
+  document.getElementById('confirm-msg').innerHTML = `
+    <div style="text-align:left;margin-top:8px;">
+      <div style="margin-bottom:8px;">
+        <label style="font-size:12px;font-weight:600;color:#555;">Dependencia</label><br>
+        <select id="acta-dep-select" style="width:100%;padding:8px;border:1.5px solid #ddd;border-radius:6px;font-size:13px;margin-top:4px;">
+          ${selOpts}
+        </select>
+      </div>
+      <div style="margin-bottom:8px;">
+        <label style="font-size:12px;font-weight:600;color:#555;">Fecha del acta</label><br>
+        <input type="date" id="acta-fecha-sel" value="${hoy}" style="width:100%;padding:8px;border:1.5px solid #ddd;border-radius:6px;font-size:13px;margin-top:4px;">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:600;color:#555;">Observaciones adicionales</label><br>
+        <textarea id="acta-obs-extra" rows="2" placeholder="Opcional..." style="width:100%;padding:8px;border:1.5px solid #ddd;border-radius:6px;font-size:13px;margin-top:4px;resize:none;"></textarea>
+      </div>
+    </div>`;
+  document.getElementById('confirm-ok-btn').textContent = '📄 Generar Acta';
+  document.getElementById('confirm-ok-btn').className = 'btn btn-primary';
+  document.getElementById('confirm-cancel-btn').textContent = 'Cancelar';
+  document.getElementById('confirm-ok-btn').onclick = () => {
+    const depId = document.getElementById('acta-dep-select').value;
+    const fechaActa = document.getElementById('acta-fecha-sel').value;
+    const obsExtra = document.getElementById('acta-obs-extra').value.trim();
+    cerrarConfirm();
+    _generarActaHTML(tipo, depId, fechaActa, obsExtra);
+  };
+  document.getElementById('confirm-cancel-btn').onclick = () => cerrarConfirm();
+  overlay.classList.add('open');
+}
+
+function _generarActaHTML(tipo, depId, fechaActa, obsExtra) {
+  const dep = getDependencia(depId);
+  if (!dep) { showToast('⚠️ Dependencia no encontrada'); return; }
+
+  // Obtener oficinas de la dependencia
+  const ofIds = DB_STATIC.oficinas.filter(o=>o.depId===depId).map(o=>o.id);
+
+  // Equipos de esa dependencia
+  const eqsDep = equipos.filter(e=>ofIds.includes(e.oficina));
+  const serialsDep = eqsDep.map(e=>e.serial);
+
+  // Fecha del acta
+  const fechaObj = fechaActa ? new Date(fechaActa+'T12:00:00') : new Date();
+  const diaActa = fechaObj.toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const fechaDocLarga = fechaObj.toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'});
+
+  let items=[], tablaHeader='', tablaRows='', secTitulo='', actaTitulo='';
+  let totalEquipos = eqsDep.length;
+  let intervenidos = 0;
+
+  if (tipo==='mantenimiento') {
+    actaTitulo = 'Acta de ejecución de mantenimientos preventivos';
+    secTitulo = 'Mantenimientos realizados';
+    tablaHeader = '<tr><th>Funcionario</th><th>ID del Equipo</th><th>Tipo</th><th>Fecha de Mantenimiento</th></tr>';
+    items = mantenimientos.filter(m=>{
+      const d=parseFecha(m.fecha);
+      return serialsDep.includes(m.serial) &&
+             d && d.getFullYear()===fechaObj.getFullYear() &&
+             d.getMonth()===fechaObj.getMonth() &&
+             d.getDate()===fechaObj.getDate();
+    });
+    tablaRows = items.map(m=>{
+      const p=getEquipoPersona(m.serial);
+      intervenidos++;
+      return`<tr><td>${p?.nombre||'—'}</td><td>${m.serial}</td><td>${m.tipo}</td><td>${diaActa}</td></tr>`;
+    }).join('');
+  } else {
+    actaTitulo = 'Acta de ejecución de copias de seguridad';
+    secTitulo = 'Copias de seguridad realizadas';
+    tablaHeader = '<tr><th>Funcionario</th><th>Ruta / Destino</th><th>Fecha de backup</th></tr>';
+    items = backups.filter(b=>{
+      const d=parseFecha(b.fecha);
+      return serialsDep.includes(b.serial) &&
+             d && d.getFullYear()===fechaObj.getFullYear() &&
+             d.getMonth()===fechaObj.getMonth() &&
+             d.getDate()===fechaObj.getDate();
+    });
+    tablaRows = items.map(b=>{
+      const resp=b.responsableEquipo||DB_STATIC.personas.find(x=>x.id===b.personaId)?.nombre||'—';
+      intervenidos++;
+      return`<tr><td>${resp}</td><td>${b.destino||'—'}</td><td>${diaActa}</td></tr>`;
+    }).join('');
+  }
+
+  if (items.length===0) {
+    showToast(`⚠️ No hay ${tipo==='mantenimiento'?'mantenimientos':'backups'} registrados en esa dependencia para esa fecha`);
+    return;
+  }
+
+  const noIntervenidos = Math.max(0, totalEquipos - intervenidos);
+  const pctCumplimiento = totalEquipos>0 ? ((intervenidos/totalEquipos)*100).toFixed(1) : '0.0';
+  const depNombreCorto = dep.nombre.replace('Secretaría de ','Sec. ').replace('Secretaria de ','Sec. ');
+
+  // Nombre del jefe/representante de dependencia (primer persona de la dep)
+  const primerPersona = DB_STATIC.personas.find(p=>{
+    const eq=equipos.find(e=>e.usuarioId===p.id && ofIds.includes(e.oficina));
+    return !!eq;
+  });
+  const jefeDep = primerPersona?.nombre || `Representante ${depNombreCorto}`;
+
+  const win=window.open('','_blank');
+  if(!win){ showToast('⚠️ Activa los popups'); return; }
+
+  win.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<title>${actaTitulo}</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{background:#e8e8e8;font-family:Arial,sans-serif;font-size:10.5pt;color:#111;}
+.pagina{
+  position:relative;width:21.59cm;min-height:33.02cm;
+  margin:0.8cm auto;background:#fff;
+  display:flex;flex-direction:column;
+  box-shadow:0 4px 24px rgba(0,0,0,0.18);
+}
+.header img,.footer img{width:100%;display:block;}
+.body-wrap{flex:1;padding:0.4cm 1.8cm 0.3cm;display:flex;flex-direction:column;}
+.titulo{text-align:center;font-size:12pt;font-weight:bold;text-transform:uppercase;
+  margin:0.35cm 0 0.4cm;letter-spacing:0.4px;}
+.meta{margin-bottom:0.35cm;font-size:10.5pt;}
+.meta p{margin-bottom:3px;}
+.intro{margin-bottom:0.4cm;font-size:10.5pt;text-align:justify;line-height:1.5;}
+.sec{font-weight:bold;font-size:10.5pt;margin:0.4cm 0 0.15cm;text-transform:uppercase;
+  border-left:3px solid #8B0000;padding-left:7px;color:#8B0000;}
+.sec-num{font-weight:bold;font-size:10.5pt;margin:0.35cm 0 0.15cm;}
+table{width:100%;border-collapse:collapse;margin-bottom:0.3cm;font-size:10pt;}
+td,th{padding:5px 10px;vertical-align:top;border:1px solid #e0e0e0;text-align:left;}
+th{background:#f0f0f0;font-weight:bold;}
+tr:nth-child(even) td{background:#f7f7f7;}
+.obs-text{font-size:10.5pt;text-align:justify;line-height:1.5;margin-bottom:0.2cm;}
+.indicadores{margin:0.2cm 0;}
+.indicadores li{margin-bottom:4px;font-size:10.5pt;list-style:disc inside;}
+.constancia{font-size:10.5pt;margin:0.3cm 0;text-align:justify;}
+.firma-preview{display:flex;gap:2cm;align-items:flex-end;margin-top:0.5cm;}
+.fbox{flex:1;text-align:center;}
+.fbox img{height:1.6cm;object-fit:contain;display:block;margin:0 auto 3px;max-width:5cm;}
+.flinea{border-top:1pt solid #111;padding-top:4px;line-height:1.45;}
+.fnombre{font-weight:bold;font-size:10.5pt;}
+.fcargo{font-size:9.5pt;color:#333;}
+.fentidad{font-size:9pt;color:#555;}
+.spacer{flex:1;min-height:0.3cm;}
+@media print{
+  @page{size:8.5in 13in;margin:0;}
+  html,body{background:#fff;width:8.5in;}
+  .pagina{width:8.5in;min-height:13in;margin:0;box-shadow:none;}
+  .no-print{display:none!important;}
+  body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+}
+</style></head><body>
+<div class="pagina">
+  <div class="header"><img src="${HEADER_B64}" alt="Encabezado"/></div>
+  <div class="body-wrap">
+    <div class="titulo">${actaTitulo}</div>
+
+    <div class="meta">
+      <p><b>Fecha de elaboración:</b> ${diaActa}</p>
+      <p><b>Responsable:</b> Emerson Pachón Ayala</p>
+      <p><b>Dependencia:</b> ${dep.nombre}</p>
+    </div>
+
+    <div class="intro">
+      En la fecha indicada, se deja constancia de la ejecución de actividades
+      de ${tipo==='mantenimiento'?'mantenimiento a los equipos de cómputo':'copias de seguridad (backup) de la información institucional contenida en los equipos de cómputo'} asignados a funcionarios de la
+      ${dep.nombre}, conforme a la programación establecida por el área de sistemas
+      y a los registros individuales que reposan como soporte documental.
+    </div>
+
+    <div class="sec-num">1. ${secTitulo}</div>
+    <table>
+      ${tablaHeader}
+      ${tablaRows}
+    </table>
+
+    <p class="obs-text" style="margin-bottom:0.2cm;">Se deja constancia de que los detalles técnicos de cada procedimiento
+    realizado reposan en los formatos individuales de ${tipo==='mantenimiento'?'mantenimiento':'copias de seguridad'} debidamente
+    diligenciados y archivados por el área de sistemas.</p>
+
+    <div class="sec-num">2. Observaciones</div>
+    ${obsExtra?`<p class="obs-text">${obsExtra}</p>`:''}
+    <p class="obs-text">Se acordó que, en caso de requerir soporte técnico o presentar alguna novedad en los equipos,
+    deberán registrar la incidencia a través del formulario institucional dispuesto por el área de sistemas,
+    con el fin de programar la atención correspondiente.</p>
+
+    <div class="sec-num">3. Indicadores de cumplimiento</div>
+    <p class="obs-text">Durante la jornada de ${tipo==='mantenimiento'?'mantenimiento':'ejecución de backups'} en la ${dep.nombre}
+    se evaluaron un total de ${totalEquipos} equipos de cómputo.</p>
+    <ul class="indicadores">
+      <li>Equipos intervenidos: ${intervenidos}</li>
+      <li>Equipos no intervenidos: ${noIntervenidos}</li>
+      <li>Porcentaje de cumplimiento: ${pctCumplimiento}%</li>
+    </ul>
+    <p class="obs-text" style="margin-top:0.2cm;">El resultado evidencia el cumplimiento de la programación establecida por el área de sistemas
+    y el adecuado control sobre la periodicidad de ${tipo==='mantenimiento'?'los mantenimientos preventivos':'las copias de seguridad'}.</p>
+
+    <p class="constancia" style="margin-top:0.3cm;">En constancia, se firma la presente acta.</p>
+
+    <div class="spacer"></div>
+    <div class="firma-preview">
+      <div class="fbox">
+        <img src="${FIRMA_TI_B64}" alt="Firma Emerson Pachon"/>
+        <div class="flinea">
+          <div class="fnombre">Emerson Judiño Pachón Ayala</div>
+          <div class="fcargo">Ingeniero de sistemas</div>
+        </div>
+      </div>
+      <div class="fbox">
+        <div style="height:1.6cm;"></div>
+        <div class="flinea">
+          <div class="fnombre">${jefeDep}</div>
+          <div class="fcargo">${dep.nombre}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><img src="${FOOTER_B64}" alt="Pie de página"/></div>
+</div>
+
+<div class="no-print" style="position:fixed;bottom:0;left:0;right:0;
+  text-align:center;padding:10px;background:#f0f0f0;border-top:1px solid #ccc;z-index:999;">
+  <button onclick="window.print()"
+    style="background:#8B1318;color:#fff;border:none;padding:10px 28px;
+    border-radius:6px;font-size:13px;cursor:pointer;font-weight:bold;margin-right:8px;">
+    🖨️ Imprimir / Guardar PDF
+  </button>
+  <button onclick="window.close()"
+    style="background:#555;color:#fff;border:none;padding:10px 16px;
+    border-radius:6px;font-size:13px;cursor:pointer;">✕ Cerrar</button>
+</div>
+</body></html>`);
+  win.document.close();
+}
+
 
 // ============================================================
 // CALENDARIO
