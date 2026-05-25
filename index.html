@@ -76,20 +76,19 @@
   /* ── NAV ── */
   nav {
     background: #fff;
-    border-top: 1px solid var(--border);
-    padding: 6px 4px 10px;
+    border-top: 1.5px solid #f0f0f0;
+    padding: 0 8px env(safe-area-inset-bottom, 8px);
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    bottom: 0; left: 0; right: 0;
     z-index: 100;
-    box-shadow: 0 -2px 12px rgba(0,0,0,0.07);
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
     display: flex;
     flex-direction: row;
     justify-content: space-around;
-    align-items: center;
+    align-items: stretch;
     max-width: 680px;
     margin: 0 auto;
+    height: 58px;
   }
   nav ul {
     display: flex; flex-direction: row;
@@ -98,15 +97,27 @@
     width: 100%; padding: 0;
   }
   .nav-btn {
-    display: flex; flex-direction: column; align-items: center; gap: 2px;
-    background: none; border: none; color: var(--text3);
-    font-size: 9px; font-weight: 500; cursor: pointer;
-    font-family: inherit; padding: 4px 2px; border-radius: 8px;
-    transition: color .2s; white-space: nowrap; min-width: 0; flex: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px;
+    background: none; border: none; color: #aaa;
+    font-size: 10px; font-weight: 500; cursor: pointer;
+    font-family: inherit; padding: 6px 4px 4px;
+    border-radius: 0; flex: 1;
+    transition: color .15s;
+    position: relative;
   }
-  .nav-btn svg { width: 20px; height: 20px; flex-shrink: 0; }
+  .nav-btn svg { width: 22px; height: 22px; flex-shrink: 0; stroke-width: 1.7; }
+  .nav-btn span { font-size: 10px; letter-spacing: 0.2px; }
   .nav-btn.active { color: #c0392b; }
-  .nav-btn span { font-size: 9px; }
+  .nav-btn.active::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 20%; right: 20%;
+    height: 2.5px;
+    background: #c0392b;
+    border-radius: 0 0 3px 3px;
+  }
+  .nav-btn:not(.active):hover { color: #888; }
 
   /* ── FAB ── */
   .fab {
@@ -627,7 +638,20 @@
     <button class="btn btn-primary" onclick="generarInformeMensual()">🖨️ Generar informe mensual</button>
   </div>
 
-  <div class="section-title">📝 Actas por dependencia</div>
+  <div class="section-title">📅 Cronograma anual 2026</div>
+  <div id="cronograma-tabs" style="display:flex;gap:6px;margin-bottom:8px;">
+    <button id="cron-tab-mant" onclick="showCronTab('mantenimiento')"
+      style="flex:1;padding:8px;border:1.5px solid #c0392b;border-radius:8px;background:#c0392b;color:#fff;font-size:12px;font-weight:600;cursor:pointer;">
+      🔧 Mantenimientos
+    </button>
+    <button id="cron-tab-back" onclick="showCronTab('backup')"
+      style="flex:1;padding:8px;border:1.5px solid #ddd;border-radius:8px;background:#fff;color:#666;font-size:12px;font-weight:600;cursor:pointer;">
+      💾 Backups
+    </button>
+  </div>
+  <div id="cronograma-wrap" style="overflow-x:auto;"></div>
+
+  <div class="section-title" style="margin-top:16px;">📝 Actas por dependencia</div>
   <div class="card" style="margin-bottom:10px;">
     <p style="font-size:12.5px;color:var(--text3);margin-bottom:12px;line-height:1.5;">
       Genera un acta oficial conectada con los registros del sistema,
@@ -672,36 +696,36 @@
 <!-- ===================== NAV ===================== -->
 <nav class="nav">
   <button class="nav-btn active" onclick="gotoPage('inicio')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
     <span>Inicio</span>
   </button>
   <button class="nav-btn" onclick="gotoPage('mantenimientos')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
     <span>Mantto</span>
   </button>
   <button class="nav-btn" onclick="gotoPage('backups')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
     <span>Backups</span>
   </button>
   <button class="nav-btn" onclick="gotoPage('inventario')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-    <span>Inv</span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+    <span>Equipos</span>
   </button>
   <button class="nav-btn" onclick="gotoPage('incidencias')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-    <span>Inc</span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <span>Incidencias</span>
   </button>
   <button class="nav-btn" onclick="gotoPage('analytics')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
-    <span>Stats</span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+    <span>Estadísticas</span>
   </button>
   <button class="nav-btn" onclick="gotoPage('reportes')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-    <span>Report</span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+    <span>Reportes</span>
   </button>
   <button class="nav-btn" onclick="gotoPage('calendario')">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-    <span>Agenda</span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <span>Calendario</span>
   </button>
 </nav>
 
@@ -1537,7 +1561,7 @@ function gotoPage(page) {
   currentPage=page; updateFab(); window.scrollTo(0,0);
   // Render on demand
   if(page==='analytics') renderAnalytics();
-  if(page==='reportes') { renderBusquedaGlobal(''); buildSearchSelect('perfil-persona-ss',DB_STATIC.personas.map(p=>({id:p.id,label:p.nombre})),'Buscar funcionario...',()=>{}); }
+  if(page==='reportes') { renderBusquedaGlobal(''); buildSearchSelect('perfil-persona-ss',DB_STATIC.personas.map(p=>({id:p.id,label:p.nombre})),'Buscar funcionario...',()=>{}); renderCronograma('mantenimiento'); }
   if(page==='calendario') renderCalendario();
 }
 function updateFab() {
@@ -3191,33 +3215,37 @@ tr:nth-child(even) td{background:#f7f7f7;}
 // ACTA POR DEPENDENCIA
 // ============================================================
 function generarActaDependencia(tipo) {
-  // tipo = 'mantenimiento' | 'backup'
-  // Pedir dependencia y fecha al usuario usando el confirm modal
   const deps = DB_STATIC.dependencias;
   if (!deps || deps.length === 0) { showToast('⚠️ No hay dependencias cargadas'); return; }
 
-  // Construir selector de dependencias + fecha
   const selOpts = deps.map(d=>`<option value="${d.id}">${d.nombre}</option>`).join('');
   const hoy = new Date().toISOString().split('T')[0];
+  const primeroMes = new Date(); primeroMes.setDate(1);
+  const inicioMes = primeroMes.toISOString().split('T')[0];
 
-  // Usar un modal inline
   const overlay = document.getElementById('confirm-overlay');
   document.getElementById('confirm-icon').textContent = tipo==='mantenimiento'?'🔧':'💾';
   document.getElementById('confirm-title').textContent = 'Generar Acta por Dependencia';
   document.getElementById('confirm-msg').innerHTML = `
     <div style="text-align:left;margin-top:8px;">
-      <div style="margin-bottom:8px;">
-        <label style="font-size:12px;font-weight:600;color:#555;">Dependencia</label><br>
+      <div style="margin-bottom:10px;">
+        <label style="font-size:12px;font-weight:600;color:#555;">Dependencia</label>
         <select id="acta-dep-select" style="width:100%;padding:8px;border:1.5px solid #ddd;border-radius:6px;font-size:13px;margin-top:4px;">
           ${selOpts}
         </select>
       </div>
-      <div style="margin-bottom:8px;">
-        <label style="font-size:12px;font-weight:600;color:#555;">Fecha del acta</label><br>
-        <input type="date" id="acta-fecha-sel" value="${hoy}" style="width:100%;padding:8px;border:1.5px solid #ddd;border-radius:6px;font-size:13px;margin-top:4px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#555;">Fecha inicio</label>
+          <input type="date" id="acta-fecha-ini" value="${inicioMes}" style="width:100%;padding:8px;border:1.5px solid #ddd;border-radius:6px;font-size:13px;margin-top:4px;">
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:#555;">Fecha fin</label>
+          <input type="date" id="acta-fecha-fin" value="${hoy}" style="width:100%;padding:8px;border:1.5px solid #ddd;border-radius:6px;font-size:13px;margin-top:4px;">
+        </div>
       </div>
       <div>
-        <label style="font-size:12px;font-weight:600;color:#555;">Observaciones adicionales</label><br>
+        <label style="font-size:12px;font-weight:600;color:#555;">Observaciones adicionales</label>
         <textarea id="acta-obs-extra" rows="2" placeholder="Opcional..." style="width:100%;padding:8px;border:1.5px solid #ddd;border-radius:6px;font-size:13px;margin-top:4px;resize:none;"></textarea>
       </div>
     </div>`;
@@ -3226,30 +3254,41 @@ function generarActaDependencia(tipo) {
   document.getElementById('confirm-cancel-btn').textContent = 'Cancelar';
   document.getElementById('confirm-ok-btn').onclick = () => {
     const depId = document.getElementById('acta-dep-select').value;
-    const fechaActa = document.getElementById('acta-fecha-sel').value;
+    const fechaIni = document.getElementById('acta-fecha-ini').value;
+    const fechaFin = document.getElementById('acta-fecha-fin').value;
     const obsExtra = document.getElementById('acta-obs-extra').value.trim();
+    if (!fechaIni || !fechaFin) { showToast('⚠️ Selecciona el rango de fechas'); return; }
+    if (fechaIni > fechaFin) { showToast('⚠️ Fecha inicio no puede ser mayor que fecha fin'); return; }
     cerrarConfirm();
-    _generarActaHTML(tipo, depId, fechaActa, obsExtra);
+    _generarActaHTML(tipo, depId, fechaIni, fechaFin, obsExtra);
   };
   document.getElementById('confirm-cancel-btn').onclick = () => cerrarConfirm();
   overlay.classList.add('open');
 }
 
-function _generarActaHTML(tipo, depId, fechaActa, obsExtra) {
+function _generarActaHTML(tipo, depId, fechaIni, fechaFin, obsExtra) {
   const dep = getDependencia(depId);
   if (!dep) { showToast('⚠️ Dependencia no encontrada'); return; }
 
-  // Obtener oficinas de la dependencia
   const ofIds = DB_STATIC.oficinas.filter(o=>o.depId===depId).map(o=>o.id);
-
-  // Equipos de esa dependencia
   const eqsDep = equipos.filter(e=>ofIds.includes(e.oficina));
   const serialsDep = eqsDep.map(e=>e.serial);
 
-  // Fecha del acta
-  const fechaObj = fechaActa ? new Date(fechaActa+'T12:00:00') : new Date();
-  const diaActa = fechaObj.toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric'});
-  const fechaDocLarga = fechaObj.toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'});
+  // Rango de fechas
+  const dIni = new Date(fechaIni+'T00:00:00');
+  const dFin = new Date(fechaFin+'T23:59:59');
+  const enRango = d => d && d >= dIni && d <= dFin;
+
+  // Texto de rango para el documento
+  const fmtLarga = d => d.toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'});
+  const fmtCorta = d => d.toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const periodoTexto = fechaIni===fechaFin
+    ? fmtLarga(dIni)
+    : `${fmtCorta(dIni)} al ${fmtCorta(dFin)}`;
+  const periodoCorto = fechaIni===fechaFin
+    ? fmtCorta(dIni)
+    : `${fmtCorta(dIni)} – ${fmtCorta(dFin)}`;
+  const fechaEmision = new Date().toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric'});
 
   let items=[], tablaHeader='', tablaRows='', secTitulo='', actaTitulo='';
   let totalEquipos = eqsDep.length;
@@ -3258,39 +3297,30 @@ function _generarActaHTML(tipo, depId, fechaActa, obsExtra) {
   if (tipo==='mantenimiento') {
     actaTitulo = 'Acta de ejecución de mantenimientos preventivos';
     secTitulo = 'Mantenimientos realizados';
-    tablaHeader = '<tr><th>Funcionario</th><th>ID del Equipo</th><th>Tipo</th><th>Fecha de Mantenimiento</th></tr>';
-    items = mantenimientos.filter(m=>{
-      const d=parseFecha(m.fecha);
-      return serialsDep.includes(m.serial) &&
-             d && d.getFullYear()===fechaObj.getFullYear() &&
-             d.getMonth()===fechaObj.getMonth() &&
-             d.getDate()===fechaObj.getDate();
-    });
+    tablaHeader = '<tr><th>Funcionario</th><th>ID del Equipo</th><th>Tipo</th><th>Fecha</th></tr>';
+    items = mantenimientos.filter(m => serialsDep.includes(m.serial) && enRango(parseFecha(m.fecha)));
+    // Contar únicos por serial
+    const serialsIntervenidos = [...new Set(items.map(m=>m.serial))];
+    intervenidos = serialsIntervenidos.length;
     tablaRows = items.map(m=>{
       const p=getEquipoPersona(m.serial);
-      intervenidos++;
-      return`<tr><td>${p?.nombre||'—'}</td><td>${m.serial}</td><td>${m.tipo}</td><td>${diaActa}</td></tr>`;
+      return`<tr><td>${p?.nombre||'—'}</td><td>${m.serial}</td><td>${m.tipo}</td><td>${fmtCorta(parseFecha(m.fecha))}</td></tr>`;
     }).join('');
   } else {
     actaTitulo = 'Acta de ejecución de copias de seguridad';
     secTitulo = 'Copias de seguridad realizadas';
     tablaHeader = '<tr><th>Funcionario</th><th>Ruta / Destino</th><th>Fecha de backup</th></tr>';
-    items = backups.filter(b=>{
-      const d=parseFecha(b.fecha);
-      return serialsDep.includes(b.serial) &&
-             d && d.getFullYear()===fechaObj.getFullYear() &&
-             d.getMonth()===fechaObj.getMonth() &&
-             d.getDate()===fechaObj.getDate();
-    });
+    items = backups.filter(b => serialsDep.includes(b.serial) && enRango(parseFecha(b.fecha)));
+    const serialsIntervenidos = [...new Set(items.map(b=>b.serial))];
+    intervenidos = serialsIntervenidos.length;
     tablaRows = items.map(b=>{
       const resp=b.responsableEquipo||DB_STATIC.personas.find(x=>x.id===b.personaId)?.nombre||'—';
-      intervenidos++;
-      return`<tr><td>${resp}</td><td>${b.destino||'—'}</td><td>${diaActa}</td></tr>`;
+      return`<tr><td>${resp}</td><td>${b.destino||'—'}</td><td>${fmtCorta(parseFecha(b.fecha))}</td></tr>`;
     }).join('');
   }
 
   if (items.length===0) {
-    showToast(`⚠️ No hay ${tipo==='mantenimiento'?'mantenimientos':'backups'} registrados en esa dependencia para esa fecha`);
+    showToast(`⚠️ No hay ${tipo==='mantenimiento'?'mantenimientos':'backups'} registrados en esa dependencia para ese período`);
     return;
   }
 
@@ -3359,13 +3389,14 @@ tr:nth-child(even) td{background:#f7f7f7;}
     <div class="titulo">${actaTitulo}</div>
 
     <div class="meta">
-      <p><b>Fecha de elaboración:</b> ${diaActa}</p>
+      <p><b>Período:</b> ${periodoTexto}</p>
+      <p><b>Fecha de emisión:</b> ${fechaEmision}</p>
       <p><b>Responsable:</b> Emerson Pachón Ayala</p>
       <p><b>Dependencia:</b> ${dep.nombre}</p>
     </div>
 
     <div class="intro">
-      En la fecha indicada, se deja constancia de la ejecución de actividades
+      En el período indicado, se deja constancia de la ejecución de actividades
       de ${tipo==='mantenimiento'?'mantenimiento a los equipos de cómputo':'copias de seguridad (backup) de la información institucional contenida en los equipos de cómputo'} asignados a funcionarios de la
       ${dep.nombre}, conforme a la programación establecida por el área de sistemas
       y a los registros individuales que reposan como soporte documental.
@@ -3436,6 +3467,141 @@ tr:nth-child(even) td{background:#f7f7f7;}
   win.document.close();
 }
 
+
+// ============================================================
+// CRONOGRAMA
+// ============================================================
+const CRONOGRAMA = {
+  mantenimiento: [
+    { dep: 'Gobierno',                       meses: ['Feb','Ago'] },
+    { dep: 'Hacienda',                       meses: ['Feb','Ago'] },
+    { dep: 'Servicios Públicos',             meses: ['Mar','Sep'] },
+    { dep: 'Planeación',                     meses: ['Mar','Sep'] },
+    { dep: 'Agricultura',                    meses: ['Abr','Oct'] },
+    { dep: 'Cultura y Turismo',              meses: ['Abr','Oct'] },
+    { dep: 'Coordinación Programas Sociales',meses: ['Abr','Oct'] },
+  ],
+  backup: [
+    { dep: 'Planeación',                     meses: ['Feb','May','Ago','Nov'] },
+    { dep: 'Hacienda',                       meses: ['Feb','May','Ago','Nov'] },
+    { dep: 'Servicios Públicos',             meses: ['Mar','Jun','Sep','Dic'] },
+    { dep: 'Gobierno',                       meses: ['Mar','Jun','Sep','Dic'] },
+    { dep: 'Agricultura',                    meses: ['Abr','Jul','Oct'] },
+    { dep: 'Cultura y Turismo',              meses: ['Abr','Jul','Oct'] },
+    { dep: 'Coordinación Programas Sociales',meses: ['Abr','Jul','Oct'] },
+  ]
+};
+
+const MESES_ORDEN = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+let cronTabActual = 'mantenimiento';
+
+function showCronTab(tipo) {
+  cronTabActual = tipo;
+  const tabMant = document.getElementById('cron-tab-mant');
+  const tabBack = document.getElementById('cron-tab-back');
+  if (tipo==='mantenimiento') {
+    tabMant.style.background='#c0392b'; tabMant.style.color='#fff'; tabMant.style.borderColor='#c0392b';
+    tabBack.style.background='#fff'; tabBack.style.color='#666'; tabBack.style.borderColor='#ddd';
+  } else {
+    tabBack.style.background='#2980b9'; tabBack.style.color='#fff'; tabBack.style.borderColor='#2980b9';
+    tabMant.style.background='#fff'; tabMant.style.color='#666'; tabMant.style.borderColor='#ddd';
+  }
+  renderCronograma(tipo);
+}
+
+function renderCronograma(tipo) {
+  const wrap = document.getElementById('cronograma-wrap');
+  if (!wrap) return;
+  const datos = CRONOGRAMA[tipo];
+  const color = tipo==='mantenimiento' ? '#c0392b' : '#2980b9';
+  const colorLight = tipo==='mantenimiento' ? '#fef2f2' : '#eff6ff';
+  const mesActual = new Date().getMonth(); // 0-based
+
+  let html = `<table style="width:100%;border-collapse:collapse;font-size:11px;min-width:480px;">
+    <thead>
+      <tr>
+        <th style="padding:7px 8px;background:#f8f8f8;border:1px solid #e8e8e8;text-align:left;font-size:11px;color:#555;white-space:nowrap;min-width:90px;">Dependencia</th>`;
+
+  // Solo mostrar meses desde Feb en adelante (el cronograma va Feb-Dic)
+  const mesesCron = MESES_ORDEN.slice(1); // Feb a Dic
+  mesesCron.forEach((m, i) => {
+    const mesIdx = i + 1; // Feb=1, Mar=2...
+    const esActual = mesIdx === mesActual;
+    html += `<th style="padding:7px 4px;background:${esActual?colorLight:'#f8f8f8'};border:1px solid #e8e8e8;
+      text-align:center;font-size:10px;color:${esActual?color:'#555'};font-weight:${esActual?'700':'600'};
+      white-space:nowrap;">${m}</th>`;
+  });
+  html += `</tr></thead><tbody>`;
+
+  datos.forEach((row, ri) => {
+    html += `<tr>
+      <td style="padding:7px 8px;border:1px solid #e8e8e8;font-size:11px;font-weight:500;
+        background:${ri%2===0?'#fff':'#fafafa'};white-space:nowrap;">${row.dep}</td>`;
+    mesesCron.forEach((m, i) => {
+      const mesIdx = i + 1;
+      const programado = row.meses.includes(m);
+      const esActual = mesIdx === mesActual;
+      // Check if this dep/month has been executed (look in real data)
+      const ejecutado = _cronogramaEjecutado(tipo, row.dep, m);
+      let celda = '';
+      if (programado) {
+        if (ejecutado) {
+          celda = `<div style="width:20px;height:20px;border-radius:50%;background:#16a34a;
+            margin:0 auto;display:flex;align-items:center;justify-content:center;">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg></div>`;
+        } else {
+          celda = `<div style="width:20px;height:20px;border-radius:50%;background:${color};
+            margin:0 auto;opacity:0.85;"></div>`;
+        }
+      }
+      html += `<td style="padding:5px 2px;border:1px solid #e8e8e8;text-align:center;
+        background:${esActual&&programado?colorLight:ri%2===0?'#fff':'#fafafa'};">${celda}</td>`;
+    });
+    html += `</tr>`;
+  });
+
+  html += `</tbody></table>
+  <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#555;">
+      <div style="width:12px;height:12px;border-radius:50%;background:${color};"></div> Programado
+    </div>
+    <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#555;">
+      <div style="width:12px;height:12px;border-radius:50%;background:#16a34a;"></div> Ejecutado
+    </div>
+  </div>`;
+
+  wrap.innerHTML = html;
+}
+
+function _cronogramaEjecutado(tipo, depNombre, mesAbr) {
+  // Buscar si hay registros reales para esa dependencia en ese mes
+  const mesIdx = MESES_ORDEN.indexOf(mesAbr); // 0=Ene,1=Feb...
+  if (mesIdx < 0) return false;
+  const anio = new Date().getFullYear();
+
+  // Find matching dependencia by name (fuzzy)
+  const depObj = DB_STATIC.dependencias.find(d =>
+    d.nombre.toLowerCase().includes(depNombre.toLowerCase().split(' ')[0].toLowerCase()) ||
+    depNombre.toLowerCase().includes(d.nombre.toLowerCase().split(' ').slice(-1)[0].toLowerCase())
+  );
+  if (!depObj) return false;
+  const ofIds = DB_STATIC.oficinas.filter(o=>o.depId===depObj.id).map(o=>o.id);
+  const serialsDep = equipos.filter(e=>ofIds.includes(e.oficina)).map(e=>e.serial);
+
+  if (tipo==='mantenimiento') {
+    return mantenimientos.some(m => {
+      const d = parseFecha(m.fecha);
+      return serialsDep.includes(m.serial) && d && d.getFullYear()===anio && d.getMonth()===mesIdx;
+    });
+  } else {
+    return backups.some(b => {
+      const d = parseFecha(b.fecha);
+      return serialsDep.includes(b.serial) && d && d.getFullYear()===anio && d.getMonth()===mesIdx;
+    });
+  }
+}
 
 // ============================================================
 // CALENDARIO
