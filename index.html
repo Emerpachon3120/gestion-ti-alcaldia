@@ -279,22 +279,25 @@
   .form-textarea { resize: vertical; min-height: 80px; }
 
   /* ── SEARCH SELECT ── */
-  .ss-wrap { position: relative; }
-  .ss-input {
+  .ss-wrap, .search-select-wrap { position: relative; }
+  .ss-input, .search-select-input {
     width: 100%; background: #fff; border: 1.5px solid var(--border);
     color: var(--text); border-radius: var(--radius-sm);
     padding: 10px 12px; font-size: 13px; font-family: inherit;
+    box-sizing: border-box;
   }
-  .ss-input:focus { outline: none; border-color: #c0392b; }
-  .ss-dropdown {
-    position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 200;
+  .ss-input:focus, .search-select-input:focus { outline: none; border-color: #c0392b; }
+  .ss-dropdown, .search-select-dropdown {
+    position: absolute; top: calc(100% + 2px); left: 0; right: 0; z-index: 300;
     background: #fff; border: 1.5px solid var(--border);
     border-radius: var(--radius-sm); max-height: 200px; overflow-y: auto;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    display: none;
   }
-  .ss-option { padding: 9px 12px; font-size: 13px; cursor: pointer; border-bottom: 1px solid var(--border); }
-  .ss-option:hover { background: #fef2f2; color: #c0392b; }
-  .ss-option:last-child { border-bottom: none; }
+  .ss-dropdown.open, .search-select-dropdown.open { display: block; }
+  .ss-option, .search-select-option { padding: 9px 12px; font-size: 13px; cursor: pointer; border-bottom: 1px solid var(--border); }
+  .ss-option:hover, .search-select-option:hover { background: #fef2f2; color: #c0392b; }
+  .ss-option:last-child, .search-select-option:last-child { border-bottom: none; }
   .ss-selected { font-size: 12px; color: #c0392b; margin-top: 4px; padding: 3px 8px; background: #fee2e2; border-radius: 6px; display: inline-block; font-weight: 500; }
 
   /* ── BUTTONS ── */
@@ -364,6 +367,14 @@
   .foto-thumb { position: relative; width: 72px; height: 72px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
   .foto-thumb img { width: 100%; height: 100%; object-fit: cover; cursor: pointer; }
   .foto-thumb-del { position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.6); border: none; color: #fff; width: 18px; height: 18px; border-radius: 50%; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+  /* ── FOTO UPLOAD ── */
+  .foto-upload-area { border: 2px dashed var(--border); border-radius: var(--radius-sm); padding: 12px; text-align: center; cursor: pointer; background: #fafafa; transition: border-color .2s; }
+  .foto-upload-area:hover { border-color: #c0392b; }
+  .foto-upload-label { display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: pointer; color: var(--text2); font-size: 13px; }
+  .foto-upload-label svg { width: 28px; height: 28px; color: var(--text3); }
+  .foto-upload-label input[type="file"] { display: none; }
+  .foto-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 
   /* ── LIGHTBOX ── */
   .lightbox { display: none; position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.92); align-items: center; justify-content: center; flex-direction: column; gap: 12px; }
@@ -949,11 +960,11 @@
     </div>
     <div class="form-group">
       <label class="form-label">Oficina *</label>
-      <select class="form-select" id="eq-oficina"><option value="">Seleccionar...</option></select>
+      <div id="eq-oficina-ss"></div>
     </div>
     <div class="form-group">
       <label class="form-label">Usuario asignado</label>
-      <select class="form-select" id="eq-usuario"><option value="">Sin usuario</option></select>
+      <div id="eq-usuario-ss"></div>
     </div>
     <div class="form-group">
       <label class="form-label">Sistema Operativo</label>
@@ -982,6 +993,19 @@
     <div class="form-group">
       <label class="form-label">Observaciones</label>
       <textarea class="form-textarea" id="eq-obs" placeholder="Estado del equipo..."></textarea>
+    </div>
+
+    <!-- FOTOS EQUIPO -->
+    <div class="form-group">
+      <label class="form-label">📸 Fotos del equipo</label>
+      <div class="foto-upload-area" onclick="document.getElementById('eq-foto-input').click()">
+        <label class="foto-upload-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          Tomar foto o elegir de galería
+        </label>
+        <input type="file" id="eq-foto-input" accept="image/*" capture="environment" multiple onchange="agregarFotosEquipo(this)">
+      </div>
+      <div class="foto-grid" id="eq-fotos-preview"></div>
     </div>
 
     <div style="display:flex;gap:8px;">
@@ -1041,7 +1065,7 @@ let equipos        = JSON.parse(localStorage.getItem('equipos')         || 'null
 let mantenimientos = JSON.parse(localStorage.getItem('mantenimientos')  || '[]');
 let backups        = JSON.parse(localStorage.getItem('backups')         || '[]');
 let incidencias    = JSON.parse(localStorage.getItem('incidencias')     || '[]');
-let mtFotos=[], bkFotos=[], incFotos=[];
+let mtFotos=[], bkFotos=[], incFotos=[], eqFotos=[];
 
 // ============================================================
 // API — Apps Script backend
@@ -1402,10 +1426,16 @@ function resizeImage(file, maxW=1200, quality=0.8) {
 }
 
 async function agregarFotos(input, previewId, varName) {
-  const arr = varName==='mtFotos'?mtFotos:varName==='bkFotos'?bkFotos:incFotos;
+  const arr = varName==='mtFotos'?mtFotos:varName==='bkFotos'?bkFotos:varName==='eqFotos'?eqFotos:incFotos;
   for (const file of Array.from(input.files)) arr.push(await resizeImage(file));
   input.value='';
   renderFotosPreview(previewId, arr, varName);
+}
+
+async function agregarFotosEquipo(input) {
+  for (const file of Array.from(input.files)) eqFotos.push(await resizeImage(file));
+  input.value='';
+  renderFotosPreview('eq-fotos-preview', eqFotos, 'eqFotos');
 }
 
 function renderFotosPreview(previewId, arr, varName) {
@@ -1417,7 +1447,7 @@ function renderFotosPreview(previewId, arr, varName) {
 }
 
 function eliminarFotoTmp(idx, previewId, varName) {
-  const arr = varName==='mtFotos'?mtFotos:varName==='bkFotos'?bkFotos:incFotos;
+  const arr = varName==='mtFotos'?mtFotos:varName==='bkFotos'?bkFotos:varName==='eqFotos'?eqFotos:incFotos;
   arr.splice(idx,1);
   renderFotosPreview(previewId, arr, varName);
 }
@@ -1461,7 +1491,7 @@ function abrirLightboxItem(tipo,itemId,idx) {
   lbImages=item?.fotos||[]; mostrarLightbox(idx);
 }
 function abrirLightboxArr(varName,idx) {
-  lbImages=varName==='mtFotos'?mtFotos:varName==='bkFotos'?bkFotos:incFotos;
+  lbImages=varName==='mtFotos'?mtFotos:varName==='bkFotos'?bkFotos:varName==='eqFotos'?eqFotos:incFotos;
   mostrarLightbox(idx);
 }
 function mostrarLightbox(idx) {
@@ -1814,84 +1844,144 @@ function exportarHistorialEquipo(serial) {
   const bks=backups.filter(b=>b.serial===serial);
   const incs=incidencias.filter(i=>i.serial===serial);
   const fechaDoc=new Date().toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'});
-
   const semInfo=calcSemaforo(mants.slice().sort((a,b)=>((parseFecha(b.fechaProxima)||0)-(parseFecha(a.fechaProxima)||0)))[0]?.fechaProxima);
+
+  // Fotos del equipo
+  const eqFotosArr=eq.fotos||[];
+  let eqFotosHTML='';
+  if(eqFotosArr.length>0){
+    eqFotosHTML=`<p style="font-weight:bold;margin:8px 0 4px;font-size:10.5pt;">Fotos del equipo:</p>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
+    ${eqFotosArr.map(s=>`<img src="${s}" style="width:30%;border:1px solid #ddd;border-radius:3px;"/>`).join('')}
+    </div>`;
+  }
 
   const histHTML=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
 <title>Historial Equipo ${serial}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:Arial,sans-serif;font-size:12px;color:#111;}
-.page{padding:0 36px 20px;}
-.header-wrap{display:flex;align-items:center;gap:16px;padding:16px 0 8px;border-bottom:1px solid #ccc;margin-bottom:4px;}
-.header-logos img{height:65px;width:auto;}
-.header-divider{width:1px;height:50px;background:#ccc;margin:0 8px;}
-.entidad{font-size:14px;font-weight:bold;} .nit{font-size:11px;color:#666;margin-top:2px;}
-.header-line{height:3px;background:linear-gradient(to right,#006400 33%,#fff 33%,#fff 66%,#8B0000 66%);margin-bottom:16px;}
-.doc-titulo{text-align:center;font-size:15px;font-weight:bold;text-transform:uppercase;padding-bottom:8px;border-bottom:2px solid #8B0000;margin-bottom:16px;}
-.sec-titulo{font-weight:bold;font-size:11.5px;color:#8B0000;margin:14px 0 6px;border-left:3px solid #8B0000;padding-left:7px;text-transform:uppercase;}
-.datos-tabla{width:100%;border-collapse:collapse;margin-bottom:12px;font-size:11.5px;}
+html,body{background:#e8e8e8;font-family:Arial,sans-serif;font-size:10.5pt;color:#111;}
+.pagina{
+  position:relative;width:21.59cm;min-height:33.02cm;
+  margin:0.8cm auto;background:#fff;
+  display:flex;flex-direction:column;
+  box-shadow:0 4px 24px rgba(0,0,0,0.18);
+}
+.header img,.footer img{width:100%;display:block;}
+.body-wrap{flex:1;padding:0.4cm 1.8cm 0.3cm;display:flex;flex-direction:column;}
+.titulo{text-align:center;font-size:12pt;font-weight:bold;text-transform:uppercase;
+  margin:0.35cm 0 0.4cm;letter-spacing:0.4px;}
+.sec{font-weight:bold;font-size:10.5pt;margin:0.4cm 0 0.15cm;text-transform:uppercase;
+  border-left:3px solid #8B0000;padding-left:7px;color:#8B0000;}
+.datos-tabla{width:100%;border-collapse:collapse;margin-bottom:0.3cm;font-size:10pt;}
 .datos-tabla tr:nth-child(even) td{background:#f7f7f7;}
 .datos-tabla td{padding:5px 10px;vertical-align:top;border:1px solid #e0e0e0;}
 .datos-tabla td.lbl{font-weight:bold;width:38%;background:#f0f0f0;}
-.hist-item{border:1px solid #ddd;border-radius:4px;padding:8px 12px;margin-bottom:8px;font-size:11.5px;}
+.hist-item{border:1px solid #ddd;border-radius:4px;padding:8px 12px;margin-bottom:8px;font-size:10pt;}
 .hist-item .htitle{font-weight:bold;color:#333;margin-bottom:4px;}
-.hist-item .hmeta{color:#666;font-size:10.5px;}
-.badge-g{color:#16a34a;background:#dcfce7;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:bold;}
-.badge-r{color:#dc2626;background:#fee2e2;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:bold;}
-.badge-y{color:#d97706;background:#fef3c7;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:bold;}
-.footer{margin-top:24px;padding-top:12px;border-top:1px solid #eee;text-align:center;font-size:9.5px;color:#666;}
-@media print{.no-print{display:none!important;}body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+.hist-item .hmeta{color:#666;font-size:9.5pt;}
+.hist-fotos{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;}
+.hist-fotos img{width:28%;border:1px solid #ddd;border-radius:3px;}
+.badge-g{color:#16a34a;background:#dcfce7;padding:2px 8px;border-radius:10px;font-size:9pt;font-weight:bold;}
+.badge-r{color:#dc2626;background:#fee2e2;padding:2px 8px;border-radius:10px;font-size:9pt;font-weight:bold;}
+.badge-y{color:#d97706;background:#fef3c7;padding:2px 8px;border-radius:10px;font-size:9pt;font-weight:bold;}
+.firma-preview{display:flex;gap:1.5cm;align-items:flex-end;margin-top:0.4cm;}
+.fbox{flex:1;text-align:center;}
+.fbox img{height:1.6cm;object-fit:contain;display:block;margin:0 auto 3px;max-width:5cm;}
+.flinea{border-top:1pt solid #111;padding-top:4px;line-height:1.45;}
+.fnombre{font-weight:bold;font-size:10.5pt;}
+.fcargo{font-size:9.5pt;color:#333;}
+.fentidad{font-size:9pt;color:#555;}
+.ffecha{font-size:9pt;color:#777;margin-top:1px;}
+.spacer{flex:1;min-height:0.5cm;}
+@media print{
+  @page{size:8.5in 13in;margin:0;}
+  html,body{background:#fff;width:8.5in;}
+  .pagina{width:8.5in;min-height:13in;margin:0;box-shadow:none;}
+  .no-print{display:none!important;}
+  body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+}
 </style></head><body>
-<div class="page">
-<div class="header-wrap">
-  <div class="header-logos"><img src="${HEADER_IMG}" alt="Logo"/></div>
-  <div class="header-divider"></div>
-  <div><div class="entidad">ALCALDÍA MUNICIPAL DE NEMOCÓN</div><div class="nit">NIT: 899999366-1</div></div>
+<div class="pagina">
+  <div class="header"><img src="${HEADER_B64}" alt="Encabezado"/></div>
+  <div class="body-wrap">
+    <div class="titulo">Historial de Equipo — ${serial}</div>
+
+    <div class="sec">Datos del equipo</div>
+    <table class="datos-tabla">
+      <tr><td class="lbl">Serial</td><td>${serial}</td></tr>
+      <tr><td class="lbl">Sistema Operativo</td><td>${eq.so||'—'}</td></tr>
+      <tr><td class="lbl">RAM</td><td>${eq.ram||'—'}</td></tr>
+      <tr><td class="lbl">Disco / Capacidad</td><td>${(eq.disco||'')+' '+(eq.cap||'')}</td></tr>
+      <tr><td class="lbl">Office / Suite</td><td>${eq.office||'—'}</td></tr>
+      <tr><td class="lbl">Oficina</td><td>${of?.nombre||'—'}</td></tr>
+      <tr><td class="lbl">Dependencia</td><td>${dep?.nombre||'—'}</td></tr>
+      <tr><td class="lbl">Usuario asignado</td><td>${persona?.nombre||'—'}</td></tr>
+      <tr><td class="lbl">Estado</td><td>${semInfo?`${semInfo.icon} ${semInfo.label}`:'—'}</td></tr>
+      <tr><td class="lbl">Observaciones equipo</td><td>${eq.obs||'—'}</td></tr>
+    </table>
+    ${eqFotosHTML}
+
+    <div class="sec">Mantenimientos (${mants.length})</div>
+    ${mants.length?mants.map(m=>`<div class="hist-item">
+      <div class="htitle">${m.tipo} — ${formatDate(m.fecha)}</div>
+      <div class="hmeta">${m.responsable||''} · ${m.frecuencia||''} · Prox: ${formatDate(m.fechaProxima)||'—'} · ${m.firmado?'<span class="badge-g">Firmado</span>':'<span class="badge-y">Sin firmar</span>'}</div>
+      ${m.obs?`<div style="margin-top:4px;color:#444;">${m.obs}</div>`:''}
+      ${(m.fotos||[]).length?`<div class="hist-fotos">${(m.fotos||[]).map(s=>`<img src="${s}"/>`).join('')}</div>`:''}
+    </div>`).join(''):'<p style="color:#888;font-size:10pt;margin-bottom:8px;">Sin mantenimientos registrados</p>'}
+
+    <div class="sec">Copias de seguridad (${bks.length})</div>
+    ${bks.length?bks.map(b=>`<div class="hist-item">
+      <div class="htitle">${b.tipo} — ${formatDate(b.fecha)}</div>
+      <div class="hmeta">${b.responsable||''} · ${b.destino||''} · ${b.firmado?'<span class="badge-g">Firmado</span>':'<span class="badge-y">Sin firmar</span>'}</div>
+      ${b.obs?`<div style="margin-top:4px;color:#444;">${b.obs}</div>`:''}
+      ${(b.fotos||[]).length?`<div class="hist-fotos">${(b.fotos||[]).map(s=>`<img src="${s}"/>`).join('')}</div>`:''}
+    </div>`).join(''):'<p style="color:#888;font-size:10pt;margin-bottom:8px;">Sin backups registrados</p>'}
+
+    <div class="sec">Incidencias (${incs.length})</div>
+    ${incs.length?incs.map(i=>`<div class="hist-item">
+      <div class="htitle">${i.tipo} — ${formatDate(i.fecha)} · ${i.estado==='abierta'?'<span class="badge-r">Abierta</span>':'<span class="badge-g">Cerrada</span>'}</div>
+      <div style="margin-top:4px;color:#444;">${i.desc||''}</div>
+      ${(i.fotos||[]).length?`<div class="hist-fotos">${(i.fotos||[]).map(s=>`<img src="${s}"/>`).join('')}</div>`:''}
+    </div>`).join(''):'<p style="color:#888;font-size:10pt;margin-bottom:8px;">Sin incidencias</p>'}
+
+    <div class="spacer"></div>
+
+    <div class="sec">Firmas</div>
+    <div class="firma-preview">
+      <div class="fbox">
+        <div style="height:1.6cm;"></div>
+        <div class="flinea">
+          <div class="fnombre">${persona?.nombre||'— Sin asignar —'}</div>
+          <div class="fcargo">Funcionario / Responsable del equipo</div>
+          <div class="fentidad">Alcaldía Municipal de Nemocón</div>
+          <div class="ffecha">Fecha: ${fechaDoc}</div>
+        </div>
+      </div>
+      <div class="fbox">
+        <img src="${FIRMA_TI_B64}" alt="Emerson Pachon" style="height:1.6cm;object-fit:contain;display:block;margin:0 auto 3px;max-width:5cm;"/>
+        <div class="flinea">
+          <div class="fnombre">Emerson Pachon</div>
+          <div class="fcargo">Ingeniero de Sistemas — TI</div>
+          <div class="fentidad">Alcaldía Municipal de Nemocón</div>
+          <div class="ffecha">Fecha: ${fechaDoc}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><img src="${FOOTER_B64}" alt="Pie de página"/></div>
 </div>
-<div class="header-line"></div>
-<div class="doc-titulo">Historial de Equipo — ${serial}</div>
 
-<div class="sec-titulo">Datos del equipo</div>
-<table class="datos-tabla">
-  <tr><td class="lbl">Serial</td><td>${serial}</td></tr>
-  <tr><td class="lbl">Sistema Operativo</td><td>${eq.so}</td></tr>
-  <tr><td class="lbl">RAM</td><td>${eq.ram}</td></tr>
-  <tr><td class="lbl">Disco</td><td>${eq.disco} ${eq.cap}</td></tr>
-  <tr><td class="lbl">Office</td><td>${eq.office}</td></tr>
-  <tr><td class="lbl">Oficina</td><td>${of?.nombre||'—'}</td></tr>
-  <tr><td class="lbl">Dependencia</td><td>${dep?.nombre||'—'}</td></tr>
-  <tr><td class="lbl">Usuario asignado</td><td>${persona?.nombre||'—'}</td></tr>
-  <tr><td class="lbl">Estado</td><td>${semInfo?`${semInfo.icon} ${semInfo.label}`:'—'}</td></tr>
-</table>
-
-<div class="sec-titulo">Mantenimientos (${mants.length})</div>
-${mants.length?mants.map(m=>`<div class="hist-item">
-  <div class="htitle">${m.tipo} — ${formatDate(m.fecha)}</div>
-  <div class="hmeta">${m.responsable||''} · ${m.frecuencia||''} · ${m.firmado?'<span class="badge-g">Firmado</span>':'<span class="badge-y">Sin firmar</span>'}</div>
-  ${m.obs?`<div style="margin-top:4px;color:#444;">${m.obs}</div>`:''}
-</div>`).join(''):'<p style="color:#888;font-size:11px;">Sin mantenimientos registrados</p>'}
-
-<div class="sec-titulo">Copias de seguridad (${bks.length})</div>
-${bks.length?bks.map(b=>`<div class="hist-item">
-  <div class="htitle">${b.tipo} — ${formatDate(b.fecha)}</div>
-  <div class="hmeta">${b.responsable||''} · ${b.destino||''} · ${b.firmado?'<span class="badge-g">Firmado</span>':'<span class="badge-y">Sin firmar</span>'}</div>
-</div>`).join(''):'<p style="color:#888;font-size:11px;">Sin backups registrados</p>'}
-
-<div class="sec-titulo">Incidencias (${incs.length})</div>
-${incs.length?incs.map(i=>`<div class="hist-item">
-  <div class="htitle">${i.tipo} — ${formatDate(i.fecha)} · ${i.estado==='abierta'?'<span class="badge-r">Abierta</span>':'<span class="badge-g">Cerrada</span>'}</div>
-  <div style="margin-top:4px;color:#444;">${i.desc||''}</div>
-</div>`).join(''):'<p style="color:#888;font-size:11px;">Sin incidencias</p>'}
-
-<div class="footer">
-  www.nemocon-cundinamarca.gov.co | Calle 3 No. 3-21 Palacio Municipal — Nemocón Cundinamarca | 317 639 40 03<br>
-  Generado el ${fechaDoc} · Responsable: Emerson Pachon · Ingeniero de Sistemas — TI
-</div>
-</div>
-<div class="no-print" style="text-align:center;padding:16px;background:#f0f0f0;border-top:1px solid #ccc;position:sticky;bottom:0;">
-  <button onclick="window.print()" style="background:#8B0000;color:#fff;border:none;padding:11px 26px;border-radius:7px;font-size:13px;cursor:pointer;font-family:Arial;font-weight:bold;margin-right:10px;">🖨️ Imprimir / PDF</button>
-  <button onclick="window.close()" style="background:#555;color:#fff;border:none;padding:11px 18px;border-radius:7px;font-size:13px;cursor:pointer;font-family:Arial;">✕ Cerrar</button>
+<div class="no-print" style="position:fixed;bottom:0;left:0;right:0;
+  text-align:center;padding:10px;background:#f0f0f0;border-top:1px solid #ccc;z-index:999;">
+  <button onclick="window.print()"
+    style="background:#8B1318;color:#fff;border:none;padding:10px 28px;
+    border-radius:6px;font-size:13px;cursor:pointer;font-weight:bold;margin-right:8px;">
+    🖨️ Imprimir / Guardar PDF
+  </button>
+  <button onclick="window.close()"
+    style="background:#555;color:#fff;border:none;padding:10px 16px;
+    border-radius:6px;font-size:13px;cursor:pointer;">✕ Cerrar</button>
 </div>
 </body></html>`;
 
@@ -1899,6 +1989,7 @@ ${incs.length?incs.map(i=>`<div class="hist-item">
   if(win){win.document.write(histHTML);win.document.close();}
   else showToast('⚠️ Activa los popups','var(--yellow)');
 }
+
 
 // ============================================================
 // DASHBOARD — ALERTAS
@@ -2442,6 +2533,7 @@ function abrirNuevoEquipo() {
   document.getElementById('eq-disco').value='SSD';
   document.getElementById('eq-cap').value='';
   document.getElementById('eq-obs').value='';
+  eqFotos=[]; renderFotosPreview('eq-fotos-preview', eqFotos, 'eqFotos');
   llenarSSOficinas('eq-oficina-ss');
   llenarSSPersonas('eq-usuario-ss');
   abrirModal('modal-equipo');
@@ -2466,6 +2558,7 @@ function editarEquipo(serial) {
   document.getElementById('eq-disco').value=e.disco;
   document.getElementById('eq-cap').value=e.cap;
   document.getElementById('eq-obs').value=e.obs||'';
+  eqFotos=[...(e.fotos||[])]; renderFotosPreview('eq-fotos-preview', eqFotos, 'eqFotos');
   abrirModal('modal-equipo');
 }
 
@@ -2498,12 +2591,12 @@ async function guardarEquipo() {
   if(!serial||!oficina) { showToast('⚠️ Serial y oficina son obligatorios','var(--yellow)'); return; }
   if(editSerial) {
     const e=equipos.find(x=>x.serial===editSerial);
-    if(e) { e.oficina=oficina; e.usuarioId=usuarioId; e.so=so; e.office=office; e.ram=ram; e.disco=disco; e.cap=cap; e.obs=obs; }
+    if(e) { e.oficina=oficina; e.usuarioId=usuarioId; e.so=so; e.office=office; e.ram=ram; e.disco=disco; e.cap=cap; e.obs=obs; e.fotos=eqFotos; }
     apiPost('Equipos','update',{OficinaID:oficina,UsuarioID:usuarioId,SO:so,Office:office,RAM:ram,Disco:disco,Capacidad:cap,Observaciones:obs},'Serial',editSerial).catch(e=>console.warn(e));
     showToast('✅ Equipo actualizado');
   } else {
     if(equipos.find(x=>x.serial===serial)) { showToast('⚠️ Ya existe ese serial','var(--yellow)'); return; }
-    equipos.push({serial,oficina,usuarioId,so,office,ram,disco,cap,obs});
+    equipos.push({serial,oficina,usuarioId,so,office,ram,disco,cap,obs,fotos:eqFotos});
     apiPost('Equipos','insert',{Serial:serial,OficinaID:oficina,SO:so,Office:office,Disco:disco,Capacidad:cap,RAM:ram,Observaciones:obs,UsuarioID:usuarioId,Imagen_Base64:''}).catch(e=>console.warn(e));
     showToast('💻 Equipo registrado');
   }
