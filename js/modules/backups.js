@@ -5,6 +5,7 @@ import { showToast }         from '../ui/toast.js';
 import { abrirModal, cerrarModal } from '../ui/modal.js';
 import { uid, formatDate, parseFecha, calcSemaforo, calcFechaProxima } from '../utils.js';
 import { llenarSSEquipos, llenarSSPersonas, getSSValue, setSSValue } from '../ui/searchselect.js';
+import { abrirFirma as _abrirFirma } from '../ui/firma.js';
 
 let currentFilter = 'todos';
 let fDesde = '', fHasta = '';
@@ -240,6 +241,31 @@ async function _guardar() {
   saveKey('backups');
   cerrarModal('modal-backup');
   renderLista();
+}
+
+function abrirFirmaBackup(id) {
+  _abrirFirma('backup', id, (firmaBase64) => {
+    const lista = getData('backups').map(x => {
+      if (x.id !== id) return x;
+      return {
+        ...x,
+        firmado:    true,
+        firma:      firmaBase64,
+        firmaFecha: new Date().toISOString(),
+      };
+    });
+
+    setState('backups', lista);
+    saveKey('backups');
+
+    apiPost('Backups', 'update', {
+      Firmado:       'Sí',
+      Imagen_Base64: firmaBase64,
+    }, 'ID', id).catch(console.warn);
+
+    showToast('✅ Firma registrada');
+    renderLista();
+  });
 }
 
 function _eliminar(id) {

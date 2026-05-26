@@ -1,3 +1,5 @@
+import { abrirFirma as _abrirFirma } from '../ui/firma.js';
+import { setState, getData } from '../state.js';
 import { getData, getDBStatic, setState } from '../state.js';
 import { saveKey }           from '../storage.js';
 import { apiPost }           from '../api.js';
@@ -372,7 +374,33 @@ function eliminar(id) {
 }
 
 function abrirFirma(id) {
-  showToast('✍️ Función de firma — integra tu canvas de firma aquí');
+  const m = getData('mantenimientos').find(x => x.id === id);
+  if (!m) return;
+
+  _abrirFirma('mant', id, (firmaBase64) => {
+    // Guardar firma en el estado
+    const lista = getData('mantenimientos').map(x => {
+      if (x.id !== id) return x;
+      return {
+        ...x,
+        firmado:    true,
+        firma:      firmaBase64,
+        firmaFecha: new Date().toISOString(),
+      };
+    });
+
+    setState('mantenimientos', lista);
+    saveKey('mantenimientos');
+
+    // Guardar en Sheets
+    apiPost('Mantenimientos', 'update', {
+      Firmado:       'Sí',
+      Imagen_Base64: firmaBase64,
+    }, 'ID', id).catch(console.warn);
+
+    showToast('✅ Firma registrada correctamente');
+    renderLista();
+  });
 }
 
 function verDocumento(id) {
@@ -405,4 +433,33 @@ function _renderFotosPreview(arr, previewId) {
       _renderFotosPreview(arr, previewId);
     });
   });
+
+  // PEGA ESTO AL FINAL, antes del último corchete
+function abrirFirma(id) {
+  const m = getData('mantenimientos').find(x => x.id === id);
+  if (!m) return;
+
+  _abrirFirma('mant', id, (firmaBase64) => {
+    const lista = getData('mantenimientos').map(x => {
+      if (x.id !== id) return x;
+      return {
+        ...x,
+        firmado:    true,
+        firma:      firmaBase64,
+        firmaFecha: new Date().toISOString(),
+      };
+    });
+
+    setState('mantenimientos', lista);
+    saveKey('mantenimientos');
+
+    apiPost('Mantenimientos', 'update', {
+      Firmado:       'Sí',
+      Imagen_Base64: firmaBase64,
+    }, 'ID', id).catch(console.warn);
+
+    showToast('✅ Firma registrada correctamente');
+    renderLista();
+  });
+}
 }

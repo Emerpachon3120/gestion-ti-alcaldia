@@ -7,11 +7,10 @@ export function renderMenu() {
 
   nav.innerHTML = `
     <div class="menu-header">
-      <!-- Sin imagen por ahora, solo texto -->
-      <div style="text-align:center;padding:8px 0;">
-        <div style="font-size:22px;">🏛️</div>
-        <div style="font-weight:700;font-size:13px;color:var(--text1);margin-top:4px;">${CONFIG.APP_NAME}</div>
-      </div>
+      <img src="${CONFIG.IMG_ESCUDO}" 
+           class="menu-logo" 
+           alt="Escudo Nemocón"
+           style="width:80px;height:80px;object-fit:contain;display:block;margin:0 auto 8px;">
       <div class="menu-entity">${CONFIG.ENTIDAD}</div>
     </div>
     <div class="menu-nav">
@@ -27,7 +26,6 @@ export function renderMenu() {
     </div>
   `;
 
-  // Bind clicks
   nav.querySelectorAll('.menu-item').forEach(btn => {
     btn.addEventListener('click', () => {
       closeMenu();
@@ -46,7 +44,10 @@ export function renderHeader() {
     <button class="header-menu-btn" onclick="toggleMenu()" aria-label="Menú">
       <span></span><span></span><span></span>
     </button>
-    <div style="font-size:20px;">🏛️</div>
+    <img src="${CONFIG.IMG_LOGO}" 
+         class="header-logo" 
+         alt="Logo"
+         style="height:32px;object-fit:contain;">
     <div class="header-title">${CONFIG.APP_NAME}</div>
     <div class="header-right">
       <span class="header-date" id="headerDate"></span>

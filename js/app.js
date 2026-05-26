@@ -34,12 +34,20 @@ async function init() {
   renderHeader();
   renderMenu();
 
-  // Página inicial desde hash o por defecto
+  // Esperar que el DOM esté completamente listo
+  await new Promise(resolve => setTimeout(resolve, 0));
+
+  // Página inicial
   const hashPage = location.hash.replace('#', '') || 'dashboard';
   await navigate(hashPage);
 
-  // Cargar datos frescos desde Sheets en background
-  syncData();
+  // Sincronizar en background (sin bloquear)
+  syncData().catch(err => console.warn('[Sync]', err));
+
+  // Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+  }
 }
 
 // ─── SINCRONIZACIÓN ───────────────────────────────────────────
