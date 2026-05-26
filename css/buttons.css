@@ -1,0 +1,91 @@
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 11px 18px;
+  border-radius: var(--radius-sm);
+  border: none; cursor: pointer;
+  font-family: var(--font-main); font-size: 13px; font-weight: 600;
+  transition: var(--transition);
+  width: 100%; margin-top: 8px;
+}
+
+.btn:active { transform: scale(0.97); }
+.btn-primary   { background: var(--accent);  color: #fff; }
+.btn-primary:hover { background: var(--accent2); }
+.btn-secondary { background: var(--bg2); color: var(--text2); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--border); }
+.btn-danger    { background: var(--red); color: #fff; }
+.btn-danger:hover { background: #b91c1c; }
+.btn-success   { background: var(--green); color: #fff; }
+
+/* FAB */
+.fab {
+  position: fixed; bottom: 24px; right: 20px;
+  width: 52px; height: 52px;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: 50%;
+  font-size: 24px; cursor: pointer;
+  box-shadow: 0 4px 18px rgba(192,57,43,.4);
+  z-index: 90; transition: var(--transition);
+  display: flex; align-items: center; justify-content: center;
+}
+
+.fab:active { transform: scale(0.92); }
+.fab.hidden { opacity: 0; pointer-events: none; transform: scale(0.8); }
+
+/* Toast */
+#toast-container {
+  position: fixed; bottom: 80px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 400; display: flex; flex-direction: column; gap: 8px;
+  pointer-events: none; width: calc(100% - 32px); max-width: 380px;
+}
+
+.toast {
+  background: var(--text1); color: #fff;
+  padding: 10px 16px; border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 500;
+  box-shadow: var(--shadow-md);
+  animation: toastIn 0.25s ease;
+  pointer-events: all;
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Confirm */
+.confirm-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 500;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity .2s;
+}
+.confirm-overlay.open { opacity: 1; pointer-events: all; }
+.confirm-box {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 24px; width: calc(100% - 40px);
+  max-width: 360px; box-shadow: var(--shadow-md);
+  transform: scale(.95); transition: transform .2s;
+}
+.confirm-overlay.open .confirm-box { transform: scale(1); }
+.confirm-icon  { font-size: 32px; text-align: center; margin-bottom: 8px; }
+.confirm-title { font-size: 15px; font-weight: 700; text-align: center; margin-bottom: 8px; }
+.confirm-msg   { font-size: 13px; color: var(--text2); text-align: center; margin-bottom: 16px; }
+.confirm-btns  { display: flex; gap: 10px; }
+.confirm-btns button { flex: 1; }
+
+/* Empty state */
+.empty {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 48px 16px; color: var(--text3);
+  gap: 12px; text-align: center;
+}
+.empty svg { width: 48px; height: 48px; stroke: var(--border); }
+.empty p { font-size: 13px; }
+
+/* Mono */
+.mono { font-family: var(--font-mono); }

@@ -1,0 +1,24 @@
+/* Tablet */
+@media (min-width: 640px) {
+  #app-main { max-width: 640px; }
+  .stats { grid-template-columns: repeat(4,1fr); }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  #app-menu {
+    transform: translateX(0);
+    position: fixed;
+  }
+
+  #app-main {
+    margin-left: var(--menu-w);
+    max-width: none;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .menu-overlay { display: none !important; }
+
+  .header-menu-btn { display: none; }
+}

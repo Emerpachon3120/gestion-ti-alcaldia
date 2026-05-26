@@ -1,0 +1,52 @@
+:root {
+  /* Colores principales */
+  --accent:    #c0392b;
+  --accent2:   #e74c3c;
+  --accent-bg: rgba(192,57,43,.08);
+  --green:     #16a34a;
+  --yellow:    #d97706;
+  --red:       #dc2626;
+  --purple:    #7c3aed;
+  --blue:      #2563eb;
+
+  /* Superficies */
+  --bg:        #f8f8f6;
+  --bg2:       #f0f0ed;
+  --card:      #ffffff;
+  --card2:     #f5f5f3;
+  --border:    #e8e8e4;
+
+  /* Texto */
+  --text1:     #1a1a18;
+  --text2:     #3d3d3a;
+  --text3:     #8a8a85;
+
+  /* Tipografía */
+  --font-main: 'Space Grotesk', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Dimensiones */
+  --header-h:  56px;
+  --menu-w:    260px;
+  --radius:    12px;
+  --radius-sm: 8px;
+  --shadow:    0 2px 12px rgba(0,0,0,.07);
+  --shadow-md: 0 4px 24px rgba(0,0,0,.12);
+
+  /* Transiciones */
+  --transition: 0.2s ease;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:     #141412;
+    --bg2:    #1e1e1b;
+    --card:   #242420;
+    --card2:  #2a2a26;
+    --border: #333330;
+    --text1:  #f0f0ec;
+    --text2:  #c0c0bc;
+    --text3:  #707068;
+  }
+}
