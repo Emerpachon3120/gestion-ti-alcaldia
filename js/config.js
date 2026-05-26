@@ -1,6 +1,5 @@
-// Configuración global de la aplicación
 export const CONFIG = {
-  BACKEND_URL:     'https://script.google.com/macros/s/AKfycbyS3odr-R6Epz4c3wqD7NMVd0xunil8l26ntWxIqP65XRAQ9v-ea3yXk_hmYWBGWbHdDg/exec',
+  BACKEND_URL:     'https://script.google.com/macros/s/AKfycbzdHaVyadd9DkCwC57qE95KjMHokqn5oRRwi9gd-R9McH1kH51_XZHVoZuVjChfXkcWpw/exec',
   FORMS_SPREAD_ID: '16lGe0Qz0C_6mviquMLsNcFA3spVwrSFKxA5xJP0qv4E',
   FORMS_SHEET_NAME:'Incidencias',
   CACHE_VERSION:   '3.0',
