@@ -15,6 +15,8 @@ import * as Incidencias    from './modules/incidencias.js';
 import * as Estadisticas   from './modules/estadisticas.js';
 import * as Reportes       from './modules/reportes.js';
 import * as Calendario     from './modules/calendario.js';
+import { cerrarDocViewer, docViewerPrint } from './ui/documento.js';
+
 
 // ─── REGISTRO DE RUTAS ────────────────────────────────────────
 registerRoute('dashboard',     Dashboard);
@@ -48,6 +50,10 @@ async function init() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./service-worker.js').catch(() => {});
   }
+
+  // Al final de init()
+window.cerrarDocViewer = cerrarDocViewer;
+window.docViewerPrint  = docViewerPrint;
 }
 
 // ─── SINCRONIZACIÓN ───────────────────────────────────────────

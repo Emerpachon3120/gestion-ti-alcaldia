@@ -1,6 +1,7 @@
 // js/modules/reportes.js
 import { getData, getDBStatic } from '../state.js';
 import { formatDate, parseFecha } from '../utils.js';
+import { generarInformeMensual, generarActaDependencia } from '../ui/documento.js';
 
 export function render() {
   return `
@@ -40,7 +41,11 @@ export function render() {
 }
 
 export function onEnter() {
-  document.getElementById('btn-informe-mensual')?.addEventListener('click', _generarInformeMensual);
+  document.getElementById('btn-informe-mensual')?.addEventListener('click', () => {
+    const mes = document.getElementById('informe-mes').value;
+    if (!mes) { showToast('⚠️ Selecciona el mes'); return; }
+    generarInformeMensual(mes);
+  });
   document.querySelectorAll('[data-export]').forEach(btn => {
     btn.addEventListener('click', () => _exportarCSV(btn.dataset.export));
   });

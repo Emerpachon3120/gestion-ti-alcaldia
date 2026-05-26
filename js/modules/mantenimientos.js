@@ -6,6 +6,7 @@ import { showToast }                      from '../ui/toast.js';
 import { abrirModal, cerrarModal }        from '../ui/modal.js';
 import { uid, formatDate, parseFecha, calcSemaforo, calcFechaProxima } from '../utils.js';
 import { buildSearchSelect, getSSValue, setSSValue, llenarSSEquipos, llenarSSPersonas } from '../ui/searchselect.js';
+import { verActaMantenimiento } from '../ui/documento.js';
 
 let currentFilter = 'todos';
 let currentSearch = '';
@@ -403,7 +404,7 @@ function abrirFirma(id) {
 }
 
 function verDocumento(id) {
-  showToast('📄 Función ver documento');
+  verActaMantenimiento(id);
 }
 
 // ── Fotos helpers ─────────────────────────────────────────────
