@@ -4,16 +4,19 @@ import { getState } from '../state.js';
 
 export function renderMenu() {
   const nav = document.getElementById('app-menu');
-  const overlay = document.getElementById('menu-overlay');
 
   nav.innerHTML = `
     <div class="menu-header">
-      <img src="assets/logos/escudo.png" class="menu-logo" alt="Escudo">
+      <!-- Sin imagen por ahora, solo texto -->
+      <div style="text-align:center;padding:8px 0;">
+        <div style="font-size:22px;">🏛️</div>
+        <div style="font-weight:700;font-size:13px;color:var(--text1);margin-top:4px;">${CONFIG.APP_NAME}</div>
+      </div>
       <div class="menu-entity">${CONFIG.ENTIDAD}</div>
     </div>
     <div class="menu-nav">
       ${MENU_ITEMS.map(item => `
-        <button class="menu-item" data-page="${item.page}" onclick="menuNavigate('${item.page}')">
+        <button class="menu-item" data-page="${item.page}">
           <span class="menu-icon">${item.icon}</span>
           <span class="menu-label">${item.label}</span>
         </button>
@@ -21,14 +24,20 @@ export function renderMenu() {
     </div>
     <div class="menu-footer">
       <div class="menu-version">${CONFIG.APP_NAME} v${CONFIG.VERSION}</div>
-      <div>${CONFIG.ENTIDAD}</div>
     </div>
   `;
 
-  overlay.onclick = closeMenu;
-  window.menuNavigate = (page) => { closeMenu(); navigate(page); };
-  window.toggleMenu  = toggleMenu;
-  window.closeMenu   = closeMenu;
+  // Bind clicks
+  nav.querySelectorAll('.menu-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      closeMenu();
+      navigate(btn.dataset.page);
+    });
+  });
+
+  document.getElementById('menu-overlay').onclick = closeMenu;
+  window.toggleMenu = toggleMenu;
+  window.closeMenu  = closeMenu;
 }
 
 export function renderHeader() {
@@ -37,7 +46,7 @@ export function renderHeader() {
     <button class="header-menu-btn" onclick="toggleMenu()" aria-label="Menú">
       <span></span><span></span><span></span>
     </button>
-    <img src="assets/logos/logo.png" class="header-logo" alt="Logo">
+    <div style="font-size:20px;">🏛️</div>
     <div class="header-title">${CONFIG.APP_NAME}</div>
     <div class="header-right">
       <span class="header-date" id="headerDate"></span>
