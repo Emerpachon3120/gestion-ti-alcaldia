@@ -625,6 +625,9 @@ function _bindEvents() {
 
 // ── CRUD ──────────────────────────────────────────────────────
 function abrirNuevo() {
+
+  const DB = getDBStatic();
+  console.log('Personas disponibles:', DB.personas?.length);
   document.getElementById('mt-title').textContent = '🔧 Nuevo Mantenimiento';
   document.getElementById('mt-edit-id').value     = '';
 
