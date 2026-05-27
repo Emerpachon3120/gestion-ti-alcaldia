@@ -41,9 +41,13 @@ export function docViewerPrint() {
 function _cssDoc() {
   return `
     *{margin:0;padding:0;box-sizing:border-box;}
-    html,body{background:#e8e8e8;font-family:Arial,sans-serif;font-size:10.5pt;color:#111;}
+    html,body{
+      background:#e8e8e8;
+      font-family:Arial,sans-serif;
+      font-size:10.5pt;
+      color:#111;
+    }
     .pagina{
-      position:relative;
       width:21.59cm;
       min-height:33.02cm;
       margin:0.8cm auto;
@@ -51,46 +55,213 @@ function _cssDoc() {
       display:flex;
       flex-direction:column;
       box-shadow:0 4px 24px rgba(0,0,0,0.18);
+      position:relative;
     }
-    .header img{width:100%;display:block;}
+
+    /* ── Encabezado con menos opacidad ── */
+    .header{
+      width:100%;
+      opacity:0.75;
+    }
+    .header img{
+      width:100%;
+      display:block;
+    }
+
+    /* ── Cuerpo del documento ── */
     .body-wrap{
       flex:1;
-      padding:0.4cm 1.8cm 0.3cm;
+      padding:0.5cm 1.8cm 0.4cm;
       display:flex;
       flex-direction:column;
-      padding-bottom:4.5cm;
     }
+
+    /* ── Pie de página con menos opacidad ── */
     .footer{
-      position:absolute;
-      bottom:0;
-      left:0;
-      right:0;
+      margin-top:auto;
       width:100%;
+      opacity:0.75;
     }
-    .footer img{width:100%;display:block;}
-    .titulo{text-align:center;font-size:12pt;font-weight:bold;
-      text-transform:uppercase;margin:0.35cm 0 0.4cm;letter-spacing:0.4px;}
-    .meta{margin-bottom:0.35cm;font-size:10.5pt;}
-    .meta p{margin-bottom:3px;}
-    .intro{margin-bottom:0.4cm;font-size:10.5pt;text-align:justify;line-height:1.5;}
-    .sec{font-weight:bold;font-size:10.5pt;margin:0.35cm 0 0.15cm;}
-    table{width:100%;border-collapse:collapse;margin-bottom:0.3cm;font-size:10pt;}
-    td,th{padding:5px 10px;vertical-align:top;border:1px solid #e0e0e0;text-align:left;}
-    th{background:#f0f0f0;font-weight:bold;}
+    .footer img{
+      width:100%;
+      display:block;
+    }
+
+    /* ── Título del documento ── */
+    .titulo{
+      text-align:center;
+      font-size:13pt;
+      font-weight:bold;
+      text-transform:uppercase;
+      margin:0.4cm 0 0.5cm;
+      letter-spacing:0.5px;
+      color:#1a1a1a;
+      border-bottom:2pt solid #c0392b;
+      padding-bottom:0.2cm;
+    }
+
+    /* ── Metadatos ── */
+    .meta{
+      margin-bottom:0.4cm;
+      font-size:10pt;
+      background:#f9f9f9;
+      border:1px solid #e0e0e0;
+      border-radius:4px;
+      padding:0.3cm 0.4cm;
+    }
+    .meta p{
+      margin-bottom:4px;
+      display:flex;
+      gap:8px;
+    }
+    .meta p b{
+      min-width:5cm;
+      color:#555;
+    }
+
+    /* ── Secciones ── */
+    .sec{
+      font-weight:bold;
+      font-size:10.5pt;
+      margin:0.35cm 0 0.15cm;
+      color:#c0392b;
+      border-left:3pt solid #c0392b;
+      padding-left:0.2cm;
+    }
+    .sec-title{
+      font-weight:bold;
+      font-size:10.5pt;
+      margin:0.35cm 0 0.15cm;
+      text-transform:uppercase;
+      border-left:3pt solid #8B0000;
+      padding-left:7px;
+      color:#8B0000;
+    }
+
+    /* ── Tabla ── */
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-bottom:0.3cm;
+      font-size:9.5pt;
+    }
+    td,th{
+      padding:5px 10px;
+      vertical-align:top;
+      border:1px solid #ddd;
+      text-align:left;
+    }
+    th{
+      background:#c0392b;
+      color:#fff;
+      font-weight:bold;
+      font-size:9pt;
+    }
     tr:nth-child(even) td{background:#f7f7f7;}
-    .obs{font-size:10.5pt;text-align:justify;line-height:1.5;margin-bottom:0.2cm;}
-    .indicadores li{margin-bottom:4px;font-size:10.5pt;list-style:disc inside;}
-    .constancia{font-size:10.5pt;margin:0.3cm 0;text-align:justify;}
-    .firmas{display:flex;gap:2cm;align-items:flex-end;margin-top:0.5cm;}
+
+    /* ── Texto ── */
+    .intro{
+      margin-bottom:0.4cm;
+      font-size:10pt;
+      text-align:justify;
+      line-height:1.6;
+      color:#333;
+    }
+    .obs{
+      font-size:10pt;
+      text-align:justify;
+      line-height:1.6;
+      margin-bottom:0.2cm;
+      color:#333;
+    }
+    .constancia{
+      font-size:10pt;
+      margin:0.3cm 0;
+      text-align:justify;
+      font-style:italic;
+      color:#555;
+    }
+
+    /* ── Indicadores ── */
+    .indicadores{margin:0.2cm 0 0.2cm 1cm;}
+    .indicadores li{
+      margin-bottom:4px;
+      font-size:10pt;
+      list-style:disc inside;
+    }
+
+    /* ── KPIs ── */
+    .kpi-grid{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:10px;
+      margin:0.3cm 0;
+    }
+    .kpi{
+      background:#f9f9f9;
+      border:1px solid #e0e0e0;
+      border-radius:6px;
+      padding:10px;
+      text-align:center;
+    }
+    .kpi-num{
+      font-size:20pt;
+      font-weight:bold;
+      color:#8B0000;
+    }
+    .kpi-num.green{color:#16a34a;}
+    .kpi-num.orange{color:#d97706;}
+    .kpi-num.purple{color:#7c3aed;}
+    .kpi-label{font-size:8.5pt;color:#666;margin-top:3px;}
+
+    /* ── Firmas ── */
+    .firmas{
+      display:flex;
+      gap:2cm;
+      align-items:flex-end;
+      margin-top:0.5cm;
+      margin-bottom:0.3cm;
+    }
     .fbox{flex:1;text-align:center;}
-    .fbox img{height:1.6cm;object-fit:contain;display:block;margin:0 auto 3px;max-width:5cm;}
-    .flinea{border-top:1pt solid #111;padding-top:4px;line-height:1.45;}
+    .fbox img{
+      height:2cm;
+      object-fit:contain;
+      display:block;
+      margin:0 auto 3px;
+      max-width:6cm;
+    }
+    .flinea{
+      border-top:1pt solid #111;
+      padding-top:4px;
+      line-height:1.5;
+    }
     .fnombre{font-weight:bold;font-size:10.5pt;}
     .fcargo{font-size:9.5pt;color:#333;}
-    .spacer{flex:1;min-height:0.3cm;}
+
+    /* ── Spacer ── */
+    .spacer{flex:1;min-height:0.5cm;}
+
+    /* ── Badges ── */
     .badge-g{color:#16a34a;background:#dcfce7;padding:1px 7px;border-radius:10px;font-size:8.5pt;font-weight:bold;}
     .badge-y{color:#d97706;background:#fef3c7;padding:1px 7px;border-radius:10px;font-size:8.5pt;font-weight:bold;}
     .badge-r{color:#dc2626;background:#fee2e2;padding:1px 7px;border-radius:10px;font-size:8.5pt;font-weight:bold;}
+
+    /* ── Fotos evidencia ── */
+    .fotos-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+      margin-bottom:0.3cm;
+    }
+    .fotos-grid img{
+      width:100%;
+      height:5cm;
+      object-fit:cover;
+      border-radius:4px;
+      border:1px solid #e0e0e0;
+    }
+
+    /* ── Print ── */
     @media print{
       @page{size:8.5in 13in;margin:0;}
       html,body{background:#fff;width:8.5in;}
@@ -100,7 +271,6 @@ function _cssDoc() {
     }
   `;
 }
-
 // ── Acta de mantenimiento individual ─────────────────────────
 export function verActaMantenimiento(id) {
   const DB    = getDBStatic();
