@@ -17,14 +17,15 @@ export const CONFIG = {
 window.APP_CONFIG = CONFIG;
 
 export const MENU_ITEMS = [
-  { id: 'inicio',         label: 'Inicio',        icon: '🏠', page: 'dashboard'      },
-  { id: 'mantenimientos', label: 'Mantenimiento',  icon: '🔧', page: 'mantenimientos' },
-  { id: 'backups',        label: 'Backups',        icon: '💾', page: 'backups'        },
-  { id: 'equipos',        label: 'Equipos',        icon: '💻', page: 'inventario'     },
-  { id: 'incidencias',    label: 'Incidencias',    icon: '🚨', page: 'incidencias'    },
-  { id: 'estadisticas',   label: 'Estadísticas',   icon: '📊', page: 'estadisticas'   },
-  { id: 'reportes',       label: 'Reportes',       icon: '📋', page: 'reportes'       },
-  { id: 'calendario',     label: 'Calendario',     icon: '📅', page: 'calendario'     },
+  { id: 'inicio',          label: 'Inicio',          icon: '🏠', page: 'dashboard'      },
+  { id: 'mantenimientos',  label: 'Mantenimiento',   icon: '🔧', page: 'mantenimientos' },
+  { id: 'backups',         label: 'Backups',          icon: '💾', page: 'backups'        },
+  { id: 'equipos',         label: 'Equipos',          icon: '💻', page: 'inventario'     },
+  { id: 'incidencias',     label: 'Incidencias',      icon: '🚨', page: 'incidencias'    },
+  { id: 'estadisticas',    label: 'Estadísticas',     icon: '📊', page: 'estadisticas'   },
+  { id: 'reportes',        label: 'Reportes',         icon: '📋', page: 'reportes'       },
+  { id: 'calendario',      label: 'Calendario',       icon: '📅', page: 'calendario'     },
+  { id: 'administracion',  label: 'Administración',   icon: '⚙️', page: 'administracion' },
 ];
 
 export const DEPENDENCIAS_STATIC = [
