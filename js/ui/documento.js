@@ -273,15 +273,15 @@ function _cssDoc() {
 }
 // ── Acta de mantenimiento individual ─────────────────────────
 export function verActaMantenimiento(id) {
-  const DB    = getDBStatic();
-  const m     = getData('mantenimientos').find(x => x.id === id);
+  const DB  = getDBStatic();
+  const m   = getData('mantenimientos').find(x => x.id === id);
   if (!m) return;
 
-  const eq    = getData('equipos').find(e => e.serial === m.serial);
-  const p     = eq ? DB.personas.find(x => x.id === eq.usuarioId) : null;
-  const of    = eq ? DB.oficinas.find(x => x.id === eq.oficina)   : null;
-  const dep   = of ? DB.dependencias.find(x => x.id === of.depId) : null;
-  const fecha = new Date().toLocaleDateString('es-CO', { day:'2-digit', month:'long', year:'numeric' });
+  const eq  = getData('equipos').find(e => e.serial === m.serial);
+  const p   = eq ? DB.personas.find(x => x.id === eq.usuarioId) : null;
+  const of  = eq ? DB.oficinas.find(x => x.id === eq.oficina)   : null;
+  const dep = of ? DB.dependencias.find(x => x.id === of.depId) : null;
+  const fechaDoc = new Date().toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'});
 
   const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
   <title>Acta Mantenimiento ${m.serial}</title>
@@ -291,61 +291,144 @@ export function verActaMantenimiento(id) {
     <div class="header"><img src="${CONFIG.IMG_HEADER}" alt="Encabezado"/></div>
     <div class="body-wrap">
 
-      <div class="titulo">Acta de Mantenimiento ${m.tipo || 'Preventivo'}</div>
+      <div class="titulo">Acta de ${m.tipo || 'Mantenimiento Preventivo'}</div>
 
-      <div class="meta">
-        <p><b>Fecha:</b> ${formatDate(m.fecha)}</p>
-        <p><b>Serial equipo:</b> ${m.serial}</p>
-        <p><b>Funcionario:</b> ${p?.nombre || '—'}</p>
-        <p><b>Oficina:</b> ${of?.nombre || '—'}</p>
-        <p><b>Dependencia:</b> ${dep?.nombre || '—'}</p>
-        <p><b>Responsable TI:</b> ${m.responsable || CONFIG.RESPONSABLE_TI}</p>
-        <p><b>Tipo:</b> ${m.tipo || '—'}</p>
-        <p><b>Frecuencia:</b> ${m.frecuencia || '—'}</p>
-        <p><b>Próximo mantenimiento:</b> ${formatDate(m.fechaProxima)}</p>
-      </div>
-
-      <div class="sec">Actividades realizadas</div>
-      <div class="obs">${m.obs || 'Se realizaron actividades de mantenimiento según la programación establecida.'}</div>
-
-      <div class="sec">Estado del equipo</div>
-      <table>
-        <tr><th>Componente</th><th>Detalle</th></tr>
-        <tr><td>Sistema Operativo</td><td>${eq?.so || '—'}</td></tr>
-        <tr><td>RAM</td><td>${eq?.ram || '—'}</td></tr>
-        <tr><td>Disco</td><td>${eq?.disco || '—'} ${eq?.cap || ''}</td></tr>
-        <tr><td>Office</td><td>${eq?.office || '—'}</td></tr>
-        <tr><td>Estado post-mantenimiento</td><td>${m.estadoEquipo || 'Operativo'}</td></tr>
+      <!-- METADATOS EN DOS COLUMNAS -->
+      <table style="margin-bottom:0.4cm;font-size:10pt;">
+        <tr style="background:#f9f9f9;">
+          <td style="border:1px solid #e0e0e0;padding:5px 10px;width:50%;">
+            <b style="color:#c0392b;">📅 Fecha de ejecución</b><br>${formatDate(m.fecha)}
+          </td>
+          <td style="border:1px solid #e0e0e0;padding:5px 10px;width:50%;">
+            <b style="color:#c0392b;">⏭️ Próximo mantenimiento</b><br>${formatDate(m.fechaProxima) || '—'}
+          </td>
+        </tr>
+        <tr>
+          <td style="border:1px solid #e0e0e0;padding:5px 10px;">
+            <b style="color:#c0392b;">🖥️ Serial del equipo</b><br>
+            <span style="font-family:monospace;font-size:11pt;font-weight:bold;">${m.serial}</span>
+          </td>
+          <td style="border:1px solid #e0e0e0;padding:5px 10px;">
+            <b style="color:#c0392b;">🔁 Frecuencia</b><br>${m.frecuencia || '—'}
+          </td>
+        </tr>
+        <tr style="background:#f9f9f9;">
+          <td style="border:1px solid #e0e0e0;padding:5px 10px;">
+            <b style="color:#c0392b;">👤 Funcionario</b><br>${p?.nombre || '—'}
+          </td>
+          <td style="border:1px solid #e0e0e0;padding:5px 10px;">
+            <b style="color:#c0392b;">🏢 Dependencia</b><br>${dep?.nombre || '—'}
+          </td>
+        </tr>
+        <tr>
+          <td style="border:1px solid #e0e0e0;padding:5px 10px;">
+            <b style="color:#c0392b;">🏠 Oficina</b><br>${of?.nombre || '—'}
+          </td>
+          <td style="border:1px solid #e0e0e0;padding:5px 10px;">
+            <b style="color:#c0392b;">👷 Responsable TI</b><br>${m.responsable || CONFIG.RESPONSABLE_TI}
+          </td>
+        </tr>
+        <tr style="background:#f9f9f9;">
+          <td style="border:1px solid #e0e0e0;padding:5px 10px;">
+            <b style="color:#c0392b;">📊 Estado del equipo</b><br>
+            <span style="background:${m.estadoEquipo==='Operativo'?'#dcfce7':m.estadoEquipo==='Dado de baja'?'#fee2e2':'#fef3c7'};
+              color:${m.estadoEquipo==='Operativo'?'#166534':m.estadoEquipo==='Dado de baja'?'#991b1b':'#92400e'};
+              padding:2px 8px;border-radius:10px;font-size:9pt;font-weight:bold;">
+              ${m.estadoEquipo || 'Operativo'}
+            </span>
+          </td>
+          <td style="border:1px solid #e0e0e0;padding:5px 10px;">
+            <b style="color:#c0392b;">📋 Período</b><br>${m.periodo || '—'}
+          </td>
+        </tr>
       </table>
 
+      <!-- ESPECIFICACIONES TÉCNICAS -->
+      <div class="sec">⚙️ Especificaciones técnicas del equipo</div>
+      <table style="margin-bottom:0.4cm;">
+        <tr><th>Componente</th><th>Detalle</th><th>Componente</th><th>Detalle</th></tr>
+        <tr>
+          <td><b>Marca / Modelo</b></td>
+          <td>${eq?.marca || '—'} ${eq?.modelo || ''}</td>
+          <td><b>Sistema Operativo</b></td>
+          <td>${eq?.so || '—'}</td>
+        </tr>
+        <tr style="background:#f9f9f9;">
+          <td><b>Procesador</b></td>
+          <td>${eq?.procesador || '—'}</td>
+          <td><b>Memoria RAM</b></td>
+          <td>${eq?.ram || '—'}</td>
+        </tr>
+        <tr>
+          <td><b>Tipo de disco</b></td>
+          <td>${eq?.disco || '—'}</td>
+          <td><b>Capacidad</b></td>
+          <td>${eq?.cap || '—'}</td>
+        </tr>
+        <tr style="background:#f9f9f9;">
+          <td><b>Office / Suite</b></td>
+          <td>${eq?.office || '—'}</td>
+          <td><b>Ubicación física</b></td>
+          <td>${eq?.ubicacion || '—'}</td>
+        </tr>
+      </table>
+
+      <!-- ACTIVIDADES -->
+      <div class="sec">🔧 Actividades realizadas</div>
+      <div class="obs" style="background:#f9f9f9;border:1px solid #e0e0e0;border-radius:4px;padding:0.2cm 0.3cm;margin-bottom:0.3cm;">
+        ${m.obs || 'Se realizaron actividades de mantenimiento preventivo según la programación establecida por el área de sistemas de la Alcaldía Municipal de Nemocón.'}
+      </div>
+
+      <!-- CREDENCIALES -->
+      ${(m.userWin || m.userAdmin) ? `
+      <div class="sec">🔐 Datos de acceso verificados</div>
+      <table style="margin-bottom:0.3cm;">
+        <tr><th>Tipo</th><th>Usuario</th><th>¿Cambió?</th></tr>
+        ${m.userWin ? `<tr><td>Windows</td><td style="font-family:monospace;">${m.userWin}</td><td>${m.cambioCred==='Sí'?'✅ Sí':'No'}</td></tr>` : ''}
+        ${m.userAdmin ? `<tr style="background:#f9f9f9;"><td>Administrador</td><td style="font-family:monospace;">${m.userAdmin}</td><td>${m.cambioCred==='Sí'?'✅ Sí':'No'}</td></tr>` : ''}
+      </table>` : ''}
+
+      <!-- TRASLADO -->
+      ${m.traslado === 'Sí' ? `
+      <div class="sec">🚚 Traslado de dependencia</div>
+      <table style="margin-bottom:0.3cm;">
+        <tr><th>Dependencia anterior</th><th>Nueva dependencia</th><th>Fecha</th></tr>
+        <tr><td>${m.depAnterior || '—'}</td><td>${m.depNueva || '—'}</td><td>${formatDate(m.fechaTraslado)}</td></tr>
+      </table>` : ''}
+
+      <!-- EVIDENCIA FOTOGRÁFICA -->
       ${m.fotos?.length ? `
-        <div class="sec">Evidencia fotográfica (${m.fotos.length} foto${m.fotos.length > 1 ? 's' : ''})</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:0.3cm;">
-          ${m.fotos.slice(0, 4).map(f =>
+        <div class="sec">📸 Evidencia fotográfica (${m.fotos.length} foto${m.fotos.length>1?'s':''})</div>
+        <div class="fotos-grid">
+          ${m.fotos.slice(0,4).map(f =>
             `<img src="${f}" style="width:100%;height:5cm;object-fit:cover;border-radius:4px;border:1px solid #e0e0e0;">`
           ).join('')}
-        </div>
-      ` : ''}
+        </div>` : ''}
 
-      <div class="constancia">
-        En constancia de lo anterior, se firma la presente acta en la fecha indicada.
+      <!-- CONSTANCIA -->
+      <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:4px;
+        padding:0.2cm 0.3cm;margin:0.3cm 0;font-size:10pt;color:#0c4a6e;">
+        ℹ️ En constancia de lo anterior, las partes firman la presente acta de mantenimiento
+        en la ciudad de Nemocón, Cundinamarca, el día <b>${fechaDoc}</b>.
       </div>
 
       <div class="spacer"></div>
 
+      <!-- FIRMAS -->
       <div class="firmas">
         <div class="fbox">
           ${m.firma
-            ? `<img src="${m.firma}" alt="Firma funcionario">`
-            : `<div style="height:1.6cm;"></div>`}
+            ? `<img src="${m.firma}" alt="Firma funcionario" style="mix-blend-mode:multiply;">`
+            : `<div style="height:2cm;border-bottom:1px solid #999;margin-bottom:4px;"></div>`}
           <div class="flinea">
             <div class="fnombre">${p?.nombre || '___________________________'}</div>
-            <div class="fcargo">${of?.nombre || 'Funcionario'}</div>
+            <div class="fcargo">${p?.cargo || 'Funcionario'}</div>
+            <div class="fcargo">${of?.nombre || '—'}</div>
             <div class="fcargo">${dep?.nombre || ''}</div>
           </div>
         </div>
         <div class="fbox">
-          <img src="${CONFIG.IMG_FIRMA_TI}" alt="Firma TI">
+          <img src="${CONFIG.IMG_FIRMA_TI}" alt="Firma TI" style="mix-blend-mode:multiply;">
           <div class="flinea">
             <div class="fnombre">${CONFIG.RESPONSABLE_TI}</div>
             <div class="fcargo">Ingeniero de Sistemas</div>
@@ -670,12 +753,18 @@ export function verActaBackup(id) {
   const b   = getData('backups').find(x => x.id === id);
   if (!b) return;
 
-  const eq   = getData('equipos').find(e => e.serial === b.serial);
-  const p    = b.personaId ? DB.personas.find(x => x.id === b.personaId) : null;
-  const of   = eq ? DB.oficinas.find(x => x.id === eq.oficina) : null;
-  const dep  = of ? DB.dependencias.find(x => x.id === of.depId) : null;
+  const eq  = getData('equipos').find(e => e.serial === b.serial);
+  const p   = b.personaId ? DB.personas.find(x => x.id === b.personaId) : null;
+  const of  = eq ? DB.oficinas.find(x => x.id === eq.oficina) : null;
+  const dep = of ? DB.dependencias.find(x => x.id === of.depId) : null;
   const resp = b.responsableEquipo || p?.nombre || '—';
-  const fecha = new Date().toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'});
+  const fechaDoc = new Date().toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'});
+
+  const estadoColor = {
+    Completado: { bg:'#dcfce7', color:'#166534' },
+    Fallido:    { bg:'#fee2e2', color:'#991b1b' },
+    Pendiente:  { bg:'#fef3c7', color:'#92400e' },
+  }[b.estadoBk] || { bg:'#f3f4f6', color:'#374151' };
 
   const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
   <title>Acta Backup ${b.serial}</title>
@@ -687,54 +776,121 @@ export function verActaBackup(id) {
 
       <div class="titulo">Acta de Copia de Seguridad</div>
 
-      <div class="meta">
-        <p><b>Fecha:</b> ${formatDate(b.fecha)}</p>
-        <p><b>Serial equipo:</b> ${b.serial}</p>
-        <p><b>Funcionario:</b> ${resp}</p>
-        <p><b>Oficina:</b> ${of?.nombre || '—'}</p>
-        <p><b>Dependencia:</b> ${dep?.nombre || '—'}</p>
-        <p><b>Responsable TI:</b> ${b.respTI || CONFIG.RESPONSABLE_TI}</p>
-        <p><b>Tipo de backup:</b> ${b.tipo || '—'}</p>
-        <p><b>Destino:</b> ${b.destino || '—'}</p>
-        <p><b>Frecuencia:</b> ${b.frecuencia || '—'}</p>
-        <p><b>Próximo backup:</b> ${formatDate(b.fechaProxima)}</p>
-        <p><b>Estado:</b> ${b.estadoBk || '—'}</p>
-        ${b.ubicacion ? `<p><b>Ubicación:</b> ${b.ubicacion}</p>` : ''}
-      </div>
+      <!-- METADATOS EN DOS COLUMNAS -->
+      <table style="margin-bottom:0.4cm;font-size:10pt;">
+        <tr style="background:#f9f9f9;">
+          <td style="border:1px solid #e0e0e0;padding:5px 10px;width:50%;">
+            <b style="color:#2563eb;">📅 Fecha de ejecución</b><br>${formatDate(b.fecha)}
+          </td>
+          <td style="border:1px solid #e0e0e0;padding:5px 10px;width:50%;">
+            <b style="color:#2563eb;">⏭️ Próximo backup</b><br>${formatDate(b.fechaProxima) || '—'}
+          </td>
+        </tr>
+        <tr>
+          <td style="border:1px solid #e0e0e0;padding:5px 10px;">
+            <b style="color:#2563eb;">🖥️ Serial del equipo</b><br>
+            <span style="font-family:monospace;font-size:11pt;font-weight:bold;">${b.serial}</span>
+          </td>
+          <td style="border:1px solid #e0e0e0;padding:5px 10px;">
+            <b style="color:#2563eb;">🔁 Frecuencia</b><br>${b.frecuencia || '—'}
+          </td>
+        </tr>
+        <tr style="background:#f9f9f9;">
+          <td style="border:1px solid #e0e0e0;padding:5px 10px;">
+            <b style="color:#2563eb;">👤 Responsable del equipo</b><br>${resp}
+          </td>
+          <td style="border:1px solid #e0e0e0;padding:5px 10px;">
+            <b style="color:#2563eb;">🏢 Dependencia</b><br>${dep?.nombre || '—'}
+          </td>
+        </tr>
+        <tr>
+          <td style="border:1px solid #e0e0e0;padding:5px 10px;">
+            <b style="color:#2563eb;">🏠 Oficina</b><br>${of?.nombre || '—'}
+          </td>
+          <td style="border:1px solid #e0e0e0;padding:5px 10px;">
+            <b style="color:#2563eb;">👷 Responsable TI</b><br>${b.respTI || CONFIG.RESPONSABLE_TI}
+          </td>
+        </tr>
+        <tr style="background:#f9f9f9;">
+          <td style="border:1px solid #e0e0e0;padding:5px 10px;">
+            <b style="color:#2563eb;">📦 Tipo de backup</b><br>${b.tipo || '—'}
+          </td>
+          <td style="border:1px solid #e0e0e0;padding:5px 10px;">
+            <b style="color:#2563eb;">💾 Destino</b><br>${b.destino || '—'}
+          </td>
+        </tr>
+        <tr>
+          <td style="border:1px solid #e0e0e0;padding:5px 10px;">
+            <b style="color:#2563eb;">📍 Ubicación</b><br>${b.ubicacion || '—'}
+          </td>
+          <td style="border:1px solid #e0e0e0;padding:5px 10px;">
+            <b style="color:#2563eb;">📊 Estado</b><br>
+            <span style="background:${estadoColor.bg};color:${estadoColor.color};
+              padding:2px 8px;border-radius:10px;font-size:9pt;font-weight:bold;">
+              ${b.estadoBk || '—'}
+            </span>
+          </td>
+        </tr>
+      </table>
 
+      <!-- ESPECIFICACIONES DEL EQUIPO -->
+      <div class="sec">⚙️ Especificaciones del equipo respaldado</div>
+      <table style="margin-bottom:0.4cm;">
+        <tr><th>Componente</th><th>Detalle</th><th>Componente</th><th>Detalle</th></tr>
+        <tr>
+          <td><b>Marca / Modelo</b></td>
+          <td>${eq?.marca || '—'} ${eq?.modelo || ''}</td>
+          <td><b>Sistema Operativo</b></td>
+          <td>${eq?.so || '—'}</td>
+        </tr>
+        <tr style="background:#f9f9f9;">
+          <td><b>RAM</b></td>
+          <td>${eq?.ram || '—'}</td>
+          <td><b>Disco / Capacidad</b></td>
+          <td>${eq?.disco || '—'} ${eq?.cap || ''}</td>
+        </tr>
+      </table>
+
+      <!-- OBSERVACIONES -->
       ${b.obs ? `
-        <div class="sec">Observaciones</div>
-        <div class="obs">${b.obs}</div>
-      ` : ''}
+        <div class="sec">📝 Observaciones</div>
+        <div class="obs" style="background:#f9f9f9;border:1px solid #e0e0e0;border-radius:4px;padding:0.2cm 0.3cm;margin-bottom:0.3cm;">
+          ${b.obs}
+        </div>` : ''}
 
+      <!-- EVIDENCIA FOTOGRÁFICA -->
       ${b.fotos?.length ? `
-        <div class="sec">Evidencia fotográfica</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:0.3cm;">
+        <div class="sec">📸 Evidencia fotográfica (${b.fotos.length} foto${b.fotos.length>1?'s':''})</div>
+        <div class="fotos-grid">
           ${b.fotos.slice(0,4).map(f =>
             `<img src="${f}" style="width:100%;height:5cm;object-fit:cover;border-radius:4px;border:1px solid #e0e0e0;">`
           ).join('')}
-        </div>
-      ` : ''}
+        </div>` : ''}
 
-      <div class="constancia">
-        En constancia de lo anterior, se firma la presente acta en la fecha indicada.
+      <!-- CONSTANCIA -->
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:4px;
+        padding:0.2cm 0.3cm;margin:0.3cm 0;font-size:10pt;color:#1e40af;">
+        ℹ️ En constancia de lo anterior, las partes firman la presente acta de copia de seguridad
+        en la ciudad de Nemocón, Cundinamarca, el día <b>${fechaDoc}</b>.
       </div>
 
       <div class="spacer"></div>
 
+      <!-- FIRMAS -->
       <div class="firmas">
         <div class="fbox">
           ${b.firma
-            ? `<img src="${b.firma}" alt="Firma funcionario">`
-            : `<div style="height:1.6cm;"></div>`}
+            ? `<img src="${b.firma}" alt="Firma funcionario" style="mix-blend-mode:multiply;">`
+            : `<div style="height:2cm;border-bottom:1px solid #999;margin-bottom:4px;"></div>`}
           <div class="flinea">
             <div class="fnombre">${resp}</div>
-            <div class="fcargo">${of?.nombre || 'Funcionario'}</div>
+            <div class="fcargo">${p?.cargo || 'Funcionario'}</div>
+            <div class="fcargo">${of?.nombre || '—'}</div>
             <div class="fcargo">${dep?.nombre || ''}</div>
           </div>
         </div>
         <div class="fbox">
-          <img src="${CONFIG.IMG_FIRMA_TI}" alt="Firma TI">
+          <img src="${CONFIG.IMG_FIRMA_TI}" alt="Firma TI" style="mix-blend-mode:multiply;">
           <div class="flinea">
             <div class="fnombre">${CONFIG.RESPONSABLE_TI}</div>
             <div class="fcargo">Ingeniero de Sistemas</div>
