@@ -717,6 +717,10 @@ function editar(id) {
 }
 
 async function guardar() {
+  console.log('guardar() ejecutado'); // ← temporal
+  const serial = getSSValue('mt-equipo-ss');
+  console.log('serial:', serial); // ← temporal
+
   const serial      = getSSValue('mt-equipo-ss');
   const tipo        = document.getElementById('mt-tipo').value;
   const frecuencia  = document.getElementById('mt-frecuencia').value;
