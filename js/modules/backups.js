@@ -103,9 +103,17 @@ export function renderLista() {
         </div>
 
         ${b.firmado
-          ? `<button class="sign-btn signed" disabled style="margin-top:10px;">
-               ✅ Firmado ${b.firmaFecha ? '· ' + formatDate(b.firmaFecha.split('T')[0]) : ''}
-             </button>`
+          ? `<div style="display:flex;gap:6px;margin-top:10px;">
+               <button class="sign-btn signed" disabled style="flex:2;margin-top:0;">
+                 ✅ Firmado ${b.firmaFecha ? '· ' + formatDate(b.firmaFecha.split('T')[0]) : ''}
+               </button>
+               <button class="doc-viewer-btn" data-action="verdoc" data-id="${b.id}"
+                 style="flex:1;margin-top:0;padding:10px;border:1px solid var(--border);
+                        border-radius:var(--radius-sm);background:var(--bg2);
+                        font-family:var(--font-main);font-size:12px;cursor:pointer;">
+                 📄 Ver acta
+               </button>
+             </div>`
           : `<button class="sign-btn" data-action="firmar" data-id="${b.id}"
                style="margin-top:10px;">
                ✍️ Solicitar firma
@@ -125,6 +133,7 @@ export function renderLista() {
       if (action === 'editar')   editar(id);
       if (action === 'eliminar') _eliminar(id);
       if (action === 'firmar')   _firmar(id);
+      if (action === 'verdoc')   verActaBackup(id);
     });
   });
 }

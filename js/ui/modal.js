@@ -5,7 +5,11 @@ export function abrirModal(id) {
 
 export function cerrarModal(id) {
   document.getElementById(id)?.classList.remove('open');
-  document.body.style.overflow = '';
+  // Solo liberar overflow si no hay otros modales abiertos
+  const abiertos = document.querySelectorAll('.modal-overlay.open');
+  if (abiertos.length === 0) {
+    document.body.style.overflow = '';
+  }
 }
 
 // Inyectar HTML de modal en el contenedor

@@ -1,6 +1,7 @@
 import { CONFIG }    from '../config.js';
 import { getData, getDBStatic } from '../state.js';
 import { formatDate, parseFecha } from '../utils.js';
+import { verActaBackup } from '../ui/documento.js';
 
 // ── Visor de documentos ───────────────────────────────────────
 export function abrirDocViewer(htmlContent, titulo) {
@@ -493,4 +494,90 @@ export function generarActaDependencia(tipo, depId, fechaIni, fechaFin, obsExtra
   </body></html>`;
 
   abrirDocViewer(html, `${actaTitulo} — ${dep.nombre}`);
+}
+
+export function verActaBackup(id) {
+  const DB  = getDBStatic();
+  const b   = getData('backups').find(x => x.id === id);
+  if (!b) return;
+
+  const eq   = getData('equipos').find(e => e.serial === b.serial);
+  const p    = b.personaId ? DB.personas.find(x => x.id === b.personaId) : null;
+  const of   = eq ? DB.oficinas.find(x => x.id === eq.oficina) : null;
+  const dep  = of ? DB.dependencias.find(x => x.id === of.depId) : null;
+  const resp = b.responsableEquipo || p?.nombre || '—';
+  const fecha = new Date().toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'});
+
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+  <title>Acta Backup ${b.serial}</title>
+  <style>${_cssDoc()}</style>
+  </head><body>
+  <div class="pagina">
+    <div class="header"><img src="${CONFIG.IMG_HEADER}" alt="Encabezado"/></div>
+    <div class="body-wrap">
+
+      <div class="titulo">Acta de Copia de Seguridad</div>
+
+      <div class="meta">
+        <p><b>Fecha:</b> ${formatDate(b.fecha)}</p>
+        <p><b>Serial equipo:</b> ${b.serial}</p>
+        <p><b>Funcionario:</b> ${resp}</p>
+        <p><b>Oficina:</b> ${of?.nombre || '—'}</p>
+        <p><b>Dependencia:</b> ${dep?.nombre || '—'}</p>
+        <p><b>Responsable TI:</b> ${b.respTI || CONFIG.RESPONSABLE_TI}</p>
+        <p><b>Tipo de backup:</b> ${b.tipo || '—'}</p>
+        <p><b>Destino:</b> ${b.destino || '—'}</p>
+        <p><b>Frecuencia:</b> ${b.frecuencia || '—'}</p>
+        <p><b>Próximo backup:</b> ${formatDate(b.fechaProxima)}</p>
+        <p><b>Estado:</b> ${b.estadoBk || '—'}</p>
+        ${b.ubicacion ? `<p><b>Ubicación:</b> ${b.ubicacion}</p>` : ''}
+      </div>
+
+      ${b.obs ? `
+        <div class="sec">Observaciones</div>
+        <div class="obs">${b.obs}</div>
+      ` : ''}
+
+      ${b.fotos?.length ? `
+        <div class="sec">Evidencia fotográfica</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:0.3cm;">
+          ${b.fotos.slice(0,4).map(f =>
+            `<img src="${f}" style="width:100%;height:5cm;object-fit:cover;border-radius:4px;border:1px solid #e0e0e0;">`
+          ).join('')}
+        </div>
+      ` : ''}
+
+      <div class="constancia">
+        En constancia de lo anterior, se firma la presente acta en la fecha indicada.
+      </div>
+
+      <div class="spacer"></div>
+
+      <div class="firmas">
+        <div class="fbox">
+          ${b.firma
+            ? `<img src="${b.firma}" alt="Firma funcionario">`
+            : `<div style="height:1.6cm;"></div>`}
+          <div class="flinea">
+            <div class="fnombre">${resp}</div>
+            <div class="fcargo">${of?.nombre || 'Funcionario'}</div>
+            <div class="fcargo">${dep?.nombre || ''}</div>
+          </div>
+        </div>
+        <div class="fbox">
+          <img src="${CONFIG.IMG_FIRMA_TI}" alt="Firma TI">
+          <div class="flinea">
+            <div class="fnombre">${CONFIG.RESPONSABLE_TI}</div>
+            <div class="fcargo">Ingeniero de Sistemas</div>
+            <div class="fcargo">${CONFIG.ENTIDAD}</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div class="footer"><img src="${CONFIG.IMG_FOOTER}" alt="Pie de página"/></div>
+  </div>
+  </body></html>`;
+
+  abrirDocViewer(html, `Acta Backup — ${b.serial}`);
 }

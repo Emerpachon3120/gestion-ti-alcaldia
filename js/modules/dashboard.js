@@ -1,7 +1,7 @@
 import { navigate }       from '../router.js';
-import { getData, getDBStatic } from '../state.js';
 import { formatDate, calcSemaforo } from '../utils.js';
 import { renderAlertas }  from '../ui/alerts.js';
+import { getData, getDBStatic, subscribe } from '../state.js';
 
 export function render() {
   const m   = getData('mantenimientos') || [];
@@ -90,16 +90,35 @@ export function render() {
 }
 
 export function onEnter() {
-  // Acciones rápidas
   document.querySelectorAll('[data-nav]').forEach(card => {
     card.addEventListener('click', () => navigate(card.dataset.nav));
   });
 
-  // Alertas
   renderAlertas('alertas-container');
-
-  // Próximos mantenimientos
   _renderProximos();
+
+  // Escuchar cuando syncData termine para actualizar stats
+  const unsub = subscribe('mantenimientos', () => {
+    // Actualizar números en las stat cards
+    const m   = getData('mantenimientos') || [];
+    const b   = getData('backups') || [];
+    const inc = getData('incidencias') || [];
+    const eq  = getData('equipos') || [];
+    const pendientes = m.filter(x=>!x.firmado).length + b.filter(x=>!x.firmado).length;
+    const abiertas   = inc.filter(i=>['Iniciada','En proceso','abierta'].includes(i.estadoTexto||i.estado)).length;
+
+    const s1 = document.getElementById('stat-equipos');
+    const s2 = document.getElementById('stat-pendientes');
+    const s3 = document.getElementById('stat-incidencias');
+    const s4 = document.getElementById('stat-mantenimientos');
+    if (s1) s1.textContent = eq.length;
+    if (s2) s2.textContent = pendientes;
+    if (s3) s3.textContent = abiertas;
+    if (s4) s4.textContent = m.length;
+
+    renderAlertas('alertas-container');
+    _renderProximos();
+  });
 }
 
 function _renderProximos() {

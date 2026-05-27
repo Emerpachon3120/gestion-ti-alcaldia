@@ -32,22 +32,24 @@ registerRoute('calendario',    Calendario);
 
 async function init() {
   initStorage();
-  loadFromStorage();
+  loadFromStorage();  // ← carga datos locales primero
 
   renderHeader();
   renderMenu();
 
   await new Promise(resolve => setTimeout(resolve, 0));
 
+  // Navegar al dashboard con datos locales (rápido)
   const hashPage = location.hash.replace('#', '') || 'dashboard';
   await navigate(hashPage);
 
-  // Esperar syncData antes de continuar
-  try {
-    await syncData();
-  } catch(e) {
-    console.warn('[Sync] falló, usando datos locales');
-  }
+  // Sincronizar en background y actualizar dashboard
+  syncData().then(() => {
+    // Si estamos en dashboard, re-renderizar con datos frescos
+    if (getState('currentPage') === 'dashboard') {
+      navigate('dashboard');
+    }
+  }).catch(err => console.warn('[Sync]', err));
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./service-worker.js').catch(() => {});
@@ -61,79 +63,59 @@ async function init() {
 export async function syncData() {
   const btn = document.getElementById('sync-btn');
   if (btn) btn.classList.add('syncing');
-  setState('syncStatus', 'syncing');
 
   try {
     const { deps, ofs, pers, eqs, mantsSheet, bksSheet } =
       await cargarDatosDesdeSheets();
 
-    // Normalizar y guardar en estado
-    setState('DB_STATIC', {
-      dependencias: deps.map(r => ({ id: String(r.ID), nombre: r.Nombre || '', responsable: r.Responsable || '' })),
-      oficinas:     ofs.map(r  => ({ id: String(r.ID), nombre: r.Nombre || '', depId: String(r.DepID) })),
-      personas:     pers.map(r => ({ id: String(r.ID), nombre: r.Nombre || '', imagen: r.Imagen_Base64 || '' })),
-    });
+    // ← AGREGA ESTA LÍNEA — cargar incidencias del Forms spreadsheet
+    let incsSheet = [];
+    try {
+      incsSheet = await apiGet('Incidencias',
+        `&formSpreadId=${CONFIG.FORMS_SPREAD_ID}`);
+    } catch(e) {
+      console.warn('Incidencias no cargaron:', e);
+    }
 
-    setState('equipos', eqs.map(r => ({
-      serial:   String(r.Serial),
-      oficina:  String(r.OficinaID),
-      usuarioId:String(r.UsuarioID || ''),
-      so:       r.SO || '', office: r.Office || '',
-      disco:    r.Disco || '', cap: r.Capacidad || '',
-      ram:      r.RAM || '', obs: r.Observaciones || '',
-      marca:    r.Marca || '', modelo: r.Modelo || '',
-      procesador: r.Procesador || '', estado: r.Estado || 'Operativo',
-    })));
+    // ... resto del setState existente ...
 
-    // Mantener firmas/fotos del localStorage al mergear mantenimientos
-    const localMantMap = {};
-    (getState('mantenimientos') || []).forEach(m => { localMantMap[m.id] = m; });
-    setState('mantenimientos', mantsSheet.map(r => {
+    // ← AGREGA AL FINAL antes de saveToStorage()
+    const localIncMap = {};
+    (getState('incidencias') || []).forEach(i => { localIncMap[i.id] = i; });
+    setState('incidencias', incsSheet.map(r => {
+      const ticket = r['Ticket'] || r['id'] || '';
       const base = {
-        id: String(r.ID), serial: String(r.EquipoID || r.Serial || ''),
-        tipo: r.Tipo || '', frecuencia: r.Frecuencia || '',
-        fecha: r.Fecha_Ultima || r.Fecha || '',
-        fechaProxima: r.Fecha_Proxima || '',
-        firmado: r.Firmado === 'TRUE' || r.Firmado === 'Sí',
-        responsable: r.Responsable || 'Emerson Pachon',
-        obs: r.Observaciones || '', firma: null, fotos: [],
+        id:          ticket,
+        ticket,
+        fromForm:    true,
+        fecha:       r['Marca temporal'] || '',
+        secretaria:  r['Secretaria (Secretaria de la que depende)'] || '',
+        oficina:     r['Oficina'] || '',
+        nombre:      r['Nombre completo del funcionario'] || '',
+        cargo:       r['Cargo'] || '',
+        correo:      r['Correo institucional'] || '',
+        telefono:    r['Teléfono'] || '',
+        tipo:        r['Tipo de incidencia'] || '',
+        desc:        r['Descripción del problema'] || '',
+        prioridad:   (r['Grado de importancia'] || 'media').toLowerCase(),
+        estadoTexto: r['Estado'] || 'Iniciada',
+        estado:      ['Finalizada','Cancelada'].includes(r['Estado']) ? 'cerrada' : 'abierta',
+        observacion: r['Observación'] || '',
+        responsableAtencion: r['Responsable_Atencion'] || '',
+        fechaApertura: r['Fecha_Apertura'] || '',
+        fechaCierre:   r['Fecha_Cierre'] || '',
+        fotos: [],
       };
-      const local = localMantMap[base.id];
-      if (local) {
-        base.firmado    = local.firmado;
-        base.firma      = local.firma;
-        base.firmaFecha = local.firmaFecha;
-        base.fotos      = local.fotos || [];
-      }
-      return base;
-    }));
-
-    const localBkMap = {};
-    (getState('backups') || []).forEach(b => { localBkMap[b.id] = b; });
-    setState('backups', bksSheet.map(r => {
-      const base = {
-        id: String(r.ID), serial: String(r.EquipoID || ''),
-        tipo: r.Tipo || '', destino: r.Ubicacion || '',
-        fecha: r.Fecha_Ultima || '', fechaProxima: r.Fecha_Proxima || '',
-        firmado: r.Firmado === 'TRUE' || r.Firmado === 'Sí',
-        responsable: r.Responsable || '', obs: r.Observaciones || '',
-        estadoBk: r.Estado || 'Completado', fotos: [],
-      };
-      const local = localBkMap[base.id];
-      if (local) { base.firmado = local.firmado; base.firma = local.firma; base.fotos = local.fotos || []; }
+      const local = localIncMap[ticket];
+      if (local) { base.fotos = local.fotos || []; }
       return base;
     }));
 
     saveToStorage();
-    setState('syncStatus', 'idle');
     showToast('✅ Datos sincronizados');
 
-    // Re-renderizar página actual si es el dashboard
-    if (getState('currentPage') === 'dashboard') navigate('dashboard');
-
-  } catch (err) {
+  } catch(err) {
     console.error('[Sync]', err);
-    setState('syncStatus', 'error');
     showToast('⚠️ Sin conexión — usando datos locales', '#d97706');
   } finally {
     if (btn) btn.classList.remove('syncing');

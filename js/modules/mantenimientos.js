@@ -860,8 +860,10 @@ async function _ejecutarGuardar(firmaBase64 = null) {
 
   setState('mantenimientos', lista);
   saveKey('mantenimientos');
-  cerrarModal('modal-mantto');
+  cerrarModal('modal-mantto');           // ← cierra modal mantenimiento
+  document.body.style.overflow = '';     // ← libera el scroll
   renderLista();
+
 }
 
 window._guardarMantto = guardar;
