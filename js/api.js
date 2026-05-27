@@ -1,4 +1,4 @@
-import { CONFIG } from './config.js';
+const CONFIG = window.APP_CONFIG;
 
 // GET genérico
 export async function apiGet(sheet, extraParams = '') {
