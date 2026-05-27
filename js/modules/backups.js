@@ -5,9 +5,7 @@ import { saveKey }                        from '../storage.js';
 import { apiPost }                        from '../api.js';
 import { showToast }                      from '../ui/toast.js';
 import { abrirModal, cerrarModal }        from '../ui/modal.js';
-import { uid, formatDate, parseFecha, calcSemaforo, calcFechaProxima } from '../utils.js';
 import { buildSearchSelect, getSSValue, setSSValue, llenarSSEquipos, llenarSSPersonas } from '../ui/searchselect.js';
-
 let currentFilter = 'todos';
 let fDesde = '', fHasta = '';
 let bkFotos = [];
