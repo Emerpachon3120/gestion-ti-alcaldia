@@ -6,7 +6,6 @@ import { apiPost }                        from '../api.js';
 import { showToast }                      from '../ui/toast.js';
 import { abrirModal, cerrarModal }        from '../ui/modal.js';
 import { verActaMantenimiento }           from '../ui/documento.js';
-import { uid, formatDate, parseFecha, calcSemaforo, calcFechaProxima } from '../utils.js';
 import { buildSearchSelect, getSSValue, setSSValue, llenarSSEquipos, llenarSSPersonas } from '../ui/searchselect.js';
 import { navigate } from '../router.js';
 

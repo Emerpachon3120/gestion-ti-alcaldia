@@ -333,7 +333,6 @@ function abrirNuevo() {
   llenarSSPersonas('bk-persona-ss', ()=>{}, _crearFuncionarioRapido);
   abrirModal('modal-backup');
 }
-}
 
 function editar(id) {
   const b = getData('backups').find(x => x.id === id);
@@ -628,6 +627,30 @@ function _modalFuncionarioRapido() {
             Cancelar
           </button>
           <button class="btn btn-primary" style="flex:2;margin-top:0;"
-            id="func-r-save-btn">👤 Guardar funcion
+            id="func-r-save-btn">👤 Guardar funcionario</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('modals-container').appendChild(div.firstElementChild);
+
+  document.getElementById('func-r-save-btn').addEventListener('click', () => {
+    const nombre = document.getElementById('func-r-nombre').value.trim();
+    const cargo  = document.getElementById('func-r-cargo').value;
+    const correo = document.getElementById('func-r-correo').value;
+    if (!nombre) { showToast('⚠️ El nombre es obligatorio','#d97706'); return; }
+
+    const DB  = getDBStatic();
+    const id  = 'P' + Date.now();
+    DB.personas.push({ id, nombre, cargo, correo, imagen:'' });
+    apiPost('Personas','insert',{
+      ID:id, Nombre:nombre, Cargo:cargo, Correo:correo,
+    }).catch(console.warn);
+
+    llenarSSPersonas('bk-persona-ss', ()=>{}, _crearFuncionarioRapido);
+    setSSValue('bk-persona-ss', id, nombre);
+    document.getElementById('modal-func-rapido').classList.remove('open');
+    showToast(`👤 ${nombre} registrado`);
+  });
+}
 
 window._guardarBackup = _guardar;
