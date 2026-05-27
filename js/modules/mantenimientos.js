@@ -667,7 +667,37 @@ function abrirNuevo() {
   mtFotos = [];
   _renderFotosPreview([], 'mt-fotos-preview');
 
-  llenarSSEquipos('mt-equipo-ss', ()=>{}, _crearEquipoRapido);
+  llenarSSEquipos('mt-equipo-ss', (serial) => {
+  const DB = getDBStatic();
+  const eq = getData('equipos').find(e => e.serial === serial);
+  if (!eq) return;
+
+  const p   = DB.personas.find(x => x.id === eq.usuarioId);
+  if (p) setSSValue('mt-resp-equipo-ss', p.id, p.nombre);
+
+  const of  = DB.oficinas.find(x => x.id === eq.oficina);
+  const dep = of ? DB.dependencias.find(x => x.id === of.depId) : null;
+
+  const mantsEq = getData('mantenimientos')
+    .filter(m => m.serial === serial)
+    .sort((a,b) => (parseFecha(b.fecha)||0) - (parseFecha(a.fecha)||0));
+
+  let infoBox = document.getElementById('mt-equipo-info');
+  if (!infoBox) {
+    infoBox = document.createElement('div');
+    infoBox.id = 'mt-equipo-info';
+    document.getElementById('mt-equipo-ss').insertAdjacentElement('afterend', infoBox);
+  }
+  infoBox.innerHTML = `
+    <div style="background:var(--bg2);border:1px solid var(--border);
+      border-radius:var(--radius-sm);padding:8px 12px;
+      font-size:11px;color:var(--text2);margin-top:6px;">
+      🏢 <b>${dep?.nombre || '—'}</b> · ${of?.nombre || '—'}<br>
+      💻 ${eq.so || '—'} · RAM: ${eq.ram || '—'} · ${eq.disco || ''} ${eq.cap || ''}
+      ${eq.marca ? `<br>🏷️ ${eq.marca} ${eq.modelo || ''}` : ''}
+      ${mantsEq.length ? `<br>🔧 Último mant: ${formatDate(mantsEq[0].fecha)} — ${mantsEq[0].tipo} ${mantsEq[0].firmado ? '✅' : '⏳'}` : ''}
+    </div>`;
+}, _crearEquipoRapido);
   llenarSSPersonas('mt-resp-equipo-ss', ()=>{}, _crearFuncionarioRapido);
   llenarSSPersonas('mt-nuevo-resp-ss', ()=>{}, _crearFuncionarioRapido);
 

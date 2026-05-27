@@ -25,6 +25,7 @@ export const MENU_ITEMS = [
   { id: 'estadisticas',    label: 'Estadísticas',    icon: '📊', page: 'estadisticas' },
   { id: 'reportes',        label: 'Reportes',        icon: '📋', page: 'reportes' },
   { id: 'calendario',      label: 'Calendario',      icon: '📅', page: 'calendario' },
+  { id: 'administracion', label: 'Administración', icon: '⚙️', page: 'administracion' },
 ];
 
 export const DEPENDENCIAS_STATIC = [

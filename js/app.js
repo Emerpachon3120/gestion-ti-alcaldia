@@ -5,6 +5,8 @@ import { apiGet, cargarDatosDesdeSheets } from './api.js';
 import { navigate, registerRoute }        from './router.js';
 import { showToast }        from './ui/toast.js';
 import { renderMenu, renderHeader } from './ui/menu.js';
+import * as Administracion from './modules/administracion.js';
+registerRoute('administracion', Administracion);
 
 // Módulos de páginas
 import * as Dashboard      from './modules/dashboard.js';

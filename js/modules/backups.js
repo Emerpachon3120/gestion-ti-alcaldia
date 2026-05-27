@@ -320,13 +320,31 @@ function abrirNuevo() {
   bkFotos = [];
   _renderFotosPreview([], 'bk-fotos-preview');
   llenarSSEquipos('bk-equipo-ss', (serial) => {
-    const DB = getDBStatic();
-    const eq = getData('equipos').find(e => e.serial === serial);
-    if (eq) {
-      const p = DB.personas.find(x => x.id === eq.usuarioId);
-      if (p) setSSValue('bk-persona-ss', p.id, p.nombre);
-    }
-  }, _crearEquipoRapido);
+  const DB = getDBStatic();
+  const eq = getData('equipos').find(e => e.serial === serial);
+  if (!eq) return;
+
+  const p   = DB.personas.find(x => x.id === eq.usuarioId);
+  if (p) setSSValue('bk-persona-ss', p.id, p.nombre);
+
+  const of  = DB.oficinas.find(x => x.id === eq.oficina);
+  const dep = of ? DB.dependencias.find(x => x.id === of.depId) : null;
+
+  let infoBox = document.getElementById('bk-equipo-info');
+  if (!infoBox) {
+    infoBox = document.createElement('div');
+    infoBox.id = 'bk-equipo-info';
+    document.getElementById('bk-equipo-ss').insertAdjacentElement('afterend', infoBox);
+  }
+  infoBox.innerHTML = `
+    <div style="background:var(--bg2);border:1px solid var(--border);
+      border-radius:var(--radius-sm);padding:8px 12px;
+      font-size:11px;color:var(--text2);margin-top:6px;">
+      🏢 <b>${dep?.nombre || '—'}</b> · ${of?.nombre || '—'}<br>
+      💻 ${eq.so || '—'} · RAM: ${eq.ram || '—'} · ${eq.disco || ''} ${eq.cap || ''}
+      ${eq.marca ? `<br>🏷️ ${eq.marca} ${eq.modelo || ''}` : ''}
+    </div>`;
+}, _crearEquipoRapido);
 
   llenarSSPersonas('bk-persona-ss', ()=>{}, _crearFuncionarioRapido);
   abrirModal('modal-backup');
@@ -583,6 +601,7 @@ function _modalEquipoRapido() {
     llenarSSEquipos('bk-equipo-ss', ()=>{}, _crearEquipoRapido);
     setSSValue('bk-equipo-ss', serial, `${serial} — ${marca} ${modelo}`);
     document.getElementById('modal-equipo-rapido').classList.remove('open');
+    document.body.style.overflow = ''; // ← AGREGA ESTA
     showToast(`💻 Equipo ${serial} registrado`);
   });
 
