@@ -237,22 +237,32 @@ function _modalHTML() {
       <!-- Fotos -->
       <div class="form-group">
         <label class="form-label">📸 Evidencia / Soporte</label>
-        <div class="foto-upload-area" onclick="document.getElementById('bk-foto-input').click()">
-          <label class="foto-upload-label">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-              <circle cx="12" cy="13" r="4"/>
-            </svg>
-            Tomar foto o elegir de galería
-          </label>
-          <input type="file" id="bk-foto-input" accept="image/*" multiple>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <button type="button" style="
+            padding:12px 8px;border:2px dashed var(--accent);
+            border-radius:var(--radius-sm);background:var(--accent-bg);
+            color:var(--accent);font-family:var(--font-main);
+            font-size:13px;font-weight:600;cursor:pointer;"
+            onclick="document.getElementById('bk-foto-camara').click()">
+            📷 Tomar foto
+          </button>
+          <button type="button" style="
+            padding:12px 8px;border:2px dashed var(--border);
+            border-radius:var(--radius-sm);background:var(--bg2);
+            color:var(--text2);font-family:var(--font-main);
+            font-size:13px;font-weight:600;cursor:pointer;"
+            onclick="document.getElementById('bk-foto-galeria').click()">
+            🖼️ Desde galería
+          </button>
         </div>
+        <input type="file" id="bk-foto-camara" accept="image/*" capture="environment">
+        <input type="file" id="bk-foto-galeria" accept="image/*" multiple>
         <div class="foto-grid" id="bk-fotos-preview"></div>
       </div>
 
       <div style="display:flex;gap:8px;margin-top:8px;">
         <button class="btn btn-secondary" style="flex:1;margin-top:0;" id="bk-cancel-btn">Cancelar</button>
-        <button class="btn btn-primary"   style="flex:2;margin-top:0;" id="bk-save-btn">💾 Registrar</button>
+        <button class="btn btn-primary" style="flex:2;margin-top:0;"  onclick="window._guardarBackup()">💾 Registrar</button>
       </div>
     </div>
   </div>`;
@@ -281,8 +291,13 @@ function _bindEvents() {
   document.getElementById('bk-fecha')?.addEventListener('change', calcProx);
   document.getElementById('bk-frecuencia')?.addEventListener('change', calcProx);
 
-  document.getElementById('bk-foto-input')?.addEventListener('change', e => {
+  document.getElementById('bk-foto-camara')?.addEventListener('change', e => {
     _procesarFotos(e.target.files, bkFotos, 'bk-fotos-preview');
+    e.target.value = '';
+  });
+  document.getElementById('bk-foto-galeria')?.addEventListener('change', e => {
+    _procesarFotos(e.target.files, bkFotos, 'bk-fotos-preview');
+    e.target.value = '';
   });
 }
 
@@ -356,12 +371,12 @@ async function _guardar() {
   const fmt = r => r
     ? new Date(r+'T00:00:00').toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric'})
     : '';
+
   const fecha        = fmt(fechaRaw) || new Date().toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric'});
   const fechaProxima = fmt(proxRaw);
 
   const DB = getDBStatic();
   const p  = DB.personas.find(x => x.id === personaId);
-  const lista = [...getData('backups')];
 
   const campos = {
     serial, personaId, tipo, destino, estadoBk, obs, ubicacion,
@@ -369,15 +384,46 @@ async function _guardar() {
     responsableEquipo: p?.nombre || '',
   };
 
+  const lista = [...getData('backups')];
+
   if (editId) {
     const idx = lista.findIndex(x => x.id === editId);
     if (idx >= 0) lista[idx] = { ...lista[idx], ...campos, fecha };
-    apiPost('Backups','update',{ Tipo:tipo, Ubicacion:destino, Observaciones:obs, Estado:estadoBk, Fecha_Ultima:fecha, Fecha_Proxima:fechaProxima },'ID',editId).catch(console.warn);
+    apiPost('Backups', 'update', {
+      EquipoID:       serial,
+      Tipo:           tipo,
+      Frecuencia:     frecuencia,
+      Fecha_Ultima:   fecha,
+      Fecha_Proxima:  fechaProxima,
+      Ubicacion:      destino,
+      Estado:         estadoBk,
+      Observaciones:  obs,
+      Responsable:    respTI,
+      Persona_ID:     personaId,
+      Resp_TI:        respTI,
+      Fotos_Base64:   bkFotos.join('||'),
+    }, 'ID', editId).catch(console.warn);
     showToast('✅ Backup actualizado');
   } else {
     const id = uid();
-    lista.push({ id, fecha, firmado:false, firma:null, firmaFecha:null, ...campos });
-    apiPost('Backups','insert',{ ID:id, EquipoID:serial, Tipo:tipo, Frecuencia:frecuencia, Fecha_Ultima:fecha, Fecha_Proxima:fechaProxima, Ubicacion:destino, Estado:estadoBk, Observaciones:obs, Firmado:'No', Imagen_Base64:'' }).catch(console.warn);
+    lista.push({ id, fecha, firmado: false, firma: null, firmaFecha: null, ...campos });
+    apiPost('Backups', 'insert', {
+      ID:             id,
+      EquipoID:       serial,
+      Tipo:           tipo,
+      Frecuencia:     frecuencia,
+      Fecha_Ultima:   fecha,
+      Fecha_Proxima:  fechaProxima,
+      Firmado:        'No',
+      Responsable:    respTI,
+      Observaciones:  obs,
+      Imagen_Base64:  '',
+      Ubicacion:      destino,
+      Estado:         estadoBk,
+      Persona_ID:     personaId,
+      Resp_TI:        respTI,
+      Fotos_Base64:   bkFotos.join('||'),
+    }).catch(console.warn);
     showToast('💾 Backup registrado');
   }
 
@@ -433,3 +479,5 @@ function _renderFotosPreview(arr, previewId) {
     btn.addEventListener('click', () => { arr.splice(+btn.dataset.idx,1); _renderFotosPreview(arr,previewId); });
   });
 }
+
+window._guardarBackup = _guardar;
