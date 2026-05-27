@@ -1,7 +1,6 @@
 import { CONFIG }    from '../config.js';
 import { getData, getDBStatic } from '../state.js';
 import { formatDate, parseFecha } from '../utils.js';
-import { verActaBackup } from '../ui/documento.js';
 
 // ── Visor de documentos ───────────────────────────────────────
 export function abrirDocViewer(htmlContent, titulo) {
