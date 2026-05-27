@@ -322,16 +322,17 @@ function abrirNuevo() {
   bkFotos = [];
   _renderFotosPreview([], 'bk-fotos-preview');
   llenarSSEquipos('bk-equipo-ss', (serial) => {
-    // Auto-llenar responsable al seleccionar equipo
     const DB = getDBStatic();
     const eq = getData('equipos').find(e => e.serial === serial);
     if (eq) {
       const p = DB.personas.find(x => x.id === eq.usuarioId);
       if (p) setSSValue('bk-persona-ss', p.id, p.nombre);
     }
-  });
-  llenarSSPersonas('bk-persona-ss');
+  }, _crearEquipoRapido);
+
+  llenarSSPersonas('bk-persona-ss', ()=>{}, _crearFuncionarioRapido);
   abrirModal('modal-backup');
+}
 }
 
 function editar(id) {
@@ -493,5 +494,140 @@ function _renderFotosPreview(arr, previewId) {
     btn.addEventListener('click', () => { arr.splice(+btn.dataset.idx,1); _renderFotosPreview(arr,previewId); });
   });
 }
+
+function _crearEquipoRapido() {
+  _modalEquipoRapido();
+  document.getElementById('modal-equipo-rapido').classList.add('open');
+}
+
+function _crearFuncionarioRapido() {
+  _modalFuncionarioRapido();
+  document.getElementById('modal-func-rapido').classList.add('open');
+}
+
+function _modalEquipoRapido() {
+  if (document.getElementById('modal-equipo-rapido')) return;
+  const div = document.createElement('div');
+  div.innerHTML = `
+    <div class="modal-overlay" id="modal-equipo-rapido">
+      <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-title">💻 Registrar equipo rápido</div>
+        <div class="form-group">
+          <label class="form-label">Serial *</label>
+          <input type="text" class="form-input" id="eq-r-serial"
+            placeholder="Ej: YJ01RNPG" style="font-family:var(--font-mono)">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="form-group">
+            <label class="form-label">Marca</label>
+            <input type="text" class="form-input" id="eq-r-marca" placeholder="HP, Lenovo...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Modelo</label>
+            <input type="text" class="form-input" id="eq-r-modelo" placeholder="ProBook 450">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sistema Operativo</label>
+          <input type="text" class="form-input" id="eq-r-so" placeholder="Windows 11 Pro">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="form-group">
+            <label class="form-label">RAM</label>
+            <input type="text" class="form-input" id="eq-r-ram" placeholder="8 GB">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Disco</label>
+            <select class="form-select" id="eq-r-disco">
+              <option>SSD</option><option>HDD</option><option>NVMe</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Oficina *</label>
+          <div id="eq-r-oficina-ss"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button class="btn btn-secondary" style="flex:1;margin-top:0;"
+            onclick="document.getElementById('modal-equipo-rapido').classList.remove('open')">
+            Cancelar
+          </button>
+          <button class="btn btn-primary" style="flex:2;margin-top:0;"
+            id="eq-r-save-btn">💻 Guardar equipo</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('modals-container').appendChild(div.firstElementChild);
+
+  document.getElementById('eq-r-save-btn').addEventListener('click', () => {
+    const serial  = document.getElementById('eq-r-serial').value.trim().toUpperCase();
+    const marca   = document.getElementById('eq-r-marca').value;
+    const modelo  = document.getElementById('eq-r-modelo').value;
+    const so      = document.getElementById('eq-r-so').value;
+    const ram     = document.getElementById('eq-r-ram').value;
+    const disco   = document.getElementById('eq-r-disco').value;
+    const oficina = getSSValue('eq-r-oficina-ss');
+    if (!serial || !oficina) { showToast('⚠️ Serial y oficina son obligatorios','#d97706'); return; }
+
+    const lista = [...getData('equipos')];
+    if (lista.find(e => e.serial === serial)) {
+      showToast('⚠️ Ya existe ese serial','#d97706'); return;
+    }
+    lista.push({ serial, marca, modelo, so, ram, disco, oficina,
+                 usuarioId:'', estado:'Operativo', fotos:[] });
+    setState('equipos', lista);
+    saveKey('equipos');
+    apiPost('Equipos','insert',{
+      Serial:serial, OficinaID:oficina, SO:so, RAM:ram,
+      Disco:disco, Marca:marca, Modelo:modelo, Estado:'Operativo',
+    }).catch(console.warn);
+
+    llenarSSEquipos('bk-equipo-ss', ()=>{}, _crearEquipoRapido);
+    setSSValue('bk-equipo-ss', serial, `${serial} — ${marca} ${modelo}`);
+    document.getElementById('modal-equipo-rapido').classList.remove('open');
+    showToast(`💻 Equipo ${serial} registrado`);
+  });
+
+  import('../ui/searchselect.js').then(({ buildSearchSelect }) => {
+    const DB = getDBStatic();
+    const items = DB.oficinas.map(o => {
+      const dep = DB.dependencias.find(d => d.id === o.depId);
+      return { value: o.id, label: `${o.nombre} — ${dep?.nombre||''}` };
+    });
+    buildSearchSelect('eq-r-oficina-ss', items, 'Buscar oficina...',()=>{});
+  });
+}
+
+function _modalFuncionarioRapido() {
+  if (document.getElementById('modal-func-rapido')) return;
+  const div = document.createElement('div');
+  div.innerHTML = `
+    <div class="modal-overlay" id="modal-func-rapido">
+      <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-title">👤 Registrar funcionario</div>
+        <div class="form-group">
+          <label class="form-label">Nombre completo *</label>
+          <input type="text" class="form-input" id="func-r-nombre"
+            placeholder="Nombre del funcionario">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cargo</label>
+          <input type="text" class="form-input" id="func-r-cargo"
+            placeholder="Ej: Técnico Administrativo">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Correo institucional</label>
+          <input type="email" class="form-input" id="func-r-correo"
+            placeholder="correo@nemocon.gov.co">
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button class="btn btn-secondary" style="flex:1;margin-top:0;"
+            onclick="document.getElementById('modal-func-rapido').classList.remove('open')">
+            Cancelar
+          </button>
+          <button class="btn btn-primary" style="flex:2;margin-top:0;"
+            id="func-r-save-btn">👤 Guardar funcion
 
 window._guardarBackup = _guardar;
