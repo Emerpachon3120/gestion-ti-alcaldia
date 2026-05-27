@@ -52,6 +52,167 @@ export function render() {
   `;
 }
 
+// Al inicio del archivo agrega esta función
+function _modalEquipoRapido() {
+  if (document.getElementById('modal-equipo-rapido')) return;
+  const div = document.createElement('div');
+  div.innerHTML = `
+    <div class="modal-overlay" id="modal-equipo-rapido">
+      <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-title">💻 Registrar equipo rápido</div>
+        <div class="form-group">
+          <label class="form-label">Serial *</label>
+          <input type="text" class="form-input" id="eq-r-serial"
+            placeholder="Ej: YJ01RNPG" style="font-family:var(--font-mono)">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="form-group">
+            <label class="form-label">Marca</label>
+            <input type="text" class="form-input" id="eq-r-marca" placeholder="HP, Lenovo...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Modelo</label>
+            <input type="text" class="form-input" id="eq-r-modelo" placeholder="ProBook 450">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sistema Operativo</label>
+          <input type="text" class="form-input" id="eq-r-so" placeholder="Windows 11 Pro">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="form-group">
+            <label class="form-label">RAM</label>
+            <input type="text" class="form-input" id="eq-r-ram" placeholder="8 GB">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Disco</label>
+            <select class="form-select" id="eq-r-disco">
+              <option>SSD</option><option>HDD</option><option>NVMe</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Oficina *</label>
+          <div id="eq-r-oficina-ss"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button class="btn btn-secondary" style="flex:1;margin-top:0;"
+            onclick="document.getElementById('modal-equipo-rapido').classList.remove('open')">
+            Cancelar
+          </button>
+          <button class="btn btn-primary" style="flex:2;margin-top:0;"
+            id="eq-r-save-btn">💻 Guardar equipo</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('modals-container').appendChild(div.firstElementChild);
+
+  document.getElementById('eq-r-save-btn').addEventListener('click', () => {
+    const serial  = document.getElementById('eq-r-serial').value.trim().toUpperCase();
+    const marca   = document.getElementById('eq-r-marca').value;
+    const modelo  = document.getElementById('eq-r-modelo').value;
+    const so      = document.getElementById('eq-r-so').value;
+    const ram     = document.getElementById('eq-r-ram').value;
+    const disco   = document.getElementById('eq-r-disco').value;
+    const oficina = getSSValue('eq-r-oficina-ss');
+    if (!serial || !oficina) { showToast('⚠️ Serial y oficina son obligatorios','#d97706'); return; }
+
+    const lista = [...getData('equipos')];
+    if (lista.find(e => e.serial === serial)) {
+      showToast('⚠️ Ya existe ese serial','#d97706'); return;
+    }
+    lista.push({ serial, marca, modelo, so, ram, disco, oficina,
+                 usuarioId:'', estado:'Operativo', fotos:[] });
+    setState('equipos', lista);
+    saveKey('equipos');
+    apiPost('Equipos','insert',{
+      Serial:serial, OficinaID:oficina, SO:so, RAM:ram,
+      Disco:disco, Marca:marca, Modelo:modelo, Estado:'Operativo',
+    }).catch(console.warn);
+
+    // Seleccionar el nuevo equipo en el formulario
+    llenarSSEquipos('mt-equipo-ss', null, _crearEquipoRapido);
+    setSSValue('mt-equipo-ss', serial, `${serial} — ${marca} ${modelo}`);
+    document.getElementById('modal-equipo-rapido').classList.remove('open');
+    showToast(`💻 Equipo ${serial} registrado`);
+  });
+}
+
+function _crearEquipoRapido() {
+  _modalEquipoRapido();
+  const DB = getDBStatic();
+  import('../ui/searchselect.js').then(({ buildSearchSelect }) => {
+    const items = DB.oficinas.map(o => {
+      const dep = DB.dependencias.find(d => d.id === o.depId);
+      return { value: o.id, label: `${o.nombre} — ${dep?.nombre||''}` };
+    });
+    buildSearchSelect('eq-r-oficina-ss', items, 'Buscar oficina...',()=>{});
+  });
+  document.getElementById('modal-equipo-rapido').classList.add('open');
+}
+
+function _modalFuncionarioRapido() {
+  if (document.getElementById('modal-func-rapido')) return;
+  const div = document.createElement('div');
+  div.innerHTML = `
+    <div class="modal-overlay" id="modal-func-rapido">
+      <div class="modal">
+        <div class="modal-handle"></div>
+        <div class="modal-title">👤 Registrar funcionario</div>
+        <div class="form-group">
+          <label class="form-label">Nombre completo *</label>
+          <input type="text" class="form-input" id="func-r-nombre"
+            placeholder="Nombre del funcionario">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cargo</label>
+          <input type="text" class="form-input" id="func-r-cargo"
+            placeholder="Ej: Técnico Administrativo">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Correo institucional</label>
+          <input type="email" class="form-input" id="func-r-correo"
+            placeholder="correo@nemocon.gov.co">
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button class="btn btn-secondary" style="flex:1;margin-top:0;"
+            onclick="document.getElementById('modal-func-rapido').classList.remove('open')">
+            Cancelar
+          </button>
+          <button class="btn btn-primary" style="flex:2;margin-top:0;"
+            id="func-r-save-btn">👤 Guardar funcionario</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('modals-container').appendChild(div.firstElementChild);
+
+  document.getElementById('func-r-save-btn').addEventListener('click', () => {
+    const nombre = document.getElementById('func-r-nombre').value.trim();
+    const cargo  = document.getElementById('func-r-cargo').value;
+    const correo = document.getElementById('func-r-correo').value;
+    if (!nombre) { showToast('⚠️ El nombre es obligatorio','#d97706'); return; }
+
+    const DB  = getDBStatic();
+    const id  = 'P' + Date.now();
+    DB.personas.push({ id, nombre, cargo, correo, imagen:'' });
+    apiPost('Personas','insert',{
+      ID:id, Nombre:nombre, Cargo:cargo, Correo:correo,
+    }).catch(console.warn);
+
+    // Seleccionar el nuevo funcionario
+    llenarSSPersonas('mt-resp-equipo-ss', null, _crearFuncionarioRapido);
+    setSSValue('mt-resp-equipo-ss', id, nombre);
+    document.getElementById('modal-func-rapido').classList.remove('open');
+    showToast(`👤 ${nombre} registrado`);
+  });
+}
+
+function _crearFuncionarioRapido() {
+  _modalFuncionarioRapido();
+  document.getElementById('modal-func-rapido').classList.add('open');
+}
+
 export function onEnter() {
   _bindEvents();
   renderLista();
@@ -366,17 +527,26 @@ function _modalHTML() {
       <!-- Fotos -->
       <div class="form-group">
         <label class="form-label">📸 Evidencia fotográfica</label>
-        <div class="foto-upload-area" onclick="document.getElementById('mt-foto-input').click()">
-          <label class="foto-upload-label">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-              <circle cx="12" cy="13" r="4"/>
-            </svg>
-            Tomar foto o elegir de galería
-          </label>
-          <input type="file" id="mt-foto-input" accept="image/*" multiple
-            capture="environment">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <button type="button" style="
+            padding:12px 8px;border:2px dashed var(--accent);
+            border-radius:var(--radius-sm);background:var(--accent-bg);
+            color:var(--accent);font-family:var(--font-main);
+            font-size:13px;font-weight:600;cursor:pointer;"
+            onclick="document.getElementById('mt-foto-camara').click()">
+            📷 Tomar foto
+          </button>
+          <button type="button" style="
+            padding:12px 8px;border:2px dashed var(--border);
+            border-radius:var(--radius-sm);background:var(--bg2);
+            color:var(--text2);font-family:var(--font-main);
+            font-size:13px;font-weight:600;cursor:pointer;"
+            onclick="document.getElementById('mt-foto-galeria').click()">
+            🖼️ Desde galería
+          </button>
         </div>
+        <input type="file" id="mt-foto-camara" accept="image/*" capture="environment">
+        <input type="file" id="mt-foto-galeria" accept="image/*" multiple>
         <div class="foto-grid" id="mt-fotos-preview"></div>
       </div>
 
@@ -443,8 +613,13 @@ function _bindEvents() {
   });
 
   // Fotos
-  document.getElementById('mt-foto-input')?.addEventListener('change', e => {
+  document.getElementById('mt-foto-camara')?.addEventListener('change', e => {
     _procesarFotos(e.target.files, mtFotos, 'mt-fotos-preview');
+    e.target.value = '';
+  });
+  document.getElementById('mt-foto-galeria')?.addEventListener('change', e => {
+    _procesarFotos(e.target.files, mtFotos, 'mt-fotos-preview');
+    e.target.value = '';
   });
 }
 
@@ -476,11 +651,11 @@ function abrirNuevo() {
   mtFotos = [];
   _renderFotosPreview([], 'mt-fotos-preview');
 
-  llenarSSEquipos('mt-equipo-ss');
-  llenarSSPersonas('mt-resp-equipo-ss');
-  llenarSSPersonas('mt-nuevo-resp-ss');
+   llenarSSEquipos('mt-equipo-ss', ()=>{}, _crearEquipoRapido);
+    llenarSSPersonas('mt-resp-equipo-ss', ()=>{}, _crearFuncionarioRapido);
+    llenarSSPersonas('mt-nuevo-resp-ss', ()=>{}, _crearFuncionarioRapido);
 
-  abrirModal('modal-mantto');
+    abrirModal('modal-mantto');
 }
 
 function editar(id) {
@@ -586,18 +761,58 @@ async function guardar() {
     const idx = lista.findIndex(x => x.id === editId);
     if (idx >= 0) lista[idx] = { ...lista[idx], ...campos, fecha };
     apiPost('Mantenimientos', 'update', {
-      Tipo: tipo, Frecuencia: frecuencia, Fecha_Ultima: fecha,
-      Fecha_Proxima: fechaProxima, Observaciones: obs, Responsable: responsable,
+      Tipo:          tipo,
+      Frecuencia:    frecuencia,
+      Fecha_Ultima:  fecha,
+      Fecha_Proxima: fechaProxima,
+      Observaciones: obs,
+      Responsable:   responsable,
+      Periodo:          periodo,
+      Resp_Equipo_ID:   respEquipoId,
+      Cambio_Resp:      cambioResp,
+      Nuevo_Resp_ID:    nuevoRespId,
+      User_Win:         userWin,
+      Pass_Win:         passWin,
+      User_Admin:       userAdmin,
+      Pass_Admin:       passAdmin,
+      Cambio_Cred:      cambioCred,
+      Traslado:         traslado,
+      Dep_Anterior:     depAnterior,
+      Dep_Nueva:        depNueva,
+      Fecha_Traslado:   fechaTraslado,
+      Estado_Equipo:    estadoEquipo,
+      Fotos_Base64:     mtFotos.join('||'),
     }, 'ID', editId).catch(console.warn);
     showToast('✅ Mantenimiento actualizado');
   } else {
     const id = uid();
     lista.push({ id, fecha, firmado: false, firma: null, firmaFecha: null, ...campos });
     apiPost('Mantenimientos', 'insert', {
-      ID: id, EquipoID: serial, Tipo: tipo, Frecuencia: frecuencia,
-      Fecha_Ultima: fecha, Fecha_Proxima: fechaProxima,
-      Firmado: 'No', Responsable: responsable, Observaciones: obs,
+      ID:            id,
+      EquipoID:      serial,
+      Tipo:          tipo,
+      Frecuencia:    frecuencia,
+      Fecha_Ultima:  fecha,
+      Fecha_Proxima: fechaProxima,
+      Firmado:       'No',
+      Responsable:   responsable,
+      Observaciones: obs,
       Imagen_Base64: '',
+      Periodo:          periodo,
+      Resp_Equipo_ID:   respEquipoId,
+      Cambio_Resp:      cambioResp,
+      Nuevo_Resp_ID:    nuevoRespId,
+      User_Win:         userWin,
+      Pass_Win:         passWin,
+      User_Admin:       userAdmin,
+      Pass_Admin:       passAdmin,
+      Cambio_Cred:      cambioCred,
+      Traslado:         traslado,
+      Dep_Anterior:     depAnterior,
+      Dep_Nueva:        depNueva,
+      Fecha_Traslado:   fechaTraslado,
+      Estado_Equipo:    estadoEquipo,
+      Fotos_Base64:     mtFotos.join('||'),
     }).catch(console.warn);
     showToast('🔧 Mantenimiento registrado');
   }
