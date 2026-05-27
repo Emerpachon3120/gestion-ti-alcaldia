@@ -1,16 +1,19 @@
-import { MENU_ITEMS, CONFIG } from '../config.js';
+import { MENU_ITEMS } from '../config.js';
 import { navigate } from '../router.js';
-import { getState } from '../state.js';
+
+const CONFIG = window.APP_CONFIG;
 
 export function renderMenu() {
   const nav = document.getElementById('app-menu');
 
   nav.innerHTML = `
     <div class="menu-header">
-      <img src="${CONFIG.IMG_ESCUDO}" 
-           class="menu-logo" 
-           alt="Escudo Nemocón"
-           style="width:80px;height:80px;object-fit:contain;display:block;margin:0 auto 8px;">
+      <div style="text-align:center;padding:8px 0;">
+        <div style="font-size:32px;">🏛️</div>
+        <div style="font-weight:700;font-size:13px;color:var(--text1);margin-top:4px;">
+          ${CONFIG.APP_NAME}
+        </div>
+      </div>
       <div class="menu-entity">${CONFIG.ENTIDAD}</div>
     </div>
     <div class="menu-nav">
@@ -54,6 +57,7 @@ export function renderHeader() {
   document.getElementById('headerDate').textContent =
     new Date().toLocaleDateString('es-CO', { day: '2-digit', month: 'short' }).toUpperCase();
 }
+
 function toggleMenu() {
   document.getElementById('app-menu').classList.toggle('open');
   document.getElementById('menu-overlay').classList.toggle('open');
