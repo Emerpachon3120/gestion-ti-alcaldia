@@ -28,7 +28,6 @@ registerRoute('estadisticas',  Estadisticas);
 registerRoute('reportes',      Reportes);
 registerRoute('calendario',    Calendario);
 
-// ─── INICIALIZACIÓN ───────────────────────────────────────────
 async function init() {
   initStorage();
   loadFromStorage();
@@ -36,24 +35,24 @@ async function init() {
   renderHeader();
   renderMenu();
 
-  // Esperar que el DOM esté completamente listo
   await new Promise(resolve => setTimeout(resolve, 0));
 
-  // Página inicial
   const hashPage = location.hash.replace('#', '') || 'dashboard';
   await navigate(hashPage);
 
-  // Sincronizar en background (sin bloquear)
-  syncData().catch(err => console.warn('[Sync]', err));
+  // Esperar syncData antes de continuar
+  try {
+    await syncData();
+  } catch(e) {
+    console.warn('[Sync] falló, usando datos locales');
+  }
 
-  // Service Worker
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./service-worker.js').catch(() => {});
   }
 
-  // Al final de init()
-window.cerrarDocViewer = cerrarDocViewer;
-window.docViewerPrint  = docViewerPrint;
+  window.cerrarDocViewer = cerrarDocViewer;
+  window.docViewerPrint  = docViewerPrint;
 }
 
 // ─── SINCRONIZACIÓN ───────────────────────────────────────────

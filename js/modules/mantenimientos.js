@@ -623,18 +623,20 @@ function _bindEvents() {
   });
 }
 
-// ── CRUD ──────────────────────────────────────────────────────
 function abrirNuevo() {
-
   const DB = getDBStatic();
-  console.log('Personas disponibles:', DB.personas?.length);
+
+  if (!DB.personas?.length) {
+    showToast('⏳ Cargando datos...', '#d97706');
+    window.syncData?.().then(() => abrirNuevo());
+    return;
+  }
+
   document.getElementById('mt-title').textContent = '🔧 Nuevo Mantenimiento';
   document.getElementById('mt-edit-id').value     = '';
 
-  // Limpiar todos los campos
   const campos = ['mt-obs','mt-periodo','mt-user-win','mt-pass-win',
-                  'mt-user-admin','mt-pass-admin','mt-dep-anterior',
-                  'mt-dep-nueva'];
+                  'mt-user-admin','mt-pass-admin','mt-dep-anterior','mt-dep-nueva'];
   campos.forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
 
   document.getElementById('mt-tipo').value          = 'Mantenimiento Preventivo';
@@ -654,11 +656,11 @@ function abrirNuevo() {
   mtFotos = [];
   _renderFotosPreview([], 'mt-fotos-preview');
 
-   llenarSSEquipos('mt-equipo-ss', ()=>{}, _crearEquipoRapido);
-    llenarSSPersonas('mt-resp-equipo-ss', ()=>{}, _crearFuncionarioRapido);
-    llenarSSPersonas('mt-nuevo-resp-ss', ()=>{}, _crearFuncionarioRapido);
+  llenarSSEquipos('mt-equipo-ss', ()=>{}, _crearEquipoRapido);
+  llenarSSPersonas('mt-resp-equipo-ss', ()=>{}, _crearFuncionarioRapido);
+  llenarSSPersonas('mt-nuevo-resp-ss', ()=>{}, _crearFuncionarioRapido);
 
-    abrirModal('modal-mantto');
+  abrirModal('modal-mantto');
 }
 
 function editar(id) {
