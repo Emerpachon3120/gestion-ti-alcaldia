@@ -717,10 +717,6 @@ function editar(id) {
 }
 
 async function guardar() {
-  console.log('guardar() ejecutado'); // ← temporal
-  const serial = getSSValue('mt-equipo-ss');
-  console.log('serial:', serial); // ← temporal
-
   const serial      = getSSValue('mt-equipo-ss');
   const tipo        = document.getElementById('mt-tipo').value;
   const frecuencia  = document.getElementById('mt-frecuencia').value;
@@ -750,9 +746,9 @@ async function guardar() {
     ? new Date(r + 'T00:00:00').toLocaleDateString('es-CO', {day:'2-digit',month:'2-digit',year:'numeric'})
     : '';
 
-  const fecha        = fmt(fechaRaw) || new Date().toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric'});
-  const fechaProxima = fmt(proxRaw);
-  const fechaTraslado= fmt(traslRaw);
+  const fecha         = fmt(fechaRaw) || new Date().toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const fechaProxima  = fmt(proxRaw);
+  const fechaTraslado = fmt(traslRaw);
 
   const campos = {
     serial, tipo, frecuencia, obs, periodo, responsable, estadoEquipo,
@@ -768,58 +764,58 @@ async function guardar() {
     const idx = lista.findIndex(x => x.id === editId);
     if (idx >= 0) lista[idx] = { ...lista[idx], ...campos, fecha };
     apiPost('Mantenimientos', 'update', {
-      Tipo:          tipo,
-      Frecuencia:    frecuencia,
-      Fecha_Ultima:  fecha,
-      Fecha_Proxima: fechaProxima,
-      Observaciones: obs,
-      Responsable:   responsable,
-      Periodo:          periodo,
-      Resp_Equipo_ID:   respEquipoId,
-      Cambio_Resp:      cambioResp,
-      Nuevo_Resp_ID:    nuevoRespId,
-      User_Win:         userWin,
-      Pass_Win:         passWin,
-      User_Admin:       userAdmin,
-      Pass_Admin:       passAdmin,
-      Cambio_Cred:      cambioCred,
-      Traslado:         traslado,
-      Dep_Anterior:     depAnterior,
-      Dep_Nueva:        depNueva,
-      Fecha_Traslado:   fechaTraslado,
-      Estado_Equipo:    estadoEquipo,
-      Fotos_Base64:     mtFotos.join('||'),
+      Tipo:           tipo,
+      Frecuencia:     frecuencia,
+      Fecha_Ultima:   fecha,
+      Fecha_Proxima:  fechaProxima,
+      Observaciones:  obs,
+      Responsable:    responsable,
+      Periodo:        periodo,
+      Resp_Equipo_ID: respEquipoId,
+      Cambio_Resp:    cambioResp,
+      Nuevo_Resp_ID:  nuevoRespId,
+      User_Win:       userWin,
+      Pass_Win:       passWin,
+      User_Admin:     userAdmin,
+      Pass_Admin:     passAdmin,
+      Cambio_Cred:    cambioCred,
+      Traslado:       traslado,
+      Dep_Anterior:   depAnterior,
+      Dep_Nueva:      depNueva,
+      Fecha_Traslado: fechaTraslado,
+      Estado_Equipo:  estadoEquipo,
+      Fotos_Base64:   mtFotos.join('||'),
     }, 'ID', editId).catch(console.warn);
     showToast('✅ Mantenimiento actualizado');
   } else {
     const id = uid();
     lista.push({ id, fecha, firmado: false, firma: null, firmaFecha: null, ...campos });
     apiPost('Mantenimientos', 'insert', {
-      ID:            id,
-      EquipoID:      serial,
-      Tipo:          tipo,
-      Frecuencia:    frecuencia,
-      Fecha_Ultima:  fecha,
-      Fecha_Proxima: fechaProxima,
-      Firmado:       'No',
-      Responsable:   responsable,
-      Observaciones: obs,
-      Imagen_Base64: '',
-      Periodo:          periodo,
-      Resp_Equipo_ID:   respEquipoId,
-      Cambio_Resp:      cambioResp,
-      Nuevo_Resp_ID:    nuevoRespId,
-      User_Win:         userWin,
-      Pass_Win:         passWin,
-      User_Admin:       userAdmin,
-      Pass_Admin:       passAdmin,
-      Cambio_Cred:      cambioCred,
-      Traslado:         traslado,
-      Dep_Anterior:     depAnterior,
-      Dep_Nueva:        depNueva,
-      Fecha_Traslado:   fechaTraslado,
-      Estado_Equipo:    estadoEquipo,
-      Fotos_Base64:     mtFotos.join('||'),
+      ID:             id,
+      EquipoID:       serial,
+      Tipo:           tipo,
+      Frecuencia:     frecuencia,
+      Fecha_Ultima:   fecha,
+      Fecha_Proxima:  fechaProxima,
+      Firmado:        'No',
+      Responsable:    responsable,
+      Observaciones:  obs,
+      Imagen_Base64:  '',
+      Periodo:        periodo,
+      Resp_Equipo_ID: respEquipoId,
+      Cambio_Resp:    cambioResp,
+      Nuevo_Resp_ID:  nuevoRespId,
+      User_Win:       userWin,
+      Pass_Win:       passWin,
+      User_Admin:     userAdmin,
+      Pass_Admin:     passAdmin,
+      Cambio_Cred:    cambioCred,
+      Traslado:       traslado,
+      Dep_Anterior:   depAnterior,
+      Dep_Nueva:      depNueva,
+      Fecha_Traslado: fechaTraslado,
+      Estado_Equipo:  estadoEquipo,
+      Fotos_Base64:   mtFotos.join('||'),
     }).catch(console.warn);
     showToast('🔧 Mantenimiento registrado');
   }
