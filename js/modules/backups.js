@@ -7,6 +7,7 @@ import { showToast }                      from '../ui/toast.js';
 import { abrirModal, cerrarModal }        from '../ui/modal.js';
 import { buildSearchSelect, getSSValue, setSSValue, llenarSSEquipos, llenarSSPersonas } from '../ui/searchselect.js';
 import { verActaBackup } from '../ui/documento.js';
+import { abrirNuevo as abrirNuevoEquipo } from './inventario.js';
 
 let currentFilter = 'todos';
 let fDesde = '', fHasta = '';
@@ -522,8 +523,26 @@ function _renderFotosPreview(arr, previewId) {
 }
 
 function _crearEquipoRapido() {
-  _modalEquipoRapido();
-  document.getElementById('modal-equipo-rapido').classList.add('open');
+  const modalBk = document.getElementById('modal-backup');
+  modalBk?.classList.remove('open');
+  
+  abrirNuevoEquipo();
+  
+  const observer = new MutationObserver(() => {
+    const modalEq = document.getElementById('modal-equipo');
+    if (modalEq && !modalEq.classList.contains('open')) {
+      observer.disconnect();
+      setTimeout(() => {
+        modalBk?.classList.add('open');
+        llenarSSEquipos('bk-equipo-ss', () => {}, _crearEquipoRapido);
+      }, 200);
+    }
+  });
+  
+  const modalEq = document.getElementById('modal-equipo');
+  if (modalEq) {
+    observer.observe(modalEq, { attributes: true, attributeFilter: ['class'] });
+  }
 }
 
 function _crearFuncionarioRapido() {

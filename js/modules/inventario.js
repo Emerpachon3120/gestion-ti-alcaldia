@@ -424,7 +424,7 @@ function _bindEvents() {
   document.getElementById('eq-save-btn')?.addEventListener('click', _guardar);
 }
 
-function abrirNuevo() {
+export function abrirNuevo() {
   document.getElementById('eq-title').textContent     = '💻 Nuevo Equipo';
   document.getElementById('eq-edit-serial').value     = '';
   document.getElementById('eq-serial').value          = '';

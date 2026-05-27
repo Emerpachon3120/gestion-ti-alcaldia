@@ -8,6 +8,7 @@ import { abrirModal, cerrarModal }        from '../ui/modal.js';
 import { verActaMantenimiento }           from '../ui/documento.js';
 import { buildSearchSelect, getSSValue, setSSValue, llenarSSEquipos, llenarSSPersonas } from '../ui/searchselect.js';
 import { navigate } from '../router.js';
+import { abrirNuevo as abrirNuevoEquipo } from './inventario.js';
 
 let currentFilter = 'todos';
 let currentSearch = '';
@@ -140,16 +141,33 @@ function _modalEquipoRapido() {
 }
 
 function _crearEquipoRapido() {
-  _modalEquipoRapido();
-  const DB = getDBStatic();
-  import('../ui/searchselect.js').then(({ buildSearchSelect }) => {
-    const items = DB.oficinas.map(o => {
-      const dep = DB.dependencias.find(d => d.id === o.depId);
-      return { value: o.id, label: `${o.nombre} — ${dep?.nombre||''}` };
-    });
-    buildSearchSelect('eq-r-oficina-ss', items, 'Buscar oficina...',()=>{});
+  // Guardar referencia al modal actual para volver
+  const modalMantto = document.getElementById('modal-mantto');
+  
+  // Cerrar modal de mantenimiento temporalmente
+  modalMantto?.classList.remove('open');
+  
+  // Abrir formulario completo de equipo
+  abrirNuevoEquipo();
+  
+  // Cuando se guarde el equipo, volver al mantenimiento
+  const observer = new MutationObserver(() => {
+    const modalEq = document.getElementById('modal-equipo');
+    if (modalEq && !modalEq.classList.contains('open')) {
+      observer.disconnect();
+      // Reabrir modal de mantenimiento
+      setTimeout(() => {
+        modalMantto?.classList.add('open');
+        // Recargar lista de equipos en el SearchSelect
+        llenarSSEquipos('mt-equipo-ss', () => {}, _crearEquipoRapido);
+      }, 200);
+    }
   });
-  document.getElementById('modal-equipo-rapido').classList.add('open');
+  
+  const modalEq = document.getElementById('modal-equipo');
+  if (modalEq) {
+    observer.observe(modalEq, { attributes: true, attributeFilter: ['class'] });
+  }
 }
 
 function _modalFuncionarioRapido() {

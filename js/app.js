@@ -5,8 +5,7 @@ import { apiGet, cargarDatosDesdeSheets } from './api.js';
 import { navigate, registerRoute }        from './router.js';
 import { showToast }        from './ui/toast.js';
 import { renderMenu, renderHeader } from './ui/menu.js';
-import * as Administracion from './modules/administracion.js';
-registerRoute('administracion', Administracion);
+import { cerrarDocViewer, docViewerPrint } from './ui/documento.js';
 
 // Módulos de páginas
 import * as Dashboard      from './modules/dashboard.js';
@@ -17,18 +16,18 @@ import * as Incidencias    from './modules/incidencias.js';
 import * as Estadisticas   from './modules/estadisticas.js';
 import * as Reportes       from './modules/reportes.js';
 import * as Calendario     from './modules/calendario.js';
-import { cerrarDocViewer, docViewerPrint } from './ui/documento.js';
-
+import * as Administracion from './modules/administracion.js';
 
 // ─── REGISTRO DE RUTAS ────────────────────────────────────────
-registerRoute('dashboard',     Dashboard);
-registerRoute('mantenimientos',Mantenimientos);
-registerRoute('backups',       Backups);
-registerRoute('inventario',    Inventario);
-registerRoute('incidencias',   Incidencias);
-registerRoute('estadisticas',  Estadisticas);
-registerRoute('reportes',      Reportes);
-registerRoute('calendario',    Calendario);
+registerRoute('dashboard',      Dashboard);
+registerRoute('mantenimientos', Mantenimientos);
+registerRoute('backups',        Backups);
+registerRoute('inventario',     Inventario);
+registerRoute('incidencias',    Incidencias);
+registerRoute('estadisticas',   Estadisticas);
+registerRoute('reportes',       Reportes);
+registerRoute('calendario',     Calendario);
+registerRoute('administracion', Administracion);
 
 async function init() {
   initStorage();
