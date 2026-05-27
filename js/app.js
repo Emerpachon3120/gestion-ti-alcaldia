@@ -63,12 +63,103 @@ async function init() {
 export async function syncData() {
   const btn = document.getElementById('sync-btn');
   if (btn) btn.classList.add('syncing');
+  setState('syncStatus', 'syncing');
 
   try {
     const { deps, ofs, pers, eqs, mantsSheet, bksSheet } =
       await cargarDatosDesdeSheets();
 
-    // ← AGREGA ESTA LÍNEA — cargar incidencias del Forms spreadsheet
+    // DB_STATIC
+    setState('DB_STATIC', {
+      dependencias: deps.map(r => ({
+        id: String(r.ID), nombre: r.Nombre || '', responsable: r.Responsable || ''
+      })),
+      oficinas: ofs.map(r => ({
+        id: String(r.ID), nombre: r.Nombre || '', depId: String(r.DepID)
+      })),
+      personas: pers.map(r => ({
+        id: String(r.ID), nombre: r.Nombre || '', imagen: r.Imagen_Base64 || '',
+        cargo: r.Cargo || '', correo: r.Correo || ''
+      })),
+    });
+
+    // Equipos
+    setState('equipos', eqs.map(r => ({
+      serial:     String(r.Serial),
+      oficina:    String(r.OficinaID),
+      usuarioId:  String(r.UsuarioID || ''),
+      so:         r.SO || '', office: r.Office || '',
+      disco:      r.Disco || '', cap: r.Capacidad || '',
+      ram:        r.RAM || '', obs: r.Observaciones || '',
+      marca:      r.Marca || '', modelo: r.Modelo || '',
+      procesador: r.Procesador || '', estado: r.Estado || 'Operativo',
+      ubicacion:  r.Ubicacion || '', fechaCompra: r.Fecha_Compra || '',
+      garantia:   r.Garantia || '', tipoEquipo: r.Tipo_Equipo || '',
+    })));
+
+    // Mantenimientos — preservar firmas y fotos locales
+    const localMantMap = {};
+    (getState('mantenimientos') || []).forEach(m => { localMantMap[m.id] = m; });
+    setState('mantenimientos', mantsSheet.map(r => {
+      const base = {
+        id:           String(r.ID),
+        serial:       String(r.EquipoID || r.Serial || ''),
+        tipo:         r.Tipo || '',
+        frecuencia:   r.Frecuencia || '',
+        fecha:        r.Fecha_Ultima || r.Fecha || '',
+        fechaProxima: r.Fecha_Proxima || '',
+        firmado:      r.Firmado === 'TRUE' || r.Firmado === 'Sí',
+        responsable:  r.Responsable || '',
+        obs:          r.Observaciones || '',
+        periodo:      r.Periodo || '',
+        estadoEquipo: r.Estado_Equipo || '',
+        traslado:     r.Traslado || '',
+        depAnterior:  r.Dep_Anterior || '',
+        depNueva:     r.Dep_Nueva || '',
+        firma: null, fotos: [],
+      };
+      const local = localMantMap[base.id];
+      if (local) {
+        base.firmado    = local.firmado;
+        base.firma      = local.firma;
+        base.firmaFecha = local.firmaFecha;
+        base.fotos      = local.fotos || [];
+      }
+      return base;
+    }));
+
+    // Backups — preservar firmas y fotos locales
+    const localBkMap = {};
+    (getState('backups') || []).forEach(b => { localBkMap[b.id] = b; });
+    setState('backups', bksSheet.map(r => {
+      const base = {
+        id:           String(r.ID),
+        serial:       String(r.EquipoID || ''),
+        tipo:         r.Tipo || '',
+        destino:      r.Ubicacion || '',
+        fecha:        r.Fecha_Ultima || '',
+        fechaProxima: r.Fecha_Proxima || '',
+        firmado:      r.Firmado === 'TRUE' || r.Firmado === 'Sí',
+        responsable:  r.Responsable || '',
+        obs:          r.Observaciones || '',
+        estadoBk:     r.Estado || 'Completado',
+        frecuencia:   r.Frecuencia || '',
+        respTI:       r.Resp_TI || '',
+        personaId:    String(r.Persona_ID || ''),
+        fotos: [],
+      };
+      const local = localBkMap[base.id];
+      if (local) {
+        base.firmado    = local.firmado;
+        base.firma      = local.firma;
+        base.firmaFecha = local.firmaFecha;
+        base.fotos      = local.fotos || [];
+        base.responsableEquipo = local.responsableEquipo || '';
+      }
+      return base;
+    }));
+
+    // Incidencias
     let incsSheet = [];
     try {
       incsSheet = await apiGet('Incidencias',
@@ -76,10 +167,6 @@ export async function syncData() {
     } catch(e) {
       console.warn('Incidencias no cargaron:', e);
     }
-
-    // ... resto del setState existente ...
-
-    // ← AGREGA AL FINAL antes de saveToStorage()
     const localIncMap = {};
     (getState('incidencias') || []).forEach(i => { localIncMap[i.id] = i; });
     setState('incidencias', incsSheet.map(r => {
@@ -112,10 +199,12 @@ export async function syncData() {
     }));
 
     saveToStorage();
+    setState('syncStatus', 'idle');
     showToast('✅ Datos sincronizados');
 
   } catch(err) {
     console.error('[Sync]', err);
+    setState('syncStatus', 'error');
     showToast('⚠️ Sin conexión — usando datos locales', '#d97706');
   } finally {
     if (btn) btn.classList.remove('syncing');
