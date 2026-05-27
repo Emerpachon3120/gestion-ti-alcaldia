@@ -1,3 +1,4 @@
+import { uid, formatDate, parseFecha, calcSemaforo, calcFechaProxima, soloLetras, alfaNumerico } from '../utils.js';
 import { abrirFirma as _abrirFirma }     from '../ui/firma.js';
 import { getData, getDBStatic, setState } from '../state.js';
 import { saveKey }                        from '../storage.js';
@@ -621,6 +622,17 @@ function _bindEvents() {
     _procesarFotos(e.target.files, mtFotos, 'mt-fotos-preview');
     e.target.value = '';
   });
+
+    // Validaciones de campos
+  ['mt-responsable','mt-dep-anterior','mt-dep-nueva'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) soloLetras(el);
+  });
+  ['mt-user-win','mt-pass-win','mt-user-admin','mt-pass-admin','mt-periodo'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) alfaNumerico(el);
+  });
+
 }
 
 function abrirNuevo() {
@@ -719,33 +731,48 @@ function editar(id) {
 }
 
 async function guardar() {
-  const serial      = getSSValue('mt-equipo-ss');
-  const tipo        = document.getElementById('mt-tipo').value;
-  const frecuencia  = document.getElementById('mt-frecuencia').value;
-  const obs         = document.getElementById('mt-obs').value;
-  const periodo     = document.getElementById('mt-periodo').value;
-  const responsable = document.getElementById('mt-responsable').value;
-  const estadoEquipo= document.getElementById('mt-estado-equipo').value;
-  const cambioResp  = document.getElementById('mt-cambio-resp').value;
-  const cambioCred  = document.getElementById('mt-cambio-cred').value;
-  const traslado    = document.getElementById('mt-traslado').value;
-  const depAnterior = document.getElementById('mt-dep-anterior').value;
-  const depNueva    = document.getElementById('mt-dep-nueva').value;
-  const userWin     = document.getElementById('mt-user-win').value;
-  const passWin     = document.getElementById('mt-pass-win').value;
-  const userAdmin   = document.getElementById('mt-user-admin').value;
-  const passAdmin   = document.getElementById('mt-pass-admin').value;
-  const fechaRaw    = document.getElementById('mt-fecha').value;
-  const proxRaw     = document.getElementById('mt-fecha-proxima').value;
-  const traslRaw    = document.getElementById('mt-fecha-traslado')?.value;
-  const editId      = document.getElementById('mt-edit-id').value;
-  const respEquipoId= getSSValue('mt-resp-equipo-ss');
-  const nuevoRespId = getSSValue('mt-nuevo-resp-ss');
-
+  const serial = getSSValue('mt-equipo-ss');
   if (!serial) { showToast('⚠️ Selecciona un equipo', '#d97706'); return; }
+  const editId = document.getElementById('mt-edit-id').value;
+  if (!editId) {
+    _pedirFirmaYGuardar();
+  } else {
+    _ejecutarGuardar(null);
+  }
+}
+
+function _pedirFirmaYGuardar() {
+  _abrirFirma('mant', 'nuevo', (firmaBase64) => {
+    _ejecutarGuardar(firmaBase64);
+  });
+}
+
+async function _ejecutarGuardar(firmaBase64 = null) {
+  const serial       = getSSValue('mt-equipo-ss');
+  const tipo         = document.getElementById('mt-tipo').value;
+  const frecuencia   = document.getElementById('mt-frecuencia').value;
+  const obs          = document.getElementById('mt-obs').value;
+  const periodo      = document.getElementById('mt-periodo').value;
+  const responsable  = document.getElementById('mt-responsable').value;
+  const estadoEquipo = document.getElementById('mt-estado-equipo').value;
+  const cambioResp   = document.getElementById('mt-cambio-resp').value;
+  const cambioCred   = document.getElementById('mt-cambio-cred').value;
+  const traslado     = document.getElementById('mt-traslado').value;
+  const depAnterior  = document.getElementById('mt-dep-anterior').value;
+  const depNueva     = document.getElementById('mt-dep-nueva').value;
+  const userWin      = document.getElementById('mt-user-win').value;
+  const passWin      = document.getElementById('mt-pass-win').value;
+  const userAdmin    = document.getElementById('mt-user-admin').value;
+  const passAdmin    = document.getElementById('mt-pass-admin').value;
+  const fechaRaw     = document.getElementById('mt-fecha').value;
+  const proxRaw      = document.getElementById('mt-fecha-proxima').value;
+  const traslRaw     = document.getElementById('mt-fecha-traslado')?.value;
+  const editId       = document.getElementById('mt-edit-id').value;
+  const respEquipoId = getSSValue('mt-resp-equipo-ss');
+  const nuevoRespId  = getSSValue('mt-nuevo-resp-ss');
 
   const fmt = r => r
-    ? new Date(r + 'T00:00:00').toLocaleDateString('es-CO', {day:'2-digit',month:'2-digit',year:'numeric'})
+    ? new Date(r+'T00:00:00').toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric'})
     : '';
 
   const fecha         = fmt(fechaRaw) || new Date().toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric'});
@@ -758,6 +785,9 @@ async function guardar() {
     userWin, passWin, userAdmin, passAdmin,
     fechaProxima, fechaTraslado, respEquipoId, nuevoRespId,
     fotos: mtFotos,
+    firmado:    firmaBase64 ? true : false,
+    firma:      firmaBase64,
+    firmaFecha: firmaBase64 ? new Date().toISOString() : null,
   };
 
   const lista = [...getData('mantenimientos')];
@@ -766,60 +796,37 @@ async function guardar() {
     const idx = lista.findIndex(x => x.id === editId);
     if (idx >= 0) lista[idx] = { ...lista[idx], ...campos, fecha };
     apiPost('Mantenimientos', 'update', {
-      Tipo:           tipo,
-      Frecuencia:     frecuencia,
-      Fecha_Ultima:   fecha,
-      Fecha_Proxima:  fechaProxima,
-      Observaciones:  obs,
-      Responsable:    responsable,
-      Periodo:        periodo,
-      Resp_Equipo_ID: respEquipoId,
-      Cambio_Resp:    cambioResp,
-      Nuevo_Resp_ID:  nuevoRespId,
-      User_Win:       userWin,
-      Pass_Win:       passWin,
-      User_Admin:     userAdmin,
-      Pass_Admin:     passAdmin,
-      Cambio_Cred:    cambioCred,
-      Traslado:       traslado,
-      Dep_Anterior:   depAnterior,
-      Dep_Nueva:      depNueva,
-      Fecha_Traslado: fechaTraslado,
-      Estado_Equipo:  estadoEquipo,
-      Fotos_Base64:   mtFotos.join('||'),
+      Tipo: tipo, Frecuencia: frecuencia, Fecha_Ultima: fecha,
+      Fecha_Proxima: fechaProxima, Observaciones: obs, Responsable: responsable,
+      Periodo: periodo, Resp_Equipo_ID: respEquipoId, Cambio_Resp: cambioResp,
+      Nuevo_Resp_ID: nuevoRespId, User_Win: userWin, Pass_Win: passWin,
+      User_Admin: userAdmin, Pass_Admin: passAdmin, Cambio_Cred: cambioCred,
+      Traslado: traslado, Dep_Anterior: depAnterior, Dep_Nueva: depNueva,
+      Fecha_Traslado: fechaTraslado, Estado_Equipo: estadoEquipo,
+      Fotos_Base64: mtFotos.join('||'),
+      Firmado: firmaBase64 ? 'Sí' : 'No',
+      Imagen_Base64: firmaBase64 || '',
     }, 'ID', editId).catch(console.warn);
     showToast('✅ Mantenimiento actualizado');
   } else {
     const id = uid();
-    lista.push({ id, fecha, firmado: false, firma: null, firmaFecha: null, ...campos });
+    lista.push({ id, fecha, ...campos });
     apiPost('Mantenimientos', 'insert', {
-      ID:             id,
-      EquipoID:       serial,
-      Tipo:           tipo,
-      Frecuencia:     frecuencia,
-      Fecha_Ultima:   fecha,
-      Fecha_Proxima:  fechaProxima,
-      Firmado:        'No',
-      Responsable:    responsable,
-      Observaciones:  obs,
-      Imagen_Base64:  '',
-      Periodo:        periodo,
-      Resp_Equipo_ID: respEquipoId,
-      Cambio_Resp:    cambioResp,
-      Nuevo_Resp_ID:  nuevoRespId,
-      User_Win:       userWin,
-      Pass_Win:       passWin,
-      User_Admin:     userAdmin,
-      Pass_Admin:     passAdmin,
-      Cambio_Cred:    cambioCred,
-      Traslado:       traslado,
-      Dep_Anterior:   depAnterior,
-      Dep_Nueva:      depNueva,
-      Fecha_Traslado: fechaTraslado,
-      Estado_Equipo:  estadoEquipo,
-      Fotos_Base64:   mtFotos.join('||'),
+      ID: id, EquipoID: serial, Tipo: tipo, Frecuencia: frecuencia,
+      Fecha_Ultima: fecha, Fecha_Proxima: fechaProxima,
+      Firmado: firmaBase64 ? 'Sí' : 'No',
+      Responsable: responsable, Observaciones: obs,
+      Imagen_Base64: firmaBase64 || '',
+      Periodo: periodo, Resp_Equipo_ID: respEquipoId,
+      Cambio_Resp: cambioResp, Nuevo_Resp_ID: nuevoRespId,
+      User_Win: userWin, Pass_Win: passWin,
+      User_Admin: userAdmin, Pass_Admin: passAdmin,
+      Cambio_Cred: cambioCred, Traslado: traslado,
+      Dep_Anterior: depAnterior, Dep_Nueva: depNueva,
+      Fecha_Traslado: fechaTraslado, Estado_Equipo: estadoEquipo,
+      Fotos_Base64: mtFotos.join('||'),
     }).catch(console.warn);
-    showToast('🔧 Mantenimiento registrado');
+    showToast('🔧 Mantenimiento registrado y firmado');
   }
 
   setState('mantenimientos', lista);
@@ -827,6 +834,8 @@ async function guardar() {
   cerrarModal('modal-mantto');
   renderLista();
 }
+
+window._guardarMantto = guardar;
 
 function eliminar(id) {
   if (!confirm('¿Eliminar este mantenimiento?')) return;

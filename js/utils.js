@@ -51,3 +51,24 @@ export function escHtml(str) {
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])
   );
 }
+
+// Solo letras y espacios
+export function soloLetras(input) {
+  input.addEventListener('input', () => {
+    input.value = input.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
+  });
+}
+
+// Solo números
+export function soloNumeros(input) {
+  input.addEventListener('input', () => {
+    input.value = input.value.replace(/[^0-9.]/g, '');
+  });
+}
+
+// Alfanumérico (letras + números)
+export function alfaNumerico(input) {
+  input.addEventListener('input', () => {
+    input.value = input.value.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]/g, '');
+  });
+}

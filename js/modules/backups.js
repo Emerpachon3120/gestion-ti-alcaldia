@@ -1,3 +1,4 @@
+import { uid, formatDate, parseFecha, calcSemaforo, calcFechaProxima, soloLetras, alfaNumerico } from '../utils.js';
 import { abrirFirma as _abrirFirma }     from '../ui/firma.js';
 import { getData, getDBStatic, setState } from '../state.js';
 import { saveKey }                        from '../storage.js';
@@ -299,6 +300,11 @@ function _bindEvents() {
     _procesarFotos(e.target.files, bkFotos, 'bk-fotos-preview');
     e.target.value = '';
   });
+  // Validaciones
+  ['bk-resp-ti','bk-ubicacion'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) soloLetras(el);
+  });
 }
 
 function abrirNuevo() {
@@ -353,6 +359,23 @@ function editar(id) {
 }
 
 async function _guardar() {
+  const serial = getSSValue('bk-equipo-ss');
+  if (!serial) { showToast('⚠️ Selecciona un equipo', '#d97706'); return; }
+  const editId = document.getElementById('bk-edit-id').value;
+  if (!editId) {
+    _pedirFirmaYGuardarBk();
+  } else {
+    _ejecutarGuardarBk(null);
+  }
+}
+
+function _pedirFirmaYGuardarBk() {
+  _abrirFirma('backup', 'nuevo', (firmaBase64) => {
+    _ejecutarGuardarBk(firmaBase64);
+  });
+}
+
+async function _ejecutarGuardarBk(firmaBase64 = null) {
   const serial    = getSSValue('bk-equipo-ss');
   const personaId = getSSValue('bk-persona-ss');
   const tipo      = document.getElementById('bk-tipo').value;
@@ -365,8 +388,6 @@ async function _guardar() {
   const fechaRaw  = document.getElementById('bk-fecha').value;
   const proxRaw   = document.getElementById('bk-fecha-proxima').value;
   const editId    = document.getElementById('bk-edit-id').value;
-
-  if (!serial) { showToast('⚠️ Selecciona un equipo', '#d97706'); return; }
 
   const fmt = r => r
     ? new Date(r+'T00:00:00').toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric'})
@@ -382,6 +403,9 @@ async function _guardar() {
     serial, personaId, tipo, destino, estadoBk, obs, ubicacion,
     respTI, frecuencia, fechaProxima, fotos: bkFotos,
     responsableEquipo: p?.nombre || '',
+    firmado:    firmaBase64 ? true : false,
+    firma:      firmaBase64,
+    firmaFecha: firmaBase64 ? new Date().toISOString() : null,
   };
 
   const lista = [...getData('backups')];
@@ -390,41 +414,29 @@ async function _guardar() {
     const idx = lista.findIndex(x => x.id === editId);
     if (idx >= 0) lista[idx] = { ...lista[idx], ...campos, fecha };
     apiPost('Backups', 'update', {
-      EquipoID:       serial,
-      Tipo:           tipo,
-      Frecuencia:     frecuencia,
-      Fecha_Ultima:   fecha,
-      Fecha_Proxima:  fechaProxima,
-      Ubicacion:      destino,
-      Estado:         estadoBk,
-      Observaciones:  obs,
-      Responsable:    respTI,
-      Persona_ID:     personaId,
-      Resp_TI:        respTI,
-      Fotos_Base64:   bkFotos.join('||'),
+      EquipoID: serial, Tipo: tipo, Frecuencia: frecuencia,
+      Fecha_Ultima: fecha, Fecha_Proxima: fechaProxima,
+      Ubicacion: destino, Estado: estadoBk, Observaciones: obs,
+      Responsable: respTI, Persona_ID: personaId, Resp_TI: respTI,
+      Fotos_Base64: bkFotos.join('||'),
+      Firmado: firmaBase64 ? 'Sí' : 'No',
+      Imagen_Base64: firmaBase64 || '',
     }, 'ID', editId).catch(console.warn);
     showToast('✅ Backup actualizado');
   } else {
     const id = uid();
-    lista.push({ id, fecha, firmado: false, firma: null, firmaFecha: null, ...campos });
+    lista.push({ id, fecha, ...campos });
     apiPost('Backups', 'insert', {
-      ID:             id,
-      EquipoID:       serial,
-      Tipo:           tipo,
-      Frecuencia:     frecuencia,
-      Fecha_Ultima:   fecha,
-      Fecha_Proxima:  fechaProxima,
-      Firmado:        'No',
-      Responsable:    respTI,
-      Observaciones:  obs,
-      Imagen_Base64:  '',
-      Ubicacion:      destino,
-      Estado:         estadoBk,
-      Persona_ID:     personaId,
-      Resp_TI:        respTI,
-      Fotos_Base64:   bkFotos.join('||'),
+      ID: id, EquipoID: serial, Tipo: tipo, Frecuencia: frecuencia,
+      Fecha_Ultima: fecha, Fecha_Proxima: fechaProxima,
+      Firmado: firmaBase64 ? 'Sí' : 'No',
+      Responsable: respTI, Observaciones: obs,
+      Imagen_Base64: firmaBase64 || '',
+      Ubicacion: destino, Estado: estadoBk,
+      Persona_ID: personaId, Resp_TI: respTI,
+      Fotos_Base64: bkFotos.join('||'),
     }).catch(console.warn);
-    showToast('💾 Backup registrado');
+    showToast('💾 Backup registrado y firmado');
   }
 
   setState('backups', lista);
@@ -432,6 +444,8 @@ async function _guardar() {
   cerrarModal('modal-backup');
   renderLista();
 }
+
+window._guardarBackup = _guardar;
 
 function _firmar(id) {
   const b = getData('backups').find(x => x.id === id);
