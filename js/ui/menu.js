@@ -44,10 +44,7 @@ export function renderHeader() {
     <button class="header-menu-btn" onclick="toggleMenu()" aria-label="Menú">
       <span></span><span></span><span></span>
     </button>
-    <img src="${CONFIG.IMG_LOGO}" 
-         class="header-logo" 
-         alt="Logo"
-         style="height:32px;object-fit:contain;">
+    <span style="font-size:20px;">🏛️</span>
     <div class="header-title">${CONFIG.APP_NAME}</div>
     <div class="header-right">
       <span class="header-date" id="headerDate"></span>
@@ -57,7 +54,6 @@ export function renderHeader() {
   document.getElementById('headerDate').textContent =
     new Date().toLocaleDateString('es-CO', { day: '2-digit', month: 'short' }).toUpperCase();
 }
-
 function toggleMenu() {
   document.getElementById('app-menu').classList.toggle('open');
   document.getElementById('menu-overlay').classList.toggle('open');
