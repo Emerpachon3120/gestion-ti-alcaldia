@@ -277,7 +277,6 @@ export function verActaMantenimiento(id) {
   console.log('firma en memoria:', m?.firma?.slice(0,50));
 
   const DB  = getDBStatic();
-  const m   = getData('mantenimientos').find(x => x.id === id);
   if (!m) return;
 
   const eq  = getData('equipos').find(e => e.serial === m.serial);
