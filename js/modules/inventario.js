@@ -853,36 +853,84 @@ function _crearOficinaRapida() {
 }
 
 function _verFichaEquipo(serial) {
-  const DB   = getDBStatic();
-  const eq   = getData('equipos').find(e => e.serial === serial);
+  const DB  = getDBStatic();
+  const eq  = getData('equipos').find(e => e.serial === serial);
   if (!eq) return;
 
-  const p    = DB.personas.find(x => x.id === eq.usuarioId);
-  const of   = DB.oficinas.find(x => x.id === eq.oficina);
-  const dep  = of ? DB.dependencias.find(x => x.id === of.depId) : null;
+  const CONFIG = window.APP_CONFIG;
+  const p   = DB.personas.find(x => x.id === eq.usuarioId);
+  const of  = DB.oficinas.find(x => x.id === eq.oficina);
+  const dep = of ? DB.dependencias.find(x => x.id === of.depId) : null;
 
-  // Mantenimientos del equipo
   const mants = getData('mantenimientos')
     .filter(m => m.serial === serial)
     .sort((a,b) => (parseFecha(b.fecha)||0) - (parseFecha(a.fecha)||0));
 
-  // Backups del equipo
   const bks = getData('backups')
     .filter(b => b.serial === serial)
     .sort((a,b) => (parseFecha(b.fecha)||0) - (parseFecha(a.fecha)||0));
 
   const fechaDoc = new Date().toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'});
-  const CONFIG   = window.APP_CONFIG;
+
+  // Indicadores de salud
+  const ultimoMant = mants[0];
+  const ultimoBk   = bks[0];
+  const hoy        = new Date();
+
+  const diasMant = ultimoMant?.fecha
+    ? Math.floor((hoy - (parseFecha(ultimoMant.fecha)||hoy)) / 86400000)
+    : null;
+  const diasBk = ultimoBk?.fecha
+    ? Math.floor((hoy - (parseFecha(ultimoBk.fecha)||hoy)) / 86400000)
+    : null;
+
+  const semColor = dias => {
+    if (dias === null) return { bg:'#f3f4f6', color:'#374151', label:'Sin registro' };
+    if (dias <= 90)   return { bg:'#dcfce7', color:'#166534', label:`Hace ${dias} días` };
+    if (dias <= 180)  return { bg:'#fef3c7', color:'#92400e', label:`Hace ${dias} días` };
+    return               { bg:'#fee2e2', color:'#991b1b', label:`Hace ${dias} días` };
+  };
+
+  const semMant = semColor(diasMant);
+  const semBk   = semColor(diasBk);
 
   const estadoColor = {
-    Operativo:         { bg:'#dcfce7', color:'#166534' },
-    'Con fallas':      { bg:'#fef3c7', color:'#92400e' },
-    'En mantenimiento':{ bg:'#dbeafe', color:'#1e40af' },
-    'Dado de baja':    { bg:'#fee2e2', color:'#991b1b' },
+    'Operativo':          { bg:'#dcfce7', color:'#166534' },
+    'Con fallas':         { bg:'#fef3c7', color:'#92400e' },
+    'En mantenimiento':   { bg:'#dbeafe', color:'#1e40af' },
+    'Dado de baja':       { bg:'#fee2e2', color:'#991b1b' },
   }[eq.estado || 'Operativo'] || { bg:'#f3f4f6', color:'#374151' };
 
+  // Línea de tiempo unificada
+  const timeline = [
+    ...mants.map(m => ({
+      fecha: m.fecha,
+      tipo: 'Mantenimiento',
+      detalle: m.tipo || '—',
+      responsable: m.responsable || '—',
+      estado: m.estadoEquipo || '—',
+      firmado: m.firmado,
+      obs: m.obs || '',
+    })),
+    ...bks.map(b => ({
+      fecha: b.fecha,
+      tipo: 'Backup',
+      detalle: b.tipo || '—',
+      responsable: b.respTI || '—',
+      estado: b.estadoBk || '—',
+      firmado: b.firmado,
+      obs: b.obs || '',
+    })),
+  ].sort((a,b) => (parseFecha(b.fecha)||0) - (parseFecha(a.fecha)||0));
+
+  // Fotos por componente
+  const fotosComp = eq.fotosComponentes || {};
+  const tienesFotos = Object.values(fotosComp).some(f => f?.length > 0);
+
+  const val = v => v && v !== '' ? v : '—';
+
   const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
-  <title>Ficha Equipo ${serial}</title>
+  <title>Ficha Técnica ${serial}</title>
   <style>
     *{margin:0;padding:0;box-sizing:border-box;}
     html,body{background:#e8e8e8;font-family:Arial,sans-serif;font-size:10.5pt;color:#111;}
@@ -902,7 +950,16 @@ function _verFichaEquipo(serial) {
     td,th{padding:5px 10px;vertical-align:top;border:1px solid #ddd;text-align:left;}
     th{background:#c0392b;color:#fff;font-weight:bold;font-size:9pt;}
     tr:nth-child(even) td{background:#f7f7f7;}
+    .badge{display:inline-block;padding:2px 8px;border-radius:10px;
+      font-size:8.5pt;font-weight:bold;}
+    .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:0.3cm 0;}
+    .kpi{border:1px solid #e0e0e0;border-radius:6px;padding:10px;text-align:center;}
+    .kpi-label{font-size:8.5pt;color:#666;margin-bottom:4px;}
+    .kpi-val{font-size:11pt;font-weight:bold;}
     .spacer{flex:1;min-height:0.3cm;}
+    .fotos-comp{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:0.3cm;}
+    .fotos-comp img{width:100%;height:3.5cm;object-fit:cover;
+      border-radius:4px;border:1px solid #e0e0e0;}
     @media print{
       @page{size:8.5in 13in;margin:0;}
       html,body{background:#fff;width:8.5in;}
@@ -923,35 +980,36 @@ function _verFichaEquipo(serial) {
         <tr style="background:#f9f9f9;">
           <td style="border:1px solid #e0e0e0;padding:5px 10px;width:50%;">
             <b style="color:#c0392b;">Serial</b><br>
-            <span style="font-family:monospace;font-size:12pt;font-weight:bold;">${serial}</span>
+            <span style="font-family:monospace;font-size:12pt;font-weight:bold;">
+              ${val(serial)}
+            </span>
           </td>
           <td style="border:1px solid #e0e0e0;padding:5px 10px;">
             <b style="color:#c0392b;">Estado</b><br>
-            <span style="background:${estadoColor.bg};color:${estadoColor.color};
-              padding:2px 8px;border-radius:10px;font-size:9pt;font-weight:bold;">
-              ${eq.estado || 'Operativo'}
+            <span class="badge" style="background:${estadoColor.bg};color:${estadoColor.color};">
+              ${val(eq.estado)}
             </span>
           </td>
         </tr>
         <tr>
           <td style="border:1px solid #e0e0e0;padding:5px 10px;">
-            <b style="color:#c0392b;">Funcionario asignado</b><br>${p?.nombre || '—'}
+            <b style="color:#c0392b;">Funcionario asignado</b><br>${val(p?.nombre)}
           </td>
           <td style="border:1px solid #e0e0e0;padding:5px 10px;">
-            <b style="color:#c0392b;">Cargo</b><br>${p?.cargo || '—'}
+            <b style="color:#c0392b;">Cargo</b><br>${val(p?.cargo)}
           </td>
         </tr>
         <tr style="background:#f9f9f9;">
           <td style="border:1px solid #e0e0e0;padding:5px 10px;">
-            <b style="color:#c0392b;">Dependencia</b><br>${dep?.nombre || '—'}
+            <b style="color:#c0392b;">Dependencia</b><br>${val(dep?.nombre)}
           </td>
           <td style="border:1px solid #e0e0e0;padding:5px 10px;">
-            <b style="color:#c0392b;">Oficina</b><br>${of?.nombre || '—'}
+            <b style="color:#c0392b;">Oficina</b><br>${val(of?.nombre)}
           </td>
         </tr>
         <tr>
           <td style="border:1px solid #e0e0e0;padding:5px 10px;">
-            <b style="color:#c0392b;">Ubicación física</b><br>${eq.ubicacion || '—'}
+            <b style="color:#c0392b;">Ubicación física</b><br>${val(eq.ubicacion)}
           </td>
           <td style="border:1px solid #e0e0e0;padding:5px 10px;">
             <b style="color:#c0392b;">Fecha de elaboración</b><br>${fechaDoc}
@@ -959,77 +1017,136 @@ function _verFichaEquipo(serial) {
         </tr>
       </table>
 
+      <!-- INDICADORES DE SALUD -->
+      <div class="sec">Indicadores de estado</div>
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-label">Estado del equipo</div>
+          <div class="kpi-val">
+            <span class="badge" style="background:${estadoColor.bg};color:${estadoColor.color};">
+              ${val(eq.estado)}
+            </span>
+          </div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Último mantenimiento</div>
+          <div class="kpi-val">
+            <span class="badge" style="background:${semMant.bg};color:${semMant.color};">
+              ${semMant.label}
+            </span>
+          </div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Último backup</div>
+          <div class="kpi-val">
+            <span class="badge" style="background:${semBk.bg};color:${semBk.color};">
+              ${semBk.label}
+            </span>
+          </div>
+        </div>
+      </div>
+
       <!-- ESPECIFICACIONES -->
       <div class="sec">Especificaciones técnicas</div>
       <table style="margin-bottom:0.4cm;">
         <tr><th>Componente</th><th>Detalle</th><th>Componente</th><th>Detalle</th></tr>
         <tr>
-          <td><b>Tipo de equipo</b></td><td>${eq.tipoEquipo || '—'}</td>
-          <td><b>Marca</b></td><td>${eq.marca || '—'}</td>
+          <td><b>Tipo de equipo</b></td><td>${val(eq.tipoEquipo)}</td>
+          <td><b>Marca</b></td><td>${val(eq.marca)}</td>
         </tr>
         <tr style="background:#f9f9f9;">
-          <td><b>Modelo</b></td><td>${eq.modelo || '—'}</td>
-          <td><b>Sistema Operativo</b></td><td>${eq.so || '—'}</td>
+          <td><b>Modelo</b></td><td>${val(eq.modelo)}</td>
+          <td><b>Sistema Operativo</b></td><td>${val(eq.so)}</td>
         </tr>
         <tr>
-          <td><b>Procesador</b></td><td>${eq.procesador || '—'}</td>
-          <td><b>Memoria RAM</b></td><td>${eq.ram || '—'}</td>
+          <td><b>Procesador</b></td><td>${val(eq.procesador)}</td>
+          <td><b>Memoria RAM</b></td><td>${val(eq.ram)}</td>
         </tr>
         <tr style="background:#f9f9f9;">
-          <td><b>Tipo de disco</b></td><td>${eq.disco || '—'}</td>
-          <td><b>Capacidad</b></td><td>${eq.cap || '—'}</td>
+          <td><b>Tipo de disco</b></td><td>${val(eq.disco)}</td>
+          <td><b>Capacidad</b></td><td>${val(eq.cap)}</td>
         </tr>
         <tr>
-          <td><b>Office / Suite</b></td><td>${eq.office || '—'}</td>
-          <td><b>Fecha de compra</b></td><td>${eq.fechaCompra || '—'}</td>
+          <td><b>Office / Suite</b></td><td>${val(eq.office)}</td>
+          <td><b>Fecha de compra</b></td><td>${val(eq.fechaCompra)}</td>
         </tr>
         <tr style="background:#f9f9f9;">
-          <td><b>Garantía hasta</b></td><td>${eq.garantia || '—'}</td>
+          <td><b>Garantia hasta</b></td><td>${val(eq.garantia)}</td>
           <td><b>Componentes</b></td>
-          <td>${eq.componentes?.join(', ') || '—'}</td>
+          <td>${eq.componentes?.length
+            ? eq.componentes.map(c =>
+                `<span class="badge" style="background:#eff6ff;color:#1e40af;
+                  margin-right:3px;">${c}</span>`
+              ).join('')
+            : '—'}</td>
         </tr>
       </table>
 
-      <!-- HISTORIAL DE MANTENIMIENTOS -->
-      <div class="sec">Historial de mantenimientos (${mants.length})</div>
-      ${mants.length ? `
-        <table style="margin-bottom:0.4cm;">
-          <tr><th>Fecha</th><th>Tipo</th><th>Responsable TI</th><th>Estado equipo</th><th>Firmado</th></tr>
-          ${mants.map(m => `
-            <tr>
-              <td>${formatDate(m.fecha)}</td>
-              <td>${m.tipo || '—'}</td>
-              <td>${m.responsable || '—'}</td>
-              <td>${m.estadoEquipo || '—'}</td>
-              <td>${m.firmado ? 'Sí' : 'No'}</td>
-            </tr>`).join('')}
-        </table>` :
-        '<p style="font-size:10pt;color:#666;margin-bottom:0.3cm;">Sin mantenimientos registrados.</p>'
-      }
-
-      <!-- HISTORIAL DE BACKUPS -->
-      <div class="sec">Historial de copias de seguridad (${bks.length})</div>
-      ${bks.length ? `
-        <table style="margin-bottom:0.4cm;">
-          <tr><th>Fecha</th><th>Tipo</th><th>Destino</th><th>Estado</th><th>Firmado</th></tr>
-          ${bks.map(b => `
-            <tr>
-              <td>${formatDate(b.fecha)}</td>
-              <td>${b.tipo || '—'}</td>
-              <td>${b.destino || '—'}</td>
-              <td>${b.estadoBk || '—'}</td>
-              <td>${b.firmado ? 'Sí' : 'No'}</td>
-            </tr>`).join('')}
-        </table>` :
-        '<p style="font-size:10pt;color:#666;margin-bottom:0.3cm;">Sin backups registrados.</p>'
-      }
-
       ${eq.obs ? `
-        <div class="sec">Observaciones</div>
+        <div class="sec">Observaciones del equipo</div>
         <div style="background:#f9f9f9;border:1px solid #e0e0e0;border-radius:4px;
           padding:0.2cm 0.3cm;font-size:10pt;margin-bottom:0.3cm;">
           ${eq.obs}
         </div>` : ''}
+
+      <!-- FOTOS POR COMPONENTE -->
+      ${tienesFotos ? `
+        <div class="sec">Evidencia fotográfica por componente</div>
+        ${Object.entries(fotosComp)
+          .filter(([,fotos]) => fotos?.length > 0)
+          .map(([comp, fotos]) => `
+            <div style="margin-bottom:0.3cm;">
+              <div style="font-weight:bold;font-size:9.5pt;margin-bottom:4px;
+                text-transform:capitalize;color:#555;">
+                ${comp}
+              </div>
+              <div class="fotos-comp">
+                ${fotos.slice(0,3).map(f =>
+                  `<img src="${f}" alt="${comp}">`
+                ).join('')}
+              </div>
+            </div>`).join('')}
+      ` : ''}
+
+      <!-- LÍNEA DE TIEMPO -->
+      <div class="sec">Historial del equipo (${timeline.length} registros)</div>
+      ${timeline.length ? `
+        <table style="margin-bottom:0.4cm;">
+          <tr>
+            <th>Fecha</th>
+            <th>Tipo</th>
+            <th>Detalle</th>
+            <th>Responsable</th>
+            <th>Estado</th>
+            <th>Firmado</th>
+          </tr>
+          ${timeline.map(t => `
+            <tr>
+              <td>${val(formatDate(t.fecha))}</td>
+              <td>
+                <span class="badge" style="background:${t.tipo==='Mantenimiento'?'#dbeafe':'#ede9fe'};
+                  color:${t.tipo==='Mantenimiento'?'#1e40af':'#5b21b6'};">
+                  ${t.tipo}
+                </span>
+              </td>
+              <td>${val(t.detalle)}</td>
+              <td>${val(t.responsable)}</td>
+              <td>${val(t.estado)}</td>
+              <td>${t.firmado ? 'Si' : 'No'}</td>
+            </tr>
+            ${t.obs ? `
+              <tr>
+                <td colspan="6" style="font-size:9pt;color:#555;
+                  background:#fafafa;font-style:italic;padding:4px 10px;">
+                  ${t.obs.length > 200 ? t.obs.slice(0,200) + '...' : t.obs}
+                </td>
+              </tr>` : ''}
+          `).join('')}
+        </table>` :
+        `<p style="font-size:10pt;color:#666;margin-bottom:0.3cm;">
+          Sin registros de mantenimiento ni backup.
+        </p>`
+      }
 
       <div class="spacer"></div>
 
@@ -1038,5 +1155,5 @@ function _verFichaEquipo(serial) {
   </div>
   </body></html>`;
 
-  abrirDocViewer(html, `Ficha Técnica — ${serial}`);
+  abrirDocViewer(html, `Ficha Tecnica — ${serial}`);
 }
