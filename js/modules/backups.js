@@ -504,7 +504,25 @@ function _eliminar(id) {
 function _procesarFotos(files, arr, previewId) {
   Array.from(files).forEach(file => {
     const reader = new FileReader();
-    reader.onload = e => { arr.push(e.target.result); _renderFotosPreview(arr, previewId); };
+    reader.onload = e => {
+      // Comprimir la imagen antes de guardar
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        // Máximo 800px de ancho
+        const maxW = 800;
+        const ratio = Math.min(1, maxW / img.width);
+        canvas.width  = img.width  * ratio;
+        canvas.height = img.height * ratio;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        // Calidad 0.4 = 40% — suficiente para evidencia
+        const compressed = canvas.toDataURL('image/jpeg', 0.4);
+        arr.push(compressed);
+        _renderFotosPreview(arr, previewId);
+      };
+      img.src = e.target.result;
+    };
     reader.readAsDataURL(file);
   });
 }
