@@ -838,6 +838,12 @@ async function guardar() {
 }
 
 function _pedirFirmaYGuardar() {
+  // Guardar actividades ANTES de abrir firma
+  window._actividadesTemp = Array.from(
+    document.querySelectorAll('#mt-actividades-lista input[type="checkbox"]:checked')
+  ).map(cb => cb.value);
+  window._obsTemp = document.getElementById('mt-obs')?.value || '';
+
   _abrirFirma('mant', 'nuevo', (firmaBase64) => {
     _ejecutarGuardar(firmaBase64);
   });
@@ -847,7 +853,6 @@ async function _ejecutarGuardar(firmaBase64 = null) {
   const serial       = getSSValue('mt-equipo-ss');
   const tipo         = document.getElementById('mt-tipo').value;
   const frecuencia   = document.getElementById('mt-frecuencia').value;
-  const obs          = document.getElementById('mt-obs').value;
   const periodo      = document.getElementById('mt-periodo').value;
   const responsable  = document.getElementById('mt-responsable').value;
   const estadoEquipo = document.getElementById('mt-estado-equipo').value;
@@ -875,44 +880,51 @@ async function _ejecutarGuardar(firmaBase64 = null) {
   const fechaProxima  = fmt(proxRaw);
   const fechaTraslado = fmt(traslRaw);
 
- // Primero recoger actividades
- const actividadesMarcadas = Array.from(
-   document.querySelectorAll('#mt-actividades-lista input[type="checkbox"]:checked')
- ).map(cb => cb.value);
+  // Actividades — usar temporales si vienen de firma
+  const actividadesMarcadas = window._actividadesTemp || Array.from(
+    document.querySelectorAll('#mt-actividades-lista input[type="checkbox"]:checked')
+  ).map(cb => cb.value);
 
- const obsCompleto = actividadesMarcadas.length
-   ? 'Actividades realizadas:\n' + actividadesMarcadas.map(a => `• ${a}`).join('\n')
-     + (obs ? '\n\nObservaciones adicionales:\n' + obs : '')
-   : obs;
+  const obs = window._obsTemp !== undefined && window._obsTemp !== null
+    ? window._obsTemp
+    : (document.getElementById('mt-obs')?.value || '');
 
- // Luego campos con obsCompleto
- const campos = {
-   serial, tipo, frecuencia, obs: obsCompleto, periodo, responsable, estadoEquipo,
-   cambioResp, cambioCred, traslado, depAnterior, depNueva,
-   userWin, passWin, userAdmin, passAdmin,
-   fechaProxima, fechaTraslado, respEquipoId, nuevoRespId,
-   fotos: mtFotos,
-   firmado:    firmaBase64 ? true : false,
-   firma:      firmaBase64,
-   firmaFecha: firmaBase64 ? new Date().toISOString() : null,
- };
+  // Limpiar temporales
+  window._actividadesTemp = null;
+  window._obsTemp = null;
 
- const lista = [...getData('mantenimientos')];
+  const obsCompleto = actividadesMarcadas.length
+    ? 'Actividades realizadas:\n' + actividadesMarcadas.map(a => `• ${a}`).join('\n')
+      + (obs ? '\n\nObservaciones adicionales:\n' + obs : '')
+    : obs;
+
+  const campos = {
+    serial, tipo, frecuencia, obs: obsCompleto, periodo, responsable, estadoEquipo,
+    cambioResp, cambioCred, traslado, depAnterior, depNueva,
+    userWin, passWin, userAdmin, passAdmin,
+    fechaProxima, fechaTraslado, respEquipoId, nuevoRespId,
+    fotos: mtFotos,
+    firmado:    firmaBase64 ? true : false,
+    firma:      firmaBase64,
+    firmaFecha: firmaBase64 ? new Date().toISOString() : null,
+  };
+
+  const lista = [...getData('mantenimientos')];
 
   if (editId) {
     const idx = lista.findIndex(x => x.id === editId);
     if (idx >= 0) lista[idx] = { ...lista[idx], ...campos, fecha };
     apiPost('Mantenimientos', 'update', {
       Tipo: tipo, Frecuencia: frecuencia, Fecha_Ultima: fecha,
-      Fecha_Proxima: fechaProxima, Observaciones: obs, Responsable: responsable,
+      Fecha_Proxima: fechaProxima, Observaciones: obsCompleto, Responsable: responsable,
       Periodo: periodo, Resp_Equipo_ID: respEquipoId, Cambio_Resp: cambioResp,
       Nuevo_Resp_ID: nuevoRespId, User_Win: userWin, Pass_Win: passWin,
       User_Admin: userAdmin, Pass_Admin: passAdmin, Cambio_Cred: cambioCred,
       Traslado: traslado, Dep_Anterior: depAnterior, Dep_Nueva: depNueva,
       Fecha_Traslado: fechaTraslado, Estado_Equipo: estadoEquipo,
-      Fotos_Base64: mtFotos.join('||'),
+      Fotos_Base64: mtFotos.length > 0 ? `${mtFotos.length} foto(s)` : '',
       Firmado: firmaBase64 ? 'Sí' : 'No',
-      Imagen_Base64: firmaBase64 || '',
+      Imagen_Base64: firmaBase64 ? 'firmado_digitalmente' : '',
     }, 'ID', editId).catch(console.warn);
     showToast('✅ Mantenimiento actualizado');
   } else {
@@ -922,8 +934,8 @@ async function _ejecutarGuardar(firmaBase64 = null) {
       ID: id, EquipoID: serial, Tipo: tipo, Frecuencia: frecuencia,
       Fecha_Ultima: fecha, Fecha_Proxima: fechaProxima,
       Firmado: firmaBase64 ? 'Sí' : 'No',
-      Responsable: responsable, Observaciones: obs,
-      Imagen_Base64: firmaBase64 || '',
+      Responsable: responsable, Observaciones: obsCompleto,
+      Imagen_Base64: firmaBase64 ? 'firmado_digitalmente' : '',
       Periodo: periodo, Resp_Equipo_ID: respEquipoId,
       Cambio_Resp: cambioResp, Nuevo_Resp_ID: nuevoRespId,
       User_Win: userWin, Pass_Win: passWin,
@@ -931,7 +943,7 @@ async function _ejecutarGuardar(firmaBase64 = null) {
       Cambio_Cred: cambioCred, Traslado: traslado,
       Dep_Anterior: depAnterior, Dep_Nueva: depNueva,
       Fecha_Traslado: fechaTraslado, Estado_Equipo: estadoEquipo,
-      Fotos_Base64: mtFotos.join('||'),
+      Fotos_Base64: mtFotos.length > 0 ? `${mtFotos.length} foto(s)` : '',
     }).catch(console.warn);
     showToast('🔧 Mantenimiento registrado y firmado');
   }
@@ -952,19 +964,12 @@ async function _ejecutarGuardar(firmaBase64 = null) {
 
   setState('mantenimientos', lista);
   saveKey('mantenimientos');
-
-  cerrarModal('modal-mantto');           // ← cierra modal mantenimiento
-  // Limpiar checkboxes
+  cerrarModal('modal-mantto');
   document.querySelectorAll('#mt-actividades-lista input[type="checkbox"]')
     .forEach(cb => cb.checked = false);
-
-  document.body.style.overflow = '';     // ← libera el scroll
+  document.body.style.overflow = '';
   renderLista();
-
 }
-
-
-
 
 function eliminar(id) {
   if (!confirm('¿Eliminar este mantenimiento?')) return;
