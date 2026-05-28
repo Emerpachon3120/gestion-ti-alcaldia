@@ -318,7 +318,7 @@ function _bindEvents() {
     e.target.value = '';
   });
   // Validaciones
-  ['bk-resp-ti','bk-ubicacion'].forEach(id => {
+  ['bk-resp-ti'].forEach(id => {
     const el = document.getElementById(id);
     if (el) soloLetras(el);
   });
