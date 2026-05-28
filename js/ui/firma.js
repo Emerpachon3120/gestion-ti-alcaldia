@@ -124,7 +124,7 @@ function _initCanvas() {
   _canvas.width  = rect.width  || 340;
   _canvas.height = 180;
 
-  _ctx = _canvas.getContext('2d');
+  _ctx = _canvas.getContext('2d', { willReadFrequently: true });
   _ctx.strokeStyle = '#1a1a18';
   _ctx.lineWidth   = 2.5;
   _ctx.lineCap     = 'round';
