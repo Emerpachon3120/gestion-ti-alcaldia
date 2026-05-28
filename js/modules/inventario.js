@@ -463,7 +463,7 @@ export function abrirNuevo() {
   });
 
   llenarSSOficinas('eq-oficina-ss');
-  llenarSSPersonas('eq-usuario-ss');
+  llenarSSPersonas('eq-usuario-ss', ()=>{}, _crearFuncionarioRapido);
   abrirModal('modal-equipo');
 }
 
@@ -488,7 +488,7 @@ function editar(serial) {
   document.getElementById('eq-estado').value = e.estado || 'Operativo';
   document.getElementById('eq-disco').value  = e.disco || 'SSD';
   llenarSSOficinas('eq-oficina-ss');
-  llenarSSPersonas('eq-usuario-ss');
+  llenarSSPersonas('eq-usuario-ss', ()=>{}, _crearFuncionarioRapido);
   const DB = getDBStatic();
   const of = DB.oficinas.find(x => x.id === e.oficina);
   if (of) setSSValue('eq-oficina-ss', of.id, of.nombre);
@@ -692,4 +692,86 @@ function _getFotosEquipo() {
     if (_fotosComp[c]?.length) todas[c] = _fotosComp[c];
   });
   return todas;
+}
+
+function _crearFuncionarioRapido() {
+  const modalEq = document.getElementById('modal-equipo');
+  modalEq?.classList.remove('open');
+
+  import('./administracion.js').then(mod => {
+    // Asegurar que el modal de persona existe
+    if (!document.getElementById('modal-persona-admin')) {
+      document.getElementById('modals-container')
+        .insertAdjacentHTML('beforeend', `
+          <div class="modal-overlay" id="modal-persona-admin">
+            <div class="modal">
+              <div class="modal-handle"></div>
+              <div class="modal-title" id="persona-title">👤 Nuevo Funcionario</div>
+              <input type="hidden" id="persona-edit-id">
+              <div class="form-group">
+                <label class="form-label">Nombre completo *</label>
+                <input type="text" class="form-input" id="persona-nombre">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Cargo</label>
+                <input type="text" class="form-input" id="persona-cargo">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Correo</label>
+                <input type="email" class="form-input" id="persona-correo">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Teléfono</label>
+                <input type="tel" class="form-input" id="persona-tel">
+              </div>
+              <div style="display:flex;gap:8px;margin-top:8px;">
+                <button class="btn btn-secondary" style="flex:1;margin-top:0;"
+                  id="persona-cancel-btn">Cancelar</button>
+                <button class="btn btn-primary" style="flex:2;margin-top:0;"
+                  id="persona-save-btn">👤 Guardar</button>
+              </div>
+            </div>
+          </div>`);
+
+      document.getElementById('persona-cancel-btn').addEventListener('click', () => {
+        document.getElementById('modal-persona-admin').classList.remove('open');
+        document.body.style.overflow = '';
+        modalEq?.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      });
+
+      document.getElementById('persona-save-btn').addEventListener('click', () => {
+        const nombre = document.getElementById('persona-nombre').value.trim();
+        const cargo  = document.getElementById('persona-cargo').value;
+        const correo = document.getElementById('persona-correo').value;
+        const tel    = document.getElementById('persona-tel').value;
+        if (!nombre) { showToast('⚠️ El nombre es obligatorio', '#d97706'); return; }
+
+        const DB = getDBStatic();
+        const id = 'P' + Date.now();
+        DB.personas.push({ id, nombre, cargo, correo, tel, imagen: '' });
+
+        apiPost('Personas', 'insert', {
+          ID: id, Nombre: nombre, Cargo: cargo,
+          Correo: correo, Telefono: tel,
+        }).catch(console.warn);
+
+        // Seleccionar en el formulario de equipo
+        llenarSSPersonas('eq-usuario-ss', () => {}, _crearFuncionarioRapido);
+        setSSValue('eq-usuario-ss', id, nombre);
+
+        document.getElementById('modal-persona-admin').classList.remove('open');
+        modalEq?.classList.add('open');
+        document.body.style.overflow = 'hidden';
+        showToast(`👤 ${nombre} registrado`);
+      });
+    }
+
+    // Limpiar y abrir
+    ['persona-nombre','persona-cargo','persona-correo','persona-tel']
+      .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+    document.getElementById('persona-edit-id').value = '';
+    document.getElementById('modal-persona-admin').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  });
 }
