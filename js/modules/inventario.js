@@ -5,6 +5,7 @@ import { showToast }   from '../ui/toast.js';
 import { abrirModal, cerrarModal } from '../ui/modal.js';
 import { formatDate, parseFecha, calcSemaforo } from '../utils.js';
 import { llenarSSOficinas, llenarSSPersonas, getSSValue, setSSValue } from '../ui/searchselect.js';
+import { abrirDocViewer } from '../ui/documento.js';
 
 let currentDep = 'todas';
 let currentSearch = '';
@@ -100,7 +101,7 @@ export function renderLista() {
     btn.addEventListener('click', () => {
       const { action, serial } = btn.dataset;
       if (action === 'editar')   editar(serial);
-      if (action === 'historial') _historial(serial);
+      if (action === 'historial') _verFichaEquipo(serial);
       if (action === 'eliminar') _eliminar(serial);
     });
   });
@@ -389,13 +390,15 @@ function _modalHTML() {
         </textarea>
       </div>
 
-      <div style="display:flex;gap:8px;margin-top:8px;">
-        <button class="btn btn-secondary" style="flex:1;margin-top:0;" id="eq-cancel-btn">
-          Cancelar
-        </button>
-        <button class="btn btn-primary" style="flex:2;margin-top:0;" id="eq-save-btn">
-          💻 Guardar equipo
-        </button>
+      <div class="modal-footer">
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-secondary" style="flex:1;margin-top:0;" id="eq-cancel-btn">
+            Cancelar
+          </button>
+          <button class="btn btn-primary" style="flex:2;margin-top:0;" id="eq-save-btn">
+            💻 Guardar equipo
+          </button>
+        </div>
       </div>
     </div>
   </div>`;
@@ -462,7 +465,7 @@ export function abrirNuevo() {
     if (prev) prev.innerHTML = '';
   });
 
-  llenarSSOficinas('eq-oficina-ss');
+  llenarSSOficinas('eq-oficina-ss', ()=>{}, _crearOficinaRapida);
   llenarSSPersonas('eq-usuario-ss', ()=>{}, _crearFuncionarioRapido);
   abrirModal('modal-equipo');
 }
@@ -487,7 +490,7 @@ function editar(serial) {
   document.getElementById('eq-obs').value = e.obs || '';
   document.getElementById('eq-estado').value = e.estado || 'Operativo';
   document.getElementById('eq-disco').value  = e.disco || 'SSD';
-  llenarSSOficinas('eq-oficina-ss');
+  llenarSSOficinas('eq-oficina-ss', ()=>{}, _crearOficinaRapida);
   llenarSSPersonas('eq-usuario-ss', ()=>{}, _crearFuncionarioRapido);
   const DB = getDBStatic();
   const of = DB.oficinas.find(x => x.id === e.oficina);
@@ -776,4 +779,264 @@ function _crearFuncionarioRapido() {
     document.getElementById('modal-persona-admin').classList.add('open');
     document.body.style.overflow = 'hidden';
   });
+}
+
+function _crearOficinaRapida() {
+  const modalEq = document.getElementById('modal-equipo');
+  modalEq?.classList.remove('open');
+
+  if (!document.getElementById('modal-oficina-rapida')) {
+    const div = document.createElement('div');
+    div.innerHTML = `
+      <div class="modal-overlay" id="modal-oficina-rapida">
+        <div class="modal">
+          <div class="modal-handle"></div>
+          <div class="modal-title">🏢 Nueva Oficina</div>
+          <div class="form-group">
+            <label class="form-label">Nombre de la oficina *</label>
+            <input type="text" class="form-input" id="of-r-nombre"
+              placeholder="Ej: Tesorería, Comisaría de Familia">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Dependencia *</label>
+            <select class="form-select" id="of-r-dep">
+              ${getDBStatic().dependencias.map(d =>
+                `<option value="${d.id}">${d.nombre}</option>`
+              ).join('')}
+            </select>
+          </div>
+          <div class="modal-footer">
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-secondary" style="flex:1;margin-top:0;"
+                id="of-r-cancel">Cancelar</button>
+              <button class="btn btn-primary" style="flex:2;margin-top:0;"
+                id="of-r-save">🏢 Guardar oficina</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    document.getElementById('modals-container').appendChild(div.firstElementChild);
+
+    document.getElementById('of-r-cancel').addEventListener('click', () => {
+      document.getElementById('modal-oficina-rapida').classList.remove('open');
+      document.body.style.overflow = '';
+      modalEq?.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    });
+
+    document.getElementById('of-r-save').addEventListener('click', () => {
+      const nombre = document.getElementById('of-r-nombre').value.trim();
+      const depId  = document.getElementById('of-r-dep').value;
+      if (!nombre || !depId) { showToast('⚠️ Nombre y dependencia son obligatorios','#d97706'); return; }
+
+      const DB = getDBStatic();
+      const id = 'OF' + Date.now();
+      DB.oficinas.push({ id, nombre, depId });
+
+      apiPost('Oficinas','insert',{
+        ID: id, Nombre: nombre, DepID: depId,
+      }).catch(console.warn);
+
+      llenarSSOficinas('eq-oficina-ss', ()=>{}, _crearOficinaRapida);
+      setSSValue('eq-oficina-ss', id, nombre);
+
+      document.getElementById('modal-oficina-rapida').classList.remove('open');
+      modalEq?.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      showToast(`🏢 Oficina "${nombre}" registrada`);
+    });
+  }
+
+  document.getElementById('of-r-nombre').value = '';
+  document.getElementById('modal-oficina-rapida').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function _verFichaEquipo(serial) {
+  const DB   = getDBStatic();
+  const eq   = getData('equipos').find(e => e.serial === serial);
+  if (!eq) return;
+
+  const p    = DB.personas.find(x => x.id === eq.usuarioId);
+  const of   = DB.oficinas.find(x => x.id === eq.oficina);
+  const dep  = of ? DB.dependencias.find(x => x.id === of.depId) : null;
+
+  // Mantenimientos del equipo
+  const mants = getData('mantenimientos')
+    .filter(m => m.serial === serial)
+    .sort((a,b) => (parseFecha(b.fecha)||0) - (parseFecha(a.fecha)||0));
+
+  // Backups del equipo
+  const bks = getData('backups')
+    .filter(b => b.serial === serial)
+    .sort((a,b) => (parseFecha(b.fecha)||0) - (parseFecha(a.fecha)||0));
+
+  const fechaDoc = new Date().toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'});
+  const CONFIG   = window.APP_CONFIG;
+
+  const estadoColor = {
+    Operativo:         { bg:'#dcfce7', color:'#166534' },
+    'Con fallas':      { bg:'#fef3c7', color:'#92400e' },
+    'En mantenimiento':{ bg:'#dbeafe', color:'#1e40af' },
+    'Dado de baja':    { bg:'#fee2e2', color:'#991b1b' },
+  }[eq.estado || 'Operativo'] || { bg:'#f3f4f6', color:'#374151' };
+
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+  <title>Ficha Equipo ${serial}</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    html,body{background:#e8e8e8;font-family:Arial,sans-serif;font-size:10.5pt;color:#111;}
+    .pagina{width:21.59cm;min-height:33.02cm;margin:0.8cm auto;background:#fff;
+      display:flex;flex-direction:column;box-shadow:0 4px 24px rgba(0,0,0,0.18);}
+    .header{width:100%;opacity:0.6;}
+    .header img{width:100%;display:block;}
+    .footer{margin-top:auto;width:100%;opacity:0.35;}
+    .footer img{width:100%;display:block;}
+    .body-wrap{flex:1;padding:0.5cm 1.8cm 0.4cm;display:flex;flex-direction:column;}
+    .titulo{text-align:center;font-size:13pt;font-weight:bold;text-transform:uppercase;
+      margin:0.4cm 0 0.5cm;letter-spacing:0.5px;color:#1a1a1a;
+      border-bottom:2pt solid #c0392b;padding-bottom:0.2cm;}
+    .sec{font-weight:bold;font-size:10.5pt;margin:0.35cm 0 0.15cm;
+      color:#c0392b;border-left:3pt solid #c0392b;padding-left:0.2cm;}
+    table{width:100%;border-collapse:collapse;margin-bottom:0.3cm;font-size:9.5pt;}
+    td,th{padding:5px 10px;vertical-align:top;border:1px solid #ddd;text-align:left;}
+    th{background:#c0392b;color:#fff;font-weight:bold;font-size:9pt;}
+    tr:nth-child(even) td{background:#f7f7f7;}
+    .spacer{flex:1;min-height:0.3cm;}
+    @media print{
+      @page{size:8.5in 13in;margin:0;}
+      html,body{background:#fff;width:8.5in;}
+      .pagina{width:8.5in;min-height:13in;margin:0;box-shadow:none;}
+      .footer{position:fixed;bottom:0;left:0;right:0;}
+      body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    }
+  </style>
+  </head><body>
+  <div class="pagina">
+    <div class="header"><img src="${CONFIG.IMG_HEADER}" alt="Encabezado"/></div>
+    <div class="body-wrap">
+
+      <div class="titulo">Ficha Técnica del Equipo</div>
+
+      <!-- IDENTIFICACIÓN -->
+      <table style="margin-bottom:0.4cm;">
+        <tr style="background:#f9f9f9;">
+          <td style="border:1px solid #e0e0e0;padding:5px 10px;width:50%;">
+            <b style="color:#c0392b;">Serial</b><br>
+            <span style="font-family:monospace;font-size:12pt;font-weight:bold;">${serial}</span>
+          </td>
+          <td style="border:1px solid #e0e0e0;padding:5px 10px;">
+            <b style="color:#c0392b;">Estado</b><br>
+            <span style="background:${estadoColor.bg};color:${estadoColor.color};
+              padding:2px 8px;border-radius:10px;font-size:9pt;font-weight:bold;">
+              ${eq.estado || 'Operativo'}
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td style="border:1px solid #e0e0e0;padding:5px 10px;">
+            <b style="color:#c0392b;">Funcionario asignado</b><br>${p?.nombre || '—'}
+          </td>
+          <td style="border:1px solid #e0e0e0;padding:5px 10px;">
+            <b style="color:#c0392b;">Cargo</b><br>${p?.cargo || '—'}
+          </td>
+        </tr>
+        <tr style="background:#f9f9f9;">
+          <td style="border:1px solid #e0e0e0;padding:5px 10px;">
+            <b style="color:#c0392b;">Dependencia</b><br>${dep?.nombre || '—'}
+          </td>
+          <td style="border:1px solid #e0e0e0;padding:5px 10px;">
+            <b style="color:#c0392b;">Oficina</b><br>${of?.nombre || '—'}
+          </td>
+        </tr>
+        <tr>
+          <td style="border:1px solid #e0e0e0;padding:5px 10px;">
+            <b style="color:#c0392b;">Ubicación física</b><br>${eq.ubicacion || '—'}
+          </td>
+          <td style="border:1px solid #e0e0e0;padding:5px 10px;">
+            <b style="color:#c0392b;">Fecha de elaboración</b><br>${fechaDoc}
+          </td>
+        </tr>
+      </table>
+
+      <!-- ESPECIFICACIONES -->
+      <div class="sec">Especificaciones técnicas</div>
+      <table style="margin-bottom:0.4cm;">
+        <tr><th>Componente</th><th>Detalle</th><th>Componente</th><th>Detalle</th></tr>
+        <tr>
+          <td><b>Tipo de equipo</b></td><td>${eq.tipoEquipo || '—'}</td>
+          <td><b>Marca</b></td><td>${eq.marca || '—'}</td>
+        </tr>
+        <tr style="background:#f9f9f9;">
+          <td><b>Modelo</b></td><td>${eq.modelo || '—'}</td>
+          <td><b>Sistema Operativo</b></td><td>${eq.so || '—'}</td>
+        </tr>
+        <tr>
+          <td><b>Procesador</b></td><td>${eq.procesador || '—'}</td>
+          <td><b>Memoria RAM</b></td><td>${eq.ram || '—'}</td>
+        </tr>
+        <tr style="background:#f9f9f9;">
+          <td><b>Tipo de disco</b></td><td>${eq.disco || '—'}</td>
+          <td><b>Capacidad</b></td><td>${eq.cap || '—'}</td>
+        </tr>
+        <tr>
+          <td><b>Office / Suite</b></td><td>${eq.office || '—'}</td>
+          <td><b>Fecha de compra</b></td><td>${eq.fechaCompra || '—'}</td>
+        </tr>
+        <tr style="background:#f9f9f9;">
+          <td><b>Garantía hasta</b></td><td>${eq.garantia || '—'}</td>
+          <td><b>Componentes</b></td>
+          <td>${eq.componentes?.join(', ') || '—'}</td>
+        </tr>
+      </table>
+
+      <!-- HISTORIAL DE MANTENIMIENTOS -->
+      <div class="sec">Historial de mantenimientos (${mants.length})</div>
+      ${mants.length ? `
+        <table style="margin-bottom:0.4cm;">
+          <tr><th>Fecha</th><th>Tipo</th><th>Responsable TI</th><th>Estado equipo</th><th>Firmado</th></tr>
+          ${mants.map(m => `
+            <tr>
+              <td>${formatDate(m.fecha)}</td>
+              <td>${m.tipo || '—'}</td>
+              <td>${m.responsable || '—'}</td>
+              <td>${m.estadoEquipo || '—'}</td>
+              <td>${m.firmado ? 'Sí' : 'No'}</td>
+            </tr>`).join('')}
+        </table>` :
+        '<p style="font-size:10pt;color:#666;margin-bottom:0.3cm;">Sin mantenimientos registrados.</p>'
+      }
+
+      <!-- HISTORIAL DE BACKUPS -->
+      <div class="sec">Historial de copias de seguridad (${bks.length})</div>
+      ${bks.length ? `
+        <table style="margin-bottom:0.4cm;">
+          <tr><th>Fecha</th><th>Tipo</th><th>Destino</th><th>Estado</th><th>Firmado</th></tr>
+          ${bks.map(b => `
+            <tr>
+              <td>${formatDate(b.fecha)}</td>
+              <td>${b.tipo || '—'}</td>
+              <td>${b.destino || '—'}</td>
+              <td>${b.estadoBk || '—'}</td>
+              <td>${b.firmado ? 'Sí' : 'No'}</td>
+            </tr>`).join('')}
+        </table>` :
+        '<p style="font-size:10pt;color:#666;margin-bottom:0.3cm;">Sin backups registrados.</p>'
+      }
+
+      ${eq.obs ? `
+        <div class="sec">Observaciones</div>
+        <div style="background:#f9f9f9;border:1px solid #e0e0e0;border-radius:4px;
+          padding:0.2cm 0.3cm;font-size:10pt;margin-bottom:0.3cm;">
+          ${eq.obs}
+        </div>` : ''}
+
+      <div class="spacer"></div>
+
+    </div>
+    <div class="footer"><img src="${CONFIG.IMG_FOOTER}" alt="Pie de página"/></div>
+  </div>
+  </body></html>`;
+
+  abrirDocViewer(html, `Ficha Técnica — ${serial}`);
 }

@@ -911,8 +911,23 @@ async function _ejecutarGuardar(firmaBase64 = null) {
     showToast('🔧 Mantenimiento registrado y firmado');
   }
 
+  if (cambioResp === 'Sí' && nuevoRespId && serial) {
+    apiPost('Equipos', 'update', {
+      UsuarioID: nuevoRespId,
+    }, 'Serial', serial).catch(console.warn);
+
+    const equipos = [...getData('equipos')];
+    const idx = equipos.findIndex(e => e.serial === serial);
+    if (idx >= 0) {
+      equipos[idx].usuarioId = nuevoRespId;
+      setState('equipos', equipos);
+      saveKey('equipos');
+    }
+  }
+
   setState('mantenimientos', lista);
   saveKey('mantenimientos');
+
   cerrarModal('modal-mantto');           // ← cierra modal mantenimiento
   // Limpiar checkboxes
   document.querySelectorAll('#mt-actividades-lista input[type="checkbox"]')
