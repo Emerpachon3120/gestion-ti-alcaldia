@@ -511,6 +511,10 @@ async function _ejecutarGuardarBk(firmaBase64 = null) {
   cerrarModal('modal-backup');
   renderLista();
 }
+
+window._guardarBackup = _guardar;
+
+function _firmar(id) {
   const b = getData('backups').find(x => x.id === id);
   if (!b) return;
   if (b.firmado) { showToast('✅ Ya está firmado'); return; }
