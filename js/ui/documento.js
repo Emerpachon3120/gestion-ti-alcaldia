@@ -755,10 +755,10 @@ export function verActaBackup(id) {
   const b   = getData('backups').find(x => x.id === id);
   if (!b) return;
 
-  const eq  = getData('equipos').find(e => e.serial === b.serial);
-  const p   = b.personaId ? DB.personas.find(x => x.id === b.personaId) : null;
-  const of  = eq ? DB.oficinas.find(x => x.id === eq.oficina) : null;
-  const dep = of ? DB.dependencias.find(x => x.id === of.depId) : null;
+  const eq   = getData('equipos').find(e => e.serial === b.serial);
+  const p    = b.personaId ? DB.personas.find(x => x.id === b.personaId) : null;
+  const of   = eq ? DB.oficinas.find(x => x.id === eq.oficina) : null;
+  const dep  = of ? DB.dependencias.find(x => x.id === of.depId) : null;
   const resp = b.responsableEquipo || p?.nombre || '—';
   const fechaDoc = new Date().toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'});
 
@@ -769,7 +769,7 @@ export function verActaBackup(id) {
   }[b.estadoBk] || { bg:'#f3f4f6', color:'#374151' };
 
   const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
-  <title>Acta Backup ${b.serial}</title>
+  <title>Acta Copia de Seguridad ${b.serial}</title>
   <style>${_cssDoc()}</style>
   </head><body>
   <div class="pagina">
@@ -778,55 +778,55 @@ export function verActaBackup(id) {
 
       <div class="titulo">Acta de Copia de Seguridad</div>
 
-      <!-- METADATOS EN DOS COLUMNAS -->
+      <!-- METADATOS -->
       <table style="margin-bottom:0.4cm;font-size:10pt;">
         <tr style="background:#f9f9f9;">
           <td style="border:1px solid #e0e0e0;padding:5px 10px;width:50%;">
-            <b style="color:#2563eb;">📅 Fecha de ejecución</b><br>${formatDate(b.fecha)}
+            <b style="color:#2563eb;">Fecha de ejecución</b><br>${formatDate(b.fecha)}
           </td>
           <td style="border:1px solid #e0e0e0;padding:5px 10px;width:50%;">
-            <b style="color:#2563eb;">⏭️ Próximo backup</b><br>${formatDate(b.fechaProxima) || '—'}
+            <b style="color:#2563eb;">Próximo backup</b><br>${formatDate(b.fechaProxima) || '—'}
           </td>
         </tr>
         <tr>
           <td style="border:1px solid #e0e0e0;padding:5px 10px;">
-            <b style="color:#2563eb;">🖥️ Serial del equipo</b><br>
+            <b style="color:#2563eb;">Serial del equipo</b><br>
             <span style="font-family:monospace;font-size:11pt;font-weight:bold;">${b.serial}</span>
           </td>
           <td style="border:1px solid #e0e0e0;padding:5px 10px;">
-            <b style="color:#2563eb;">🔁 Frecuencia</b><br>${b.frecuencia || '—'}
+            <b style="color:#2563eb;">Frecuencia</b><br>${b.frecuencia || '—'}
           </td>
         </tr>
         <tr style="background:#f9f9f9;">
           <td style="border:1px solid #e0e0e0;padding:5px 10px;">
-            <b style="color:#2563eb;">👤 Responsable del equipo</b><br>${resp}
+            <b style="color:#2563eb;">Responsable del equipo</b><br>${resp}
           </td>
           <td style="border:1px solid #e0e0e0;padding:5px 10px;">
-            <b style="color:#2563eb;">🏢 Dependencia</b><br>${dep?.nombre || '—'}
+            <b style="color:#2563eb;">Dependencia</b><br>${dep?.nombre || '—'}
           </td>
         </tr>
         <tr>
           <td style="border:1px solid #e0e0e0;padding:5px 10px;">
-            <b style="color:#2563eb;">🏠 Oficina</b><br>${of?.nombre || '—'}
+            <b style="color:#2563eb;">Oficina</b><br>${of?.nombre || '—'}
           </td>
           <td style="border:1px solid #e0e0e0;padding:5px 10px;">
-            <b style="color:#2563eb;">👷 Responsable TI</b><br>${b.respTI || CONFIG.RESPONSABLE_TI}
+            <b style="color:#2563eb;">Responsable TI</b><br>${b.respTI || CONFIG.RESPONSABLE_TI}
           </td>
         </tr>
         <tr style="background:#f9f9f9;">
           <td style="border:1px solid #e0e0e0;padding:5px 10px;">
-            <b style="color:#2563eb;">📦 Tipo de backup</b><br>${b.tipo || '—'}
+            <b style="color:#2563eb;">Tipo de backup</b><br>${b.tipo || '—'}
           </td>
           <td style="border:1px solid #e0e0e0;padding:5px 10px;">
-            <b style="color:#2563eb;">💾 Destino</b><br>${b.destino || '—'}
+            <b style="color:#2563eb;">Destino / Medio</b><br>${b.destino || '—'}
           </td>
         </tr>
         <tr>
           <td style="border:1px solid #e0e0e0;padding:5px 10px;">
-            <b style="color:#2563eb;">📍 Ubicación</b><br>${b.ubicacion || '—'}
+            <b style="color:#2563eb;">Lugar de ejecución</b><br>${b.ubicacion || '—'}
           </td>
           <td style="border:1px solid #e0e0e0;padding:5px 10px;">
-            <b style="color:#2563eb;">📊 Estado</b><br>
+            <b style="color:#2563eb;">Estado</b><br>
             <span style="background:${estadoColor.bg};color:${estadoColor.color};
               padding:2px 8px;border-radius:10px;font-size:9pt;font-weight:bold;">
               ${b.estadoBk || '—'}
@@ -836,7 +836,7 @@ export function verActaBackup(id) {
       </table>
 
       <!-- ESPECIFICACIONES DEL EQUIPO -->
-      <div class="sec">⚙️ Especificaciones del equipo respaldado</div>
+      <div class="sec">Especificaciones del equipo respaldado</div>
       <table style="margin-bottom:0.4cm;">
         <tr><th>Componente</th><th>Detalle</th><th>Componente</th><th>Detalle</th></tr>
         <tr>
@@ -846,23 +846,36 @@ export function verActaBackup(id) {
           <td>${eq?.so || '—'}</td>
         </tr>
         <tr style="background:#f9f9f9;">
-          <td><b>RAM</b></td>
+          <td><b>Procesador</b></td>
+          <td>${eq?.procesador || '—'}</td>
+          <td><b>Memoria RAM</b></td>
           <td>${eq?.ram || '—'}</td>
-          <td><b>Disco / Capacidad</b></td>
-          <td>${eq?.disco || '—'} ${eq?.cap || ''}</td>
+        </tr>
+        <tr>
+          <td><b>Tipo de disco</b></td>
+          <td>${eq?.disco || '—'}</td>
+          <td><b>Capacidad</b></td>
+          <td>${eq?.cap || '—'}</td>
+        </tr>
+        <tr style="background:#f9f9f9;">
+          <td><b>Office / Suite</b></td>
+          <td>${eq?.office || '—'}</td>
+          <td><b>Ubicación física</b></td>
+          <td>${eq?.ubicacion || '—'}</td>
         </tr>
       </table>
 
-      <!-- OBSERVACIONES -->
-      ${b.obs ? `
-        <div class="sec">📝 Observaciones</div>
-        <div class="obs" style="background:#f9f9f9;border:1px solid #e0e0e0;border-radius:4px;padding:0.2cm 0.3cm;margin-bottom:0.3cm;">
-          ${b.obs}
-        </div>` : ''}
+      <!-- ACTIVIDADES -->
+      <div class="sec">Actividades realizadas</div>
+      <div class="obs" style="background:#f9f9f9;border:1px solid #e0e0e0;
+        border-radius:4px;padding:0.2cm 0.3cm;margin-bottom:0.3cm;
+        white-space:pre-line;">
+        ${b.obs || 'Se realizó copia de seguridad de la información institucional según la programación establecida por el área de sistemas.'}
+      </div>
 
-      <!-- EVIDENCIA FOTOGRÁFICA -->
+      <!-- EVIDENCIA -->
       ${b.fotos?.length ? `
-        <div class="sec">📸 Evidencia fotográfica (${b.fotos.length} foto${b.fotos.length>1?'s':''})</div>
+        <div class="sec">Evidencia fotográfica (${b.fotos.length} foto${b.fotos.length>1?'s':''})</div>
         <div class="fotos-grid">
           ${b.fotos.slice(0,4).map(f =>
             `<img src="${f}" style="width:100%;height:5cm;object-fit:cover;border-radius:4px;border:1px solid #e0e0e0;">`
@@ -872,7 +885,7 @@ export function verActaBackup(id) {
       <!-- CONSTANCIA -->
       <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:4px;
         padding:0.2cm 0.3cm;margin:0.3cm 0;font-size:10pt;color:#1e40af;">
-        ℹ️ En constancia de lo anterior, las partes firman la presente acta de copia de seguridad
+        En constancia de lo anterior, las partes firman la presente acta de copia de seguridad
         en la ciudad de Nemocón, Cundinamarca, el día <b>${fechaDoc}</b>.
       </div>
 

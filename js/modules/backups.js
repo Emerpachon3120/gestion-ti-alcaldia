@@ -234,15 +234,22 @@ function _modalHTML() {
       </div>
 
       <div class="form-group">
-        <label class="form-label">Ubicación física</label>
+        <label class="form-label">Ruta de origen del backup</label>
         <input type="text" class="form-input" id="bk-ubicacion"
-          placeholder="Ej: Oficina Sistemas, Sala de servidores...">
+          placeholder=" Ubicacion dentro del equipo Ej: C:/">
       </div>
 
       <div class="form-group">
-        <label class="form-label">Observaciones</label>
+        <label class="form-label">Actividades realizadas</label>
+        <div id="bk-actividades-lista" style="
+          background:var(--bg2);border:1px solid var(--border);
+          border-radius:var(--radius-sm);padding:10px;
+          display:grid;grid-template-columns:1fr 1fr;gap:6px;
+          margin-bottom:8px;">
+        </div>
+        <label class="form-label" style="margin-top:8px;">Observaciones adicionales</label>
         <textarea class="form-textarea" id="bk-obs"
-          placeholder="Información relevante del backup..."></textarea>
+          placeholder="Observaciones adicionales..."></textarea>
       </div>
 
       <!-- Fotos -->
@@ -359,6 +366,11 @@ function abrirNuevo() {
 }, _crearEquipoRapido);
 
   llenarSSPersonas('bk-persona-ss', ()=>{}, _crearFuncionarioRapido);
+  setTimeout(() => {
+    window._actualizarActividadesBk();
+    document.querySelectorAll('#bk-actividades-lista input[type="checkbox"]')
+      .forEach(cb => cb.checked = false);
+  }, 150);
   abrirModal('modal-backup');
 }
 
@@ -426,6 +438,15 @@ async function _ejecutarGuardarBk(firmaBase64 = null) {
 
   const DB = getDBStatic();
   const p  = DB.personas.find(x => x.id === personaId);
+
+  const actividadesMarcadas = Array.from(
+     document.querySelectorAll('#bk-actividades-lista input[type="checkbox"]:checked')
+  ).map(cb => cb.value);
+
+  const obsCompleto = actividadesMarcadas.length
+  ? 'Actividades realizadas:\n' + actividadesMarcadas.map(a => `• ${a}`).join('\n')
+  + (obs ? '\n\nObservaciones adicionales:\n' + obs : '')
+  : obs;
 
   const campos = {
     serial, personaId, tipo, destino, estadoBk, obs, ubicacion,
@@ -543,24 +564,64 @@ function _renderFotosPreview(arr, previewId) {
 function _crearEquipoRapido() {
   const modalBk = document.getElementById('modal-backup');
   modalBk?.classList.remove('open');
-  
-  abrirNuevoEquipo();
-  
-  const observer = new MutationObserver(() => {
+
+  // Usar el formulario completo de inventario
+  import('./inventario.js').then(mod => {
+    mod.abrirNuevo();
+
+    // Observar cuando se cierre el modal de equipo
     const modalEq = document.getElementById('modal-equipo');
-    if (modalEq && !modalEq.classList.contains('open')) {
-      observer.disconnect();
-      setTimeout(() => {
-        modalBk?.classList.add('open');
-        llenarSSEquipos('bk-equipo-ss', () => {}, _crearEquipoRapido);
-      }, 200);
-    }
-  });
-  
-  const modalEq = document.getElementById('modal-equipo');
-  if (modalEq) {
+    if (!modalEq) return;
+
+    const observer = new MutationObserver(() => {
+      if (!modalEq.classList.contains('open')) {
+        observer.disconnect();
+        setTimeout(() => {
+          // Reabrir modal backup
+          modalBk?.classList.add('open');
+
+          // Tomar el último equipo registrado
+          const equipos = getData('equipos');
+          const ultimo  = equipos[equipos.length - 1];
+          if (!ultimo) return;
+
+          const DB = getDBStatic();
+
+          // Auto-rellenar serial
+          llenarSSEquipos('bk-equipo-ss', () => {}, _crearEquipoRapido);
+          setSSValue('bk-equipo-ss', ultimo.serial,
+            `${ultimo.serial}${ultimo.marca ? ' — ' + ultimo.marca : ''}`);
+
+          // Auto-rellenar responsable
+          const p = DB.personas.find(x => x.id === ultimo.usuarioId);
+          if (p) {
+            llenarSSPersonas('bk-persona-ss', () => {}, _crearFuncionarioRapido);
+            setSSValue('bk-persona-ss', p.id, p.nombre);
+          }
+
+          // Mostrar info
+          const of  = DB.oficinas.find(x => x.id === ultimo.oficina);
+          const dep = of ? DB.dependencias.find(x => x.id === of.depId) : null;
+          let infoBox = document.getElementById('bk-equipo-info');
+          if (!infoBox) {
+            infoBox = document.createElement('div');
+            infoBox.id = 'bk-equipo-info';
+            document.getElementById('bk-equipo-ss')
+              .insertAdjacentElement('afterend', infoBox);
+          }
+          infoBox.innerHTML = `
+            <div style="background:var(--bg2);border:1px solid var(--border);
+              border-radius:var(--radius-sm);padding:8px 12px;
+              font-size:11px;color:var(--text2);margin-top:6px;">
+              <b>${dep?.nombre || '—'}</b> · ${of?.nombre || '—'}<br>
+              ${ultimo.so || '—'} · RAM: ${ultimo.ram || '—'}
+            </div>`;
+        }, 200);
+      }
+    });
+
     observer.observe(modalEq, { attributes: true, attributeFilter: ['class'] });
-  }
+  });
 }
 
 function _crearFuncionarioRapido() {
@@ -717,5 +778,32 @@ function _modalFuncionarioRapido() {
     showToast(`👤 ${nombre} registrado`);
   });
 }
+
+const ACTIVIDADES_BACKUP = [
+  'Verificación del espacio disponible en destino',
+  'Copia de documentos institucionales',
+  'Copia de correos y configuraciones',
+  'Copia de base de datos local',
+  'Copia de escritorio y descargas',
+  'Copia de software instalado (lista)',
+  'Verificación de integridad del backup',
+  'Prueba de restauración parcial',
+  'Eliminación de backups anteriores obsoletos',
+  'Registro de ruta y nombre del archivo backup',
+  'Notificación al funcionario del resultado',
+  'Etiquetado del medio de almacenamiento',
+];
+
+window._actualizarActividadesBk = function() {
+  const lista = document.getElementById('bk-actividades-lista');
+  if (!lista) return;
+  lista.innerHTML = ACTIVIDADES_BACKUP.map((act, i) => `
+    <label style="display:flex;align-items:center;gap:6px;
+      font-size:12px;cursor:pointer;padding:3px 0;">
+      <input type="checkbox" id="bk-act-${i}" value="${act}"
+        style="width:14px;height:14px;cursor:pointer;">
+      ${act}
+    </label>`).join('');
+};
 
 window._guardarBackup = _guardar;
