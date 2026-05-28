@@ -85,8 +85,19 @@ export function renderLista() {
           <span class="tag" style="color:${pColor}">${i.prioridad}</span>
         </div>
         <div class="card-actions">
-          <button class="action-btn" data-action="editar" data-id="${i.id}">✏️ Editar</button>
-          ${['Iniciada','En proceso','Pendiente','abierta'].includes(est) ? `<button class="action-btn" data-action="resolver" data-id="${i.id}" style="color:var(--green)">✅ Resolver</button>` : ''}
+          <select class="action-btn" data-action="estado" data-id="${i.id}"
+            style="cursor:pointer;font-size:11px;padding:6px;">
+            <option value="Iniciada"   ${est==='Iniciada'   ?'selected':''}>Iniciada</option>
+            <option value="En proceso" ${est==='En proceso' ?'selected':''}>En proceso</option>
+            <option value="En pausa"   ${est==='En pausa'   ?'selected':''}>En pausa</option>
+            <option value="Finalizada" ${est==='Finalizada' ?'selected':''}>Finalizada</option>
+            <option value="Cancelada"  ${est==='Cancelada'  ?'selected':''}>Cancelada</option>
+            <option value="Pendiente"  ${est==='Pendiente'  ?'selected':''}>Pendiente</option>
+          </select>
+          ${['Iniciada','En proceso','Pendiente','abierta'].includes(est)
+            ? `<button class="action-btn" data-action="resolver" data-id="${i.id}"
+                style="color:var(--green);font-weight:600;">Resolver</button>`
+            : ''}
           <button class="action-btn del" data-action="eliminar" data-id="${i.id}">🗑️</button>
         </div>
       </div>`;
@@ -95,9 +106,27 @@ export function renderLista() {
   container.querySelectorAll('[data-action]').forEach(btn => {
     btn.addEventListener('click', () => {
       const { action, id } = btn.dataset;
-      if (action === 'editar')   editar(id);
       if (action === 'resolver') _resolver(id);
       if (action === 'eliminar') _eliminar(id);
+    });
+  });
+
+  // Cambio de estado con el select
+  container.querySelectorAll('select[data-action="estado"]').forEach(sel => {
+    sel.addEventListener('change', () => {
+      const id = sel.dataset.id;
+      const nuevoEstado = sel.value;
+      const estadoCerrado = ['Finalizada','Cancelada'].includes(nuevoEstado);
+      const lista = getData('incidencias').map(i => i.id !== id ? i : {
+        ...i,
+        estadoTexto: nuevoEstado,
+        estado: estadoCerrado ? 'cerrada' : 'abierta',
+      });
+      setState('incidencias', lista);
+      saveKey('incidencias');
+      apiPost('Incidencias','update',{ 'Estado': nuevoEstado },'Ticket', id).catch(console.warn);
+      showToast(`Estado actualizado: ${nuevoEstado}`);
+      renderLista();
     });
   });
 }
