@@ -6,6 +6,7 @@ import { navigate, registerRoute }        from './router.js';
 import { showToast }        from './ui/toast.js';
 import { renderMenu, renderHeader } from './ui/menu.js';
 import { cerrarDocViewer, docViewerPrint } from './ui/documento.js';
+import { abrirFirma } from './ui/firma.js';
 
 // Módulos de páginas
 import * as Dashboard      from './modules/dashboard.js';
@@ -28,6 +29,8 @@ registerRoute('estadisticas',   Estadisticas);
 registerRoute('reportes',       Reportes);
 registerRoute('calendario',     Calendario);
 registerRoute('administracion', Administracion);
+
+window._abrirFirmaGlobal = abrirFirma;
 
 async function init() {
   initStorage();

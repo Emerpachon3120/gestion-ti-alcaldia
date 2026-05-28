@@ -655,7 +655,7 @@ export function generarActaDependencia(tipo, depId, fechaIni, fechaFin, obsExtra
     actaTitulo = 'Acta de ejecución de copias de seguridad';
     secTitulo  = 'Copias de seguridad realizadas';
     intro = `En la fecha indicada, se deja constancia de la ejecución de actividades de copias de seguridad (backup) de la información institucional contenida en los equipos de cómputo asignados a funcionarios de la ${dep.nombre}, conforme a la programación establecida por el área de sistemas y a los registros individuales que reposan como soporte documental.`;
-    headers = `<tr><th>Funcionario</th><th>Ruta de origen</th><th>Destino</th><th>Fecha</th><th>Firmado</th></tr>`;
+    headers = `<tr><th>Funcionario</th><th>Serial equipo</th><th>Destino</th><th>Fecha</th><th>Firmado</th></tr>`;
     items = getData('backups').filter(b =>
       serials.includes(b.serial) && enRango(parseFecha(b.fecha))
     );
@@ -664,7 +664,7 @@ export function generarActaDependencia(tipo, depId, fechaIni, fechaFin, obsExtra
         DB.personas.find(x => x.id === b.personaId)?.nombre || '—';
       return `<tr>
         <td>${resp}</td>
-        <td style="font-size:9pt;font-family:monospace;">${b.ubicacion || '—'}</td>
+        <td style="font-family:monospace;font-size:9pt;">${b.serial || '—'}</td>
         <td>${b.destino || '—'}</td>
         <td>${fmtC(parseFecha(b.fecha))}</td>
         <td>${b.firmado ? 'Si' : 'No'}</td>
@@ -808,9 +808,9 @@ export function generarActaDependencia(tipo, depId, fechaIni, fechaFin, obsExtra
   let _htmlActa = html;
 
   abrirDocViewer(html, `${actaTitulo} — ${dep.nombre}`, () => {
-    import('./firma.js').then(({ abrirFirma }) => {
-      abrirFirma('acta', depId, (firmaBase64) => {
-        // Insertar firma del jefe en el acta
+    // Usar la función global en vez de import dinámico
+    if (typeof window._abrirFirmaGlobal === 'function') {
+      window._abrirFirmaGlobal('acta', depId, (firmaBase64) => {
         const htmlConFirma = _htmlActa.replace(
           `<div style="height:2cm;"></div>`,
           `<img src="${firmaBase64}" alt="Firma jefe"
@@ -819,11 +819,11 @@ export function generarActaDependencia(tipo, depId, fechaIni, fechaFin, obsExtra
         );
         _htmlActa = htmlConFirma;
         abrirDocViewer(htmlConFirma, `${actaTitulo} — ${dep.nombre}`);
-        import('./toast.js').then(({ showToast }) =>
-          showToast('Firma registrada en el acta')
-        );
+        showToast('Firma registrada en el acta');
       });
-    });
+    } else {
+      showToast('Error cargando módulo de firma');
+    }
   });
 }
 
