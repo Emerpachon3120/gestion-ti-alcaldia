@@ -323,6 +323,10 @@ function _bindEvents() {
     if (el) soloLetras(el);
   });
 }
+function _crearFuncionarioRapido() {
+  _modalFuncionarioRapido();
+  document.getElementById('modal-func-rapido').classList.add('open');
+}
 
 function abrirNuevo() {
   document.getElementById('bk-title').textContent = '💾 Nueva Copia de Seguridad';
@@ -622,11 +626,6 @@ function _crearEquipoRapido() {
 
     observer.observe(modalEq, { attributes: true, attributeFilter: ['class'] });
   });
-}
-
-function _crearFuncionarioRapido() {
-  _modalFuncionarioRapido();
-  document.getElementById('modal-func-rapido').classList.add('open');
 }
 
 function _modalEquipoRapido() {
