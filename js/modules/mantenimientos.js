@@ -732,6 +732,11 @@ function abrirNuevo() {
   llenarSSPersonas('mt-nuevo-resp-ss', ()=>{}, _crearFuncionarioRapido);
 
   setTimeout(() => window._actualizarActividades(), 100);
+  // Reset checkboxes después de que se rendericen
+  setTimeout(() => {
+    document.querySelectorAll('#mt-actividades-lista input[type="checkbox"]')
+      .forEach(cb => cb.checked = false);
+  }, 150);
   abrirModal('modal-mantto');
 }
 
@@ -903,6 +908,10 @@ async function _ejecutarGuardar(firmaBase64 = null) {
   setState('mantenimientos', lista);
   saveKey('mantenimientos');
   cerrarModal('modal-mantto');           // ← cierra modal mantenimiento
+  // Limpiar checkboxes
+  document.querySelectorAll('#mt-actividades-lista input[type="checkbox"]')
+    .forEach(cb => cb.checked = false);
+
   document.body.style.overflow = '';     // ← libera el scroll
   renderLista();
 
