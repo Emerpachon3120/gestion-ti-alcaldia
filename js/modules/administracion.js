@@ -101,11 +101,13 @@ export function render() {
           <input type="text" class="form-input" id="dep-responsable"
             placeholder="Nombre del jefe de dependencia">
         </div>
-        <div style="display:flex;gap:8px;margin-top:8px;">
-          <button class="btn btn-secondary" style="flex:1;margin-top:0;"
-            onclick="cerrarModal('modal-dep')">Cancelar</button>
-          <button class="btn btn-primary" style="flex:2;margin-top:0;"
-            id="dep-save-btn">💾 Guardar</button>
+        <div class="modal-footer">
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-secondary" style="flex:1;margin-top:0;"
+              onclick="cerrarModal('modal-dep')">Cancelar</button>
+            <button class="btn btn-primary" style="flex:2;margin-top:0;"
+              id="dep-save-btn">💾 Guardar</button>
+          </div>
         </div>
       </div>
     </div>

@@ -724,11 +724,13 @@ function _crearFuncionarioRapido() {
                 <label class="form-label">Teléfono</label>
                 <input type="tel" class="form-input" id="persona-tel">
               </div>
-              <div style="display:flex;gap:8px;margin-top:8px;">
-                <button class="btn btn-secondary" style="flex:1;margin-top:0;"
-                  id="persona-cancel-btn">Cancelar</button>
-                <button class="btn btn-primary" style="flex:2;margin-top:0;"
-                  id="persona-save-btn">👤 Guardar</button>
+              <div class="modal-footer">
+                <div style="display:flex;gap:8px;">
+                  <button class="btn btn-secondary" style="flex:1;margin-top:0;"
+                    id="persona-cancel-btn">Cancelar</button>
+                  <button class="btn btn-primary" style="flex:2;margin-top:0;"
+                    id="persona-save-btn">👤 Guardar</button>
+                </div>
               </div>
             </div>
           </div>`);

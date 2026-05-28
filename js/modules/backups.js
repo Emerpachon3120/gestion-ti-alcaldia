@@ -671,13 +671,15 @@ function _modalEquipoRapido() {
           <label class="form-label">Oficina *</label>
           <div id="eq-r-oficina-ss"></div>
         </div>
-        <div style="display:flex;gap:8px;margin-top:8px;">
-          <button class="btn btn-secondary" style="flex:1;margin-top:0;"
-            onclick="document.getElementById('modal-equipo-rapido').classList.remove('open')">
-            Cancelar
-          </button>
-          <button class="btn btn-primary" style="flex:2;margin-top:0;"
-            id="eq-r-save-btn">💻 Guardar equipo</button>
+        <div class="modal-footer">
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-secondary" style="flex:1;margin-top:0;"
+              onclick="document.getElementById('modal-equipo-rapido').classList.remove('open')">
+              Cancelar
+            </button>
+            <button class="btn btn-primary" style="flex:2;margin-top:0;"
+              id="eq-r-save-btn">💻 Guardar equipo</button>
+          </div>
         </div>
       </div>
     </div>`;
