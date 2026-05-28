@@ -755,7 +755,6 @@ function editar(id) {
 
   document.getElementById('mt-tipo').value          = m.tipo          || 'Mantenimiento Preventivo';
   document.getElementById('mt-frecuencia').value    = m.frecuencia    || 'Semestral';
-  document.getElementById('mt-obs').value           = m.obs           || '';
   document.getElementById('mt-periodo').value       = m.periodo       || '';
   document.getElementById('mt-responsable').value   = m.responsable   || 'Emerson Judiño Pachón Ayala';
   document.getElementById('mt-estado-equipo').value = m.estadoEquipo  || 'Operativo';
@@ -774,29 +773,52 @@ function editar(id) {
   document.getElementById('mt-traslado-wrap').style.display =
     m.traslado === 'Sí' ? 'block' : 'none';
 
-  const d = parseFecha(m.fecha);
-  if (d) document.getElementById('mt-fecha').value = d.toISOString().split('T')[0];
+  const d  = parseFecha(m.fecha);
   const dp = parseFecha(m.fechaProxima);
-  if (dp) document.getElementById('mt-fecha-proxima').value = dp.toISOString().split('T')[0];
   const dt = parseFecha(m.fechaTraslado);
+  if (d)  document.getElementById('mt-fecha').value          = d.toISOString().split('T')[0];
+  if (dp) document.getElementById('mt-fecha-proxima').value  = dp.toISOString().split('T')[0];
   if (dt) document.getElementById('mt-fecha-traslado').value = dt.toISOString().split('T')[0];
+
+  // Separar observaciones de actividades
+  let obsSolo = m.obs || '';
+  if (obsSolo.includes('Observaciones adicionales:\n')) {
+    obsSolo = obsSolo.split('Observaciones adicionales:\n')[1] || '';
+  } else if (obsSolo.startsWith('Actividades realizadas:\n')) {
+    obsSolo = '';
+  }
+  document.getElementById('mt-obs').value = obsSolo;
 
   mtFotos = [...(m.fotos || [])];
   _renderFotosPreview(mtFotos, 'mt-fotos-preview');
 
-  llenarSSEquipos('mt-equipo-ss');
-  llenarSSPersonas('mt-resp-equipo-ss');
-  llenarSSPersonas('mt-nuevo-resp-ss');
+  llenarSSEquipos('mt-equipo-ss', ()=>{}, _crearEquipoRapido);
+  llenarSSPersonas('mt-resp-equipo-ss', ()=>{}, _crearFuncionarioRapido);
+  llenarSSPersonas('mt-nuevo-resp-ss', ()=>{}, _crearFuncionarioRapido);
 
   const DB = getDBStatic();
   const eq = getData('equipos').find(e => e.serial === m.serial);
   const p  = eq ? DB.personas.find(x => x.id === eq.usuarioId) : null;
-  setSSValue('mt-equipo-ss', m.serial, `${m.serial}${p ? ' — ' + p.nombre : ''}`);
+  setSSValue('mt-equipo-ss', m.serial, `${m.serial}${p ? ' — '+p.nombre : ''}`);
 
   if (m.respEquipoId) {
     const rp = DB.personas.find(x => x.id === m.respEquipoId);
     if (rp) setSSValue('mt-resp-equipo-ss', rp.id, rp.nombre);
   }
+  if (m.nuevoRespId) {
+    const nr = DB.personas.find(x => x.id === m.nuevoRespId);
+    if (nr) setSSValue('mt-nuevo-resp-ss', nr.id, nr.nombre);
+  }
+
+  // Actividades — marcar checkboxes
+  setTimeout(() => {
+    window._actualizarActividades();
+    if (m.obs) {
+      const lineas = m.obs.split('\n').map(l => l.replace('• ','').trim());
+      document.querySelectorAll('#mt-actividades-lista input[type="checkbox"]')
+        .forEach(cb => { cb.checked = lineas.includes(cb.value); });
+    }
+  }, 150);
 
   abrirModal('modal-mantto');
 }
