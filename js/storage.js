@@ -1,8 +1,7 @@
 import { CONFIG } from './config.js';
 import { setState, getState } from './state.js';
 
-const KEYS = ['equipos', 'mantenimientos', 'backups', 'incidencias'];
-
+const KEYS = ['equipos', 'mantenimientos', 'backups', 'incidencias', 'DB_STATIC'];
 // Limpiar caché si cambia la versión
 export function initStorage() {
   if (localStorage.getItem('cache_version') !== CONFIG.CACHE_VERSION) {

@@ -44,6 +44,7 @@ async function init() {
 
   // Sincronizar en background y actualizar dashboard
   syncData().then(() => {
+
     // Si estamos en dashboard, re-renderizar con datos frescos
     if (getState('currentPage') === 'dashboard') {
       navigate('dashboard');
@@ -63,6 +64,7 @@ export async function syncData() {
   const btn = document.getElementById('sync-btn');
   if (btn) btn.classList.add('syncing');
   setState('syncStatus', 'syncing');
+  saveKey('DB_STATIC');
 
   try {
     const { deps, ofs, pers, eqs, mantsSheet, bksSheet } =
@@ -81,6 +83,8 @@ export async function syncData() {
         cargo: r.Cargo || '', correo: r.Correo || ''
       })),
     });
+
+    saveKey('DB_STATIC');
 
     // Equipos
     setState('equipos', eqs.map(r => ({
