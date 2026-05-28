@@ -1,5 +1,5 @@
 import { CONFIG }           from './config.js';
-import { initStorage, loadFromStorage, saveToStorage } from './storage.js';
+import { initStorage, loadFromStorage, saveToStorage, saveKey } from './storage.js';
 import { setState, getState }   from './state.js';
 import { apiGet, cargarDatosDesdeSheets } from './api.js';
 import { navigate, registerRoute }        from './router.js';
