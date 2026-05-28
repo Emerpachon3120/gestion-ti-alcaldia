@@ -32,6 +32,7 @@ export function render() {
 
 export function onEnter() {
   _bindEvents();
+  _bindModalEvents();
   renderLista();
   window.abrirNuevoEquipo = abrirNuevo;
   window.editarEquipo     = editar;
@@ -425,7 +426,14 @@ function _bindEvents() {
 }
 
 export function abrirNuevo() {
-  document.getElementById('eq-title').textContent     = '💻 Nuevo Equipo';
+
+  if (!document.getElementById('modal-equipo')) {
+    document.getElementById('modals-container')
+      .insertAdjacentHTML('beforeend', _modalHTML());
+    _bindModalEvents();
+  }
+
+  document.getElementById('eq-title').textContent = '💻 Nuevo Equipo';
   document.getElementById('eq-edit-serial').value     = '';
   document.getElementById('eq-serial').value          = '';
   document.getElementById('eq-serial').disabled       = false;
@@ -458,6 +466,12 @@ export function abrirNuevo() {
   llenarSSPersonas('eq-usuario-ss');
   abrirModal('modal-equipo');
 }
+
+function _bindModalEvents() {
+  document.getElementById('eq-cancel-btn')?.addEventListener('click', () => cerrarModal('modal-equipo'));
+  document.getElementById('eq-save-btn')?.addEventListener('click', _guardar);
+}
+
 function editar(serial) {
   const e = getData('equipos').find(x => x.serial === serial);
   if (!e) return;
