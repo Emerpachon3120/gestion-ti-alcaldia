@@ -453,18 +453,20 @@ async function _ejecutarGuardarBk(firmaBase64 = null) {
   const DB = getDBStatic();
   const p  = DB.personas.find(x => x.id === personaId);
 
+  // Actividades marcadas
   const actividadesMarcadas = Array.from(
-     document.querySelectorAll('#bk-actividades-lista input[type="checkbox"]:checked')
+    document.querySelectorAll('#bk-actividades-lista input[type="checkbox"]:checked')
   ).map(cb => cb.value);
 
   const obsCompleto = actividadesMarcadas.length
-  ? 'Actividades realizadas:\n' + actividadesMarcadas.map(a => `• ${a}`).join('\n')
-  + (obs ? '\n\nObservaciones adicionales:\n' + obs : '')
-  : obs;
+    ? 'Actividades realizadas:\n' + actividadesMarcadas.map(a => `• ${a}`).join('\n')
+      + (obs ? '\n\nObservaciones adicionales:\n' + obs : '')
+    : obs;
 
   const campos = {
-    serial, personaId, tipo, destino, estadoBk, obs, ubicacion,
-    respTI, frecuencia, fechaProxima, fotos: bkFotos,
+    serial, personaId, tipo, destino, estadoBk,
+    obs: obsCompleto,  // ← obsCompleto
+    ubicacion, respTI, frecuencia, fechaProxima, fotos: bkFotos,
     responsableEquipo: p?.nombre || '',
     firmado:    firmaBase64 ? true : false,
     firma:      firmaBase64,
@@ -479,11 +481,12 @@ async function _ejecutarGuardarBk(firmaBase64 = null) {
     apiPost('Backups', 'update', {
       EquipoID: serial, Tipo: tipo, Frecuencia: frecuencia,
       Fecha_Ultima: fecha, Fecha_Proxima: fechaProxima,
-      Ubicacion: destino, Estado: estadoBk, Observaciones: obs,
+      Ubicacion: destino, Estado: estadoBk,
+      Observaciones: obsCompleto,  // ← obsCompleto
       Responsable: respTI, Persona_ID: personaId, Resp_TI: respTI,
       Fotos_Base64: bkFotos.join('||'),
       Firmado: firmaBase64 ? 'Sí' : 'No',
-      Imagen_Base64: firmaBase64 || '',
+      Imagen_Base64: firmaBase64 ? 'firmado_digitalmente' : '',
     }, 'ID', editId).catch(console.warn);
     showToast('✅ Backup actualizado');
   } else {
@@ -493,11 +496,12 @@ async function _ejecutarGuardarBk(firmaBase64 = null) {
       ID: id, EquipoID: serial, Tipo: tipo, Frecuencia: frecuencia,
       Fecha_Ultima: fecha, Fecha_Proxima: fechaProxima,
       Firmado: firmaBase64 ? 'Sí' : 'No',
-      Responsable: respTI, Observaciones: obs,
-      Imagen_Base64: firmaBase64 || '',
+      Responsable: respTI,
+      Observaciones: obsCompleto,  // ← obsCompleto
+      Imagen_Base64: firmaBase64 ? 'firmado_digitalmente' : '',
       Ubicacion: destino, Estado: estadoBk,
       Persona_ID: personaId, Resp_TI: respTI,
-      Fotos_Base64: bkFotos.join('||'),
+      Fotos_Base64: bkFotos.length > 0 ? `${bkFotos.length} foto(s)` : '',
     }).catch(console.warn);
     showToast('💾 Backup registrado y firmado');
   }
@@ -507,10 +511,6 @@ async function _ejecutarGuardarBk(firmaBase64 = null) {
   cerrarModal('modal-backup');
   renderLista();
 }
-
-window._guardarBackup = _guardar;
-
-function _firmar(id) {
   const b = getData('backups').find(x => x.id === id);
   if (!b) return;
   if (b.firmado) { showToast('✅ Ya está firmado'); return; }
