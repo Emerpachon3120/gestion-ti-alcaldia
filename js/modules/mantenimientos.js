@@ -653,7 +653,13 @@ function _bindEvents() {
     const el = document.getElementById(id);
     if (el) soloLetras(el);
   });
-  ['mt-user-win','mt-pass-win','mt-user-admin','mt-pass-admin','mt-periodo'].forEach(id => {
+  // Solo periodo usa alfanumérico
+  const periodoEl = document.getElementById('mt-periodo');
+  if (periodoEl) alfaNumerico(periodoEl);
+
+  // Contraseñas permiten todo — sin validación restrictiva
+  // Usuarios solo alfanumérico
+  ['mt-user-win','mt-user-admin'].forEach(id => {
     const el = document.getElementById(id);
     if (el) alfaNumerico(el);
   });
