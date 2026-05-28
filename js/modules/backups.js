@@ -409,6 +409,18 @@ function editar(id) {
   const DB = getDBStatic();
   const p  = DB.personas.find(x => x.id === b.personaId);
   if (p) setSSValue('bk-persona-ss', p.id, p.nombre);
+
+  setTimeout(() => {
+    window._actualizarActividadesBk?.();
+    // Si el backup tiene actividades guardadas en obs, marcar los checkboxes
+    if (b.obs) {
+      const lineas = b.obs.split('\n').map(l => l.replace('• ','').trim());
+      document.querySelectorAll('#bk-actividades-lista input[type="checkbox"]')
+        .forEach(cb => {
+          cb.checked = lineas.includes(cb.value);
+        });
+    }
+  }, 150);
   abrirModal('modal-backup');
 }
 
