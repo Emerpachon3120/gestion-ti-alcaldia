@@ -278,9 +278,11 @@ function _modalHTML() {
         <div class="foto-grid" id="bk-fotos-preview"></div>
       </div>
 
-      <div style="display:flex;gap:8px;margin-top:8px;">
-        <button class="btn btn-secondary" style="flex:1;margin-top:0;" id="bk-cancel-btn">Cancelar</button>
-        <button class="btn btn-primary" style="flex:2;margin-top:0;"  onclick="window._guardarBackup()">💾 Registrar</button>
+      <div class="modal-footer">
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-secondary" style="flex:1;margin-top:0;" id="bk-cancel-btn">Cancelar</button>
+          <button class="btn btn-primary" style="flex:2;margin-top:0;" onclick="window._guardarBackup()">💾 Registrar</button>
+        </div>
       </div>
     </div>
   </div>`;
