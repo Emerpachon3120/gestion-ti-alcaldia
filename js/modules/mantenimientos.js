@@ -801,16 +801,19 @@ function editar(id) {
   const p  = eq ? DB.personas.find(x => x.id === eq.usuarioId) : null;
   setSSValue('mt-equipo-ss', m.serial, `${m.serial}${p ? ' — '+p.nombre : ''}`);
 
-  if (m.respEquipoId) {
-    const rp = DB.personas.find(x => x.id === m.respEquipoId);
+  // Responsable del equipo con fallback al usuario del equipo
+  const respId = m.respEquipoId || eq?.usuarioId;
+  if (respId) {
+    const rp = DB.personas.find(x => x.id === respId);
     if (rp) setSSValue('mt-resp-equipo-ss', rp.id, rp.nombre);
   }
+
   if (m.nuevoRespId) {
     const nr = DB.personas.find(x => x.id === m.nuevoRespId);
     if (nr) setSSValue('mt-nuevo-resp-ss', nr.id, nr.nombre);
   }
 
-  // Actividades — marcar checkboxes
+  // Actividades — marcar checkboxes según obs guardado
   setTimeout(() => {
     window._actualizarActividades();
     if (m.obs) {
