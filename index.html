@@ -49,6 +49,10 @@
   <div id="doc-viewer-overlay">
     <div id="doc-viewer-toolbar">
       <div id="doc-viewer-title">Documento</div>
+      <button id="doc-viewer-firmar-btn" style="display:none;background:#16a34a;color:#fff;border:none;padding:7px 14px;border-radius:6px;font-family:var(--font-main);font-size:12px;cursor:pointer;"
+              onclick="window._docFirmarCallback?.()">
+        Firmar acta
+      </button>
       <button onclick="docViewerPrint()">🖨️ Imprimir</button>
       <button onclick="cerrarDocViewer()">✕ Cerrar</button>
     </div>

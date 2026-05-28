@@ -3,10 +3,11 @@ import { getData, getDBStatic } from '../state.js';
 import { formatDate, parseFecha } from '../utils.js';
 
 // ── Visor de documentos ───────────────────────────────────────
-export function abrirDocViewer(htmlContent, titulo) {
+export function abrirDocViewer(htmlContent, titulo, onFirmar = null) {
   const overlay = document.getElementById('doc-viewer-overlay');
   const iframe  = document.getElementById('doc-viewer-iframe');
   const titleEl = document.getElementById('doc-viewer-title');
+  const btnFirmar = document.getElementById('doc-viewer-firmar-btn');
 
   titleEl.textContent = titulo || 'Documento';
 
@@ -20,6 +21,15 @@ export function abrirDocViewer(htmlContent, titulo) {
   iframe.src = window._docBlob;
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
+
+  // Mostrar u ocultar botón firmar
+  if (onFirmar) {
+    btnFirmar.style.display = 'block';
+    window._docFirmarCallback = onFirmar;
+  } else {
+    btnFirmar.style.display = 'none';
+    window._docFirmarCallback = null;
+  }
 }
 
 export function cerrarDocViewer() {
@@ -606,64 +616,130 @@ export function generarActaDependencia(tipo, depId, fechaIni, fechaFin, obsExtra
   const dep = DB.dependencias.find(x => x.id === depId);
   if (!dep) return;
 
-  const ofIds     = DB.oficinas.filter(o => o.depId === depId).map(o => o.id);
-  const eqsDep    = getData('equipos').filter(e => ofIds.includes(e.oficina));
-  const serials   = eqsDep.map(e => e.serial);
-  const dIni      = new Date(fechaIni + 'T00:00:00');
-  const dFin      = new Date(fechaFin + 'T23:59:59');
-  const enRango   = d => d && d >= dIni && d <= dFin;
-  const fmtC      = d => d.toLocaleDateString('es-CO', { day:'2-digit', month:'2-digit', year:'numeric' });
-  const fechaDoc  = new Date().toLocaleDateString('es-CO', { day:'2-digit', month:'2-digit', year:'numeric' });
-  const periodo   = fechaIni === fechaFin ? fmtC(dIni) : `${fmtC(dIni)} al ${fmtC(dFin)}`;
+  const ofIds   = DB.oficinas.filter(o => o.depId === depId).map(o => o.id);
+  const eqsDep  = getData('equipos').filter(e => ofIds.includes(e.oficina));
+  const serials = eqsDep.map(e => e.serial);
+  const dIni    = new Date(fechaIni + 'T00:00:00');
+  const dFin    = new Date(fechaFin + 'T23:59:59');
+  const enRango = d => d && d >= dIni && d <= dFin;
+  const fmtC    = d => d instanceof Date
+    ? d.toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric'})
+    : '—';
+  const fechaDoc = new Date().toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'});
+  const periodo  = `${fmtC(dIni)} al ${fmtC(dFin)}`;
+  const CONFIG   = window.APP_CONFIG;
 
-  let items = [], actaTitulo = '', secTitulo = '', filas = [];
+  let items = [], actaTitulo = '', intro = '', secTitulo = '', filas = [], headers = '';
   const totalEquipos = eqsDep.length;
 
   if (tipo === 'mantenimiento') {
-    actaTitulo = 'Acta de ejecución de mantenimientos preventivos';
+    actaTitulo = 'Acta de ejecución de mantenimientos';
     secTitulo  = 'Mantenimientos realizados';
-    items = getData('mantenimientos').filter(m => serials.includes(m.serial) && enRango(parseFecha(m.fecha)));
+    intro = `En la fecha indicada, se deja constancia de la ejecución de actividades de mantenimiento a los equipos de cómputo asignados a funcionarios de la ${dep.nombre}, conforme a la programación establecida por el área de sistemas y a los registros individuales que reposan como soporte documental.`;
+    headers = `<tr><th>Funcionario</th><th>ID del Equipo</th><th>Tipo</th><th>Fecha</th><th>Firmado</th></tr>`;
+    items = getData('mantenimientos').filter(m =>
+      serials.includes(m.serial) && enRango(parseFecha(m.fecha))
+    );
     filas = items.map(m => {
-      const p = getData('equipos').find(e => e.serial === m.serial);
-      const persona = p ? DB.personas.find(x => x.id === p.usuarioId) : null;
-      return `<tr><td>${persona?.nombre || '—'}</td><td>${m.serial}</td><td>${m.tipo || 'Preventivo'}</td><td>${fmtC(parseFecha(m.fecha))}</td></tr>`;
+      const eq = getData('equipos').find(e => e.serial === m.serial);
+      const p  = eq ? DB.personas.find(x => x.id === eq.usuarioId) : null;
+      return `<tr>
+        <td>${p?.nombre || '—'}</td>
+        <td style="font-family:monospace;font-size:9pt;">${m.serial}</td>
+        <td>${m.tipo || 'Preventivo'}</td>
+        <td>${fmtC(parseFecha(m.fecha))}</td>
+        <td>${m.firmado ? 'Si' : 'No'}</td>
+      </tr>`;
     });
   } else {
     actaTitulo = 'Acta de ejecución de copias de seguridad';
     secTitulo  = 'Copias de seguridad realizadas';
-    items = getData('backups').filter(b => serials.includes(b.serial) && enRango(parseFecha(b.fecha)));
+    intro = `En la fecha indicada, se deja constancia de la ejecución de actividades de copias de seguridad (backup) de la información institucional contenida en los equipos de cómputo asignados a funcionarios de la ${dep.nombre}, conforme a la programación establecida por el área de sistemas y a los registros individuales que reposan como soporte documental.`;
+    headers = `<tr><th>Funcionario</th><th>Ruta de origen</th><th>Destino</th><th>Fecha</th><th>Firmado</th></tr>`;
+    items = getData('backups').filter(b =>
+      serials.includes(b.serial) && enRango(parseFecha(b.fecha))
+    );
     filas = items.map(b => {
-      const resp = b.responsableEquipo || DB.personas.find(x => x.id === b.personaId)?.nombre || '—';
-      return `<tr><td>${resp}</td><td>${b.destino || '—'}</td><td>${fmtC(parseFecha(b.fecha))}</td></tr>`;
+      const resp = b.responsableEquipo ||
+        DB.personas.find(x => x.id === b.personaId)?.nombre || '—';
+      return `<tr>
+        <td>${resp}</td>
+        <td style="font-size:9pt;font-family:monospace;">${b.ubicacion || '—'}</td>
+        <td>${b.destino || '—'}</td>
+        <td>${fmtC(parseFecha(b.fecha))}</td>
+        <td>${b.firmado ? 'Si' : 'No'}</td>
+      </tr>`;
     });
   }
 
   if (!items.length) {
     import('./toast.js').then(({ showToast }) =>
-      showToast(`⚠️ No hay registros en ese período para ${dep.nombre}`)
+      showToast(`Sin registros en ese período para ${dep.nombre}`)
     );
     return;
   }
 
   const intervenidos   = new Set(items.map(x => x.serial)).size;
   const noIntervenidos = Math.max(0, totalEquipos - intervenidos);
-  const pct            = totalEquipos > 0 ? ((intervenidos / totalEquipos) * 100).toFixed(1) : '0.0';
+  const pct            = totalEquipos > 0
+    ? ((intervenidos / totalEquipos) * 100).toFixed(0) : '0';
 
-  const primerPersona = DB.personas.find(p => {
-    const eq = getData('equipos').find(e => e.usuarioId === p.id && ofIds.includes(e.oficina));
-    return !!eq;
-  });
-  const jefeDep = primerPersona?.nombre || `Representante ${dep.nombre}`;
+  const tipoTexto = tipo === 'mantenimiento' ? 'mantenimiento' : 'copias de seguridad';
 
-  const headers = tipo === 'mantenimiento'
-    ? `<tr><th>Funcionario</th><th>ID Equipo</th><th>Tipo</th><th>Fecha</th></tr>`
-    : `<tr><th>Funcionario</th><th>Ruta / Destino</th><th>Fecha</th></tr>`;
-
-  const tipoTexto = tipo === 'mantenimiento' ? 'mantenimiento' : 'copias de seguridad (backup)';
+  // Jefe de dependencia — usar responsable de la dependencia si existe
+  const jefeDep = dep.responsable || (() => {
+    for (const of_ of DB.oficinas.filter(o => o.depId === depId)) {
+      const eq = getData('equipos').find(e => e.oficina === of_.id && e.usuarioId);
+      if (eq) {
+        const p = DB.personas.find(x => x.id === eq.usuarioId);
+        if (p) return p.nombre;
+      }
+    }
+    return `Representante ${dep.nombre}`;
+  })();
 
   const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
   <title>${actaTitulo}</title>
-  <style>${_cssDoc()}</style>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    html,body{background:#e8e8e8;font-family:Arial,sans-serif;font-size:10.5pt;color:#111;}
+    .pagina{width:21.59cm;min-height:33.02cm;margin:0.8cm auto;background:#fff;
+      display:flex;flex-direction:column;box-shadow:0 4px 24px rgba(0,0,0,0.18);}
+    .header{width:100%;opacity:0.6;}
+    .header img{width:100%;display:block;}
+    .footer{margin-top:auto;width:100%;opacity:0.35;}
+    .footer img{width:100%;display:block;}
+    .body-wrap{flex:1;padding:0.5cm 1.8cm 0.4cm;display:flex;flex-direction:column;}
+    .titulo{text-align:center;font-size:13pt;font-weight:bold;text-transform:uppercase;
+      margin:0.4cm 0 0.5cm;letter-spacing:0.5px;
+      border-bottom:2pt solid #c0392b;padding-bottom:0.2cm;}
+    .meta{margin-bottom:0.4cm;font-size:10.5pt;background:#f9f9f9;
+      border:1px solid #e0e0e0;border-radius:4px;padding:0.3cm 0.4cm;}
+    .meta p{margin-bottom:4px;}
+    .intro{margin-bottom:0.4cm;font-size:10.5pt;text-align:justify;line-height:1.6;}
+    .sec{font-weight:bold;font-size:10.5pt;margin:0.35cm 0 0.15cm;
+      color:#c0392b;border-left:3pt solid #c0392b;padding-left:0.2cm;}
+    table{width:100%;border-collapse:collapse;margin-bottom:0.3cm;font-size:10pt;}
+    td,th{padding:6px 10px;vertical-align:top;border:1px solid #ddd;text-align:left;}
+    th{background:#c0392b;color:#fff;font-weight:bold;}
+    tr:nth-child(even) td{background:#f7f7f7;}
+    .obs{font-size:10.5pt;text-align:justify;line-height:1.6;margin-bottom:0.3cm;}
+    .constancia{font-size:10.5pt;margin:0.3cm 0;text-align:justify;font-style:italic;}
+    .firmas{display:flex;gap:2cm;align-items:flex-end;margin-top:0.5cm;}
+    .fbox{flex:1;text-align:center;}
+    .fbox img{height:2cm;object-fit:contain;display:block;margin:0 auto 3px;max-width:6cm;}
+    .flinea{border-top:1pt solid #111;padding-top:4px;line-height:1.5;}
+    .fnombre{font-weight:bold;font-size:10.5pt;}
+    .fcargo{font-size:9.5pt;color:#333;}
+    .spacer{flex:1;min-height:0.3cm;}
+    @media print{
+      @page{size:8.5in 13in;margin:0;}
+      html,body{background:#fff;width:8.5in;}
+      .pagina{width:8.5in;min-height:13in;margin:0;box-shadow:none;}
+      .footer{position:fixed;bottom:0;left:0;right:0;}
+      body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    }
+  </style>
   </head><body>
   <div class="pagina">
     <div class="header"><img src="${CONFIG.IMG_HEADER}" alt="Encabezado"/></div>
@@ -673,19 +749,19 @@ export function generarActaDependencia(tipo, depId, fechaIni, fechaFin, obsExtra
 
       <div class="meta">
         <p><b>Fecha de elaboración:</b> ${fechaDoc}</p>
-        <p><b>Responsable:</b> ${CONFIG.RESPONSABLE_TI}</p>
+        <p><b>Responsable TI:</b> ${CONFIG.RESPONSABLE_TI}</p>
         <p><b>Dependencia:</b> ${dep.nombre}</p>
         <p><b>Período:</b> ${periodo}</p>
+        <p><b>Total equipos en dependencia:</b> ${totalEquipos}</p>
+        <p><b>Equipos atendidos:</b> ${intervenidos} de ${totalEquipos} (${pct}%)</p>
+        ${noIntervenidos > 0
+          ? `<p><b>Equipos no atendidos:</b> ${noIntervenidos}</p>`
+          : ''}
       </div>
 
-      <div class="intro">
-        En la fecha indicada, se deja constancia de la ejecución de actividades de
-        ${tipoTexto} a los equipos de cómputo asignados a funcionarios de la
-        ${dep.nombre}, conforme a la programación establecida por el área de sistemas
-        y a los registros individuales que reposan como soporte documental.
-      </div>
+      <p class="intro">${intro}</p>
 
-      <div class="sec">1. ${secTitulo}</div>
+      <div class="sec">${secTitulo}</div>
       <table>
         ${headers}
         ${filas.join('')}
@@ -693,33 +769,14 @@ export function generarActaDependencia(tipo, depId, fechaIni, fechaFin, obsExtra
 
       <p class="obs">
         Se deja constancia de que los detalles técnicos de cada procedimiento realizado
-        reposan en los formatos individuales debidamente diligenciados y archivados por
-        el área de sistemas.
+        reposan en los formatos individuales de ${tipoTexto} debidamente diligenciados
+        y archivados por el área de sistemas.
       </p>
 
-      <div class="sec">2. Observaciones</div>
-      <p class="obs">
-        ${obsExtra || ''}
-        Se acordó que, en caso de requerir soporte técnico o presentar alguna novedad
-        en los equipos, deberán registrar la incidencia a través del formulario
-        institucional dispuesto por el área de sistemas.
-      </p>
-
-      <div class="sec">3. Indicadores de cumplimiento</div>
-      <p class="obs">
-        Durante la jornada de ${tipoTexto} en la ${dep.nombre}
-        se evaluaron un total de ${totalEquipos} equipos de cómputo.
-      </p>
-      <ul class="indicadores" style="margin:0.2cm 0 0.2cm 1cm;">
-        <li>Equipos intervenidos: ${intervenidos}</li>
-        <li>Equipos no intervenidos: ${noIntervenidos}</li>
-        <li>Porcentaje de cumplimiento: ${pct}%</li>
-      </ul>
-      <p class="obs">
-        El resultado evidencia el cumplimiento de la programación establecida por
-        el área de sistemas y el adecuado control sobre la periodicidad de los
-        ${tipoTexto}s.
-      </p>
+      ${obsExtra ? `
+        <div class="sec">Observaciones</div>
+        <p class="obs">${obsExtra}</p>
+      ` : ''}
 
       <p class="constancia">En constancia, se firma la presente acta.</p>
 
@@ -727,14 +784,15 @@ export function generarActaDependencia(tipo, depId, fechaIni, fechaFin, obsExtra
 
       <div class="firmas">
         <div class="fbox">
-          <img src="${CONFIG.IMG_FIRMA_TI}" alt="Firma TI">
+          <img src="${CONFIG.IMG_FIRMA_TI}" alt="Firma TI" style="mix-blend-mode:multiply;">
           <div class="flinea">
             <div class="fnombre">${CONFIG.RESPONSABLE_TI}</div>
             <div class="fcargo">Ingeniero de Sistemas</div>
+            <div class="fcargo">${CONFIG.ENTIDAD}</div>
           </div>
         </div>
         <div class="fbox">
-          <div style="height:1.6cm;"></div>
+          <div style="height:2cm;"></div>
           <div class="flinea">
             <div class="fnombre">${jefeDep}</div>
             <div class="fcargo">${dep.nombre}</div>
@@ -747,7 +805,26 @@ export function generarActaDependencia(tipo, depId, fechaIni, fechaFin, obsExtra
   </div>
   </body></html>`;
 
-  abrirDocViewer(html, `${actaTitulo} — ${dep.nombre}`);
+  let _htmlActa = html;
+
+  abrirDocViewer(html, `${actaTitulo} — ${dep.nombre}`, () => {
+    import('./firma.js').then(({ abrirFirma }) => {
+      abrirFirma('acta', depId, (firmaBase64) => {
+        // Insertar firma del jefe en el acta
+        const htmlConFirma = _htmlActa.replace(
+          `<div style="height:2cm;"></div>`,
+          `<img src="${firmaBase64}" alt="Firma jefe"
+            style="height:2cm;object-fit:contain;display:block;
+                   margin:0 auto 3px;max-width:6cm;mix-blend-mode:multiply;">`
+        );
+        _htmlActa = htmlConFirma;
+        abrirDocViewer(htmlConFirma, `${actaTitulo} — ${dep.nombre}`);
+        import('./toast.js').then(({ showToast }) =>
+          showToast('Firma registrada en el acta')
+        );
+      });
+    });
+  });
 }
 
 export function verActaBackup(id) {
