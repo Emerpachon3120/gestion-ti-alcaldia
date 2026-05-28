@@ -139,7 +139,7 @@ function _modalHTML() {
             </select>
           </div>
           <div class="form-group"><label class="form-label">Responsable atención</label>
-            <input type="text" class="form-input" id="inc-responsable" value="Emerson Pachon">
+            <input type="text" class="form-input" id="inc-responsable" value="Emerson Judiño Pachón Ayala">
           </div>
         </div>
         <div class="form-group"><label class="form-label">Descripción *</label>
@@ -178,7 +178,7 @@ function abrirNuevo() {
   document.getElementById('inc-estado').value = 'Iniciada';
   document.getElementById('inc-desc').value = '';
   document.getElementById('inc-obs').value = '';
-  document.getElementById('inc-responsable').value = 'Emerson Pachon';
+  document.getElementById('inc-responsable').value = 'Emerson Judiño Pachon Ayala';
   llenarSSPersonas('inc-persona-ss');
   abrirModal('modal-incidencia');
 }
@@ -194,7 +194,7 @@ function editar(id) {
   document.getElementById('inc-estado').value = i.estadoTexto || 'Iniciada';
   document.getElementById('inc-desc').value = i.desc || '';
   document.getElementById('inc-obs').value = i.observacion || '';
-  document.getElementById('inc-responsable').value = i.responsableAtencion || 'Emerson Pachon';
+  document.getElementById('inc-responsable').value = i.responsableAtencion || 'Emerson Judiño Pachón Ayala';
   llenarSSPersonas('inc-persona-ss');
   const DB = getDBStatic();
   const p  = DB.personas.find(x => x.id === i.personaId);

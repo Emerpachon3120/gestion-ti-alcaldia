@@ -166,7 +166,7 @@ function _modalHTML() {
       </div>
       <div class="form-group">
         <label class="form-label">Responsable del backup (TI)</label>
-        <input type="text" class="form-input" id="bk-resp-ti" value="Emerson Pachón Ayala">
+        <input type="text" class="form-input" id="bk-resp-ti" value="Emerson Judiño Pachón Ayala">
       </div>
 
       <div style="font-size:11px;font-weight:700;color:var(--accent);
@@ -336,45 +336,55 @@ function abrirNuevo() {
   document.getElementById('bk-estado').value      = 'Completado';
   document.getElementById('bk-obs').value         = '';
   document.getElementById('bk-ubicacion').value   = '';
-  document.getElementById('bk-resp-ti').value     = 'Emerson Pachón Ayala';
+  document.getElementById('bk-resp-ti').value     = 'Emerson Judiño Pachón Ayala';
+
+  // Limpiar info box del equipo anterior
+  const equipoInfo = document.getElementById('bk-equipo-info');
+  if (equipoInfo) equipoInfo.innerHTML = '';
+
   const hoy = new Date().toISOString().split('T')[0];
   document.getElementById('bk-fecha').value         = hoy;
   document.getElementById('bk-fecha-proxima').value = calcFechaProxima(hoy, 'Trimestral');
+
   bkFotos = [];
   _renderFotosPreview([], 'bk-fotos-preview');
+
+  // Recargar SearchSelects limpios desde cero
   llenarSSEquipos('bk-equipo-ss', (serial) => {
-  const DB = getDBStatic();
-  const eq = getData('equipos').find(e => e.serial === serial);
-  if (!eq) return;
+    const DB = getDBStatic();
+    const eq = getData('equipos').find(e => e.serial === serial);
+    if (!eq) return;
 
-  const p   = DB.personas.find(x => x.id === eq.usuarioId);
-  if (p) setSSValue('bk-persona-ss', p.id, p.nombre);
+    const p  = DB.personas.find(x => x.id === eq.usuarioId);
+    if (p) setSSValue('bk-persona-ss', p.id, p.nombre);
 
-  const of  = DB.oficinas.find(x => x.id === eq.oficina);
-  const dep = of ? DB.dependencias.find(x => x.id === of.depId) : null;
+    const of  = DB.oficinas.find(x => x.id === eq.oficina);
+    const dep = of ? DB.dependencias.find(x => x.id === of.depId) : null;
 
-  let infoBox = document.getElementById('bk-equipo-info');
-  if (!infoBox) {
-    infoBox = document.createElement('div');
-    infoBox.id = 'bk-equipo-info';
-    document.getElementById('bk-equipo-ss').insertAdjacentElement('afterend', infoBox);
-  }
-  infoBox.innerHTML = `
-    <div style="background:var(--bg2);border:1px solid var(--border);
-      border-radius:var(--radius-sm);padding:8px 12px;
-      font-size:11px;color:var(--text2);margin-top:6px;">
-      🏢 <b>${dep?.nombre || '—'}</b> · ${of?.nombre || '—'}<br>
-      💻 ${eq.so || '—'} · RAM: ${eq.ram || '—'} · ${eq.disco || ''} ${eq.cap || ''}
-      ${eq.marca ? `<br>🏷️ ${eq.marca} ${eq.modelo || ''}` : ''}
-    </div>`;
-}, _crearEquipoRapido);
+    let infoBox = document.getElementById('bk-equipo-info');
+    if (!infoBox) {
+      infoBox = document.createElement('div');
+      infoBox.id = 'bk-equipo-info';
+      document.getElementById('bk-equipo-ss').insertAdjacentElement('afterend', infoBox);
+    }
+    infoBox.innerHTML = `
+      <div style="background:var(--bg2);border:1px solid var(--border);
+        border-radius:var(--radius-sm);padding:8px 12px;
+        font-size:11px;color:var(--text2);margin-top:6px;">
+        <b>${dep?.nombre || '—'}</b> · ${of?.nombre || '—'}<br>
+        ${eq.so || '—'} · RAM: ${eq.ram || '—'} · ${eq.disco || ''} ${eq.cap || ''}
+        ${eq.marca ? `<br>${eq.marca} ${eq.modelo || ''}` : ''}
+      </div>`;
+  }, _crearEquipoRapido);
 
   llenarSSPersonas('bk-persona-ss', ()=>{}, _crearFuncionarioRapido);
+
   setTimeout(() => {
-    window._actualizarActividadesBk();
+    window._actualizarActividadesBk?.();
     document.querySelectorAll('#bk-actividades-lista input[type="checkbox"]')
       .forEach(cb => cb.checked = false);
   }, 150);
+
   abrirModal('modal-backup');
 }
 
@@ -388,7 +398,7 @@ function editar(id) {
   document.getElementById('bk-estado').value         = b.estadoBk  || 'Completado';
   document.getElementById('bk-obs').value            = b.obs       || '';
   document.getElementById('bk-ubicacion').value      = b.ubicacion || '';
-  document.getElementById('bk-resp-ti').value        = b.respTI    || 'Emerson Pachón Ayala';
+  document.getElementById('bk-resp-ti').value        = b.respTI    || 'Emerson Judiño Pachón Ayala';
   const d  = parseFecha(b.fecha);        if(d)  document.getElementById('bk-fecha').value          = d.toISOString().split('T')[0];
   const dp = parseFecha(b.fechaProxima); if(dp) document.getElementById('bk-fecha-proxima').value  = dp.toISOString().split('T')[0];
   bkFotos = [...(b.fotos || [])];

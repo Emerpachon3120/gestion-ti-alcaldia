@@ -5,6 +5,6 @@ window.APP_CONFIG = {
   CACHE_VERSION:   '3.2',
   APP_NAME:        'Gestión TI',
   ENTIDAD:         'Alcaldía Municipal de Nemocón',
-  RESPONSABLE_TI:  'Emerson Pachón Ayala',
+  RESPONSABLE_TI:  'Emerson Judiño Pachón Ayala',
   VERSION:         '3.1.0',
 };

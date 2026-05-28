@@ -427,7 +427,7 @@ function _modalHTML() {
 
       <div class="form-group">
         <label class="form-label">Responsable TI</label>
-        <input type="text" class="form-input" id="mt-responsable" value="Emerson Pachón Ayala">
+        <input type="text" class="form-input" id="mt-responsable" value="Emerson Judiño Pachón Ayala">
       </div>
 
       <div class="form-group">
@@ -682,7 +682,7 @@ function abrirNuevo() {
 
   document.getElementById('mt-tipo').value          = 'Mantenimiento Preventivo';
   document.getElementById('mt-frecuencia').value    = 'Semestral';
-  document.getElementById('mt-responsable').value   = 'Emerson Pachón Ayala';
+  document.getElementById('mt-responsable').value   = 'Emerson Judiño Pachón Ayala';
   document.getElementById('mt-estado-equipo').value = 'Operativo';
   document.getElementById('mt-cambio-resp').value   = 'No';
   document.getElementById('mt-cambio-cred').value   = 'No';
@@ -751,7 +751,7 @@ function editar(id) {
   document.getElementById('mt-frecuencia').value    = m.frecuencia    || 'Semestral';
   document.getElementById('mt-obs').value           = m.obs           || '';
   document.getElementById('mt-periodo').value       = m.periodo       || '';
-  document.getElementById('mt-responsable').value   = m.responsable   || 'Emerson Pachón Ayala';
+  document.getElementById('mt-responsable').value   = m.responsable   || 'Emerson Judiño Pachón Ayala';
   document.getElementById('mt-estado-equipo').value = m.estadoEquipo  || 'Operativo';
   document.getElementById('mt-cambio-resp').value   = m.cambioResp    || 'No';
   document.getElementById('mt-cambio-cred').value   = m.cambioCred    || 'No';
