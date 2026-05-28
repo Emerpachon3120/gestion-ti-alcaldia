@@ -438,18 +438,22 @@ async function _guardar() {
 }
 
 function _pedirFirmaYGuardarBk() {
+  // Guardar actividades ANTES de abrir firma
+  window._actividadesTempBk = Array.from(
+    document.querySelectorAll('#bk-actividades-lista input[type="checkbox"]:checked')
+  ).map(cb => cb.value);
+  window._obsTempBk = document.getElementById('bk-obs')?.value || '';
+
   _abrirFirma('backup', 'nuevo', (firmaBase64) => {
     _ejecutarGuardarBk(firmaBase64);
   });
 }
-
 async function _ejecutarGuardarBk(firmaBase64 = null) {
   const serial    = getSSValue('bk-equipo-ss');
   const personaId = getSSValue('bk-persona-ss');
   const tipo      = document.getElementById('bk-tipo').value;
   const destino   = document.getElementById('bk-destino').value;
   const estadoBk  = document.getElementById('bk-estado').value;
-  const obs       = document.getElementById('bk-obs').value;
   const ubicacion = document.getElementById('bk-ubicacion').value;
   const respTI    = document.getElementById('bk-resp-ti').value;
   const frecuencia= document.getElementById('bk-frecuencia').value;
@@ -467,10 +471,18 @@ async function _ejecutarGuardarBk(firmaBase64 = null) {
   const DB = getDBStatic();
   const p  = DB.personas.find(x => x.id === personaId);
 
-  // Actividades marcadas
-  const actividadesMarcadas = Array.from(
+  // Actividades — usar temporales si vienen de firma
+  const actividadesMarcadas = window._actividadesTempBk || Array.from(
     document.querySelectorAll('#bk-actividades-lista input[type="checkbox"]:checked')
   ).map(cb => cb.value);
+
+  const obs = window._obsTempBk !== undefined && window._obsTempBk !== null
+    ? window._obsTempBk
+    : (document.getElementById('bk-obs')?.value || '');
+
+  // Limpiar temporales
+  window._actividadesTempBk = null;
+  window._obsTempBk = null;
 
   const obsCompleto = actividadesMarcadas.length
     ? 'Actividades realizadas:\n' + actividadesMarcadas.map(a => `• ${a}`).join('\n')
@@ -479,7 +491,7 @@ async function _ejecutarGuardarBk(firmaBase64 = null) {
 
   const campos = {
     serial, personaId, tipo, destino, estadoBk,
-    obs: obsCompleto,  // ← obsCompleto
+    obs: obsCompleto,
     ubicacion, respTI, frecuencia, fechaProxima, fotos: bkFotos,
     responsableEquipo: p?.nombre || '',
     firmado:    firmaBase64 ? true : false,
@@ -496,9 +508,9 @@ async function _ejecutarGuardarBk(firmaBase64 = null) {
       EquipoID: serial, Tipo: tipo, Frecuencia: frecuencia,
       Fecha_Ultima: fecha, Fecha_Proxima: fechaProxima,
       Ubicacion: destino, Estado: estadoBk,
-      Observaciones: obsCompleto,  // ← obsCompleto
+      Observaciones: obsCompleto,
       Responsable: respTI, Persona_ID: personaId, Resp_TI: respTI,
-      Fotos_Base64: bkFotos.join('||'),
+      Fotos_Base64: bkFotos.length > 0 ? `${bkFotos.length} foto(s)` : '',
       Firmado: firmaBase64 ? 'Sí' : 'No',
       Imagen_Base64: firmaBase64 ? 'firmado_digitalmente' : '',
     }, 'ID', editId).catch(console.warn);
@@ -511,7 +523,7 @@ async function _ejecutarGuardarBk(firmaBase64 = null) {
       Fecha_Ultima: fecha, Fecha_Proxima: fechaProxima,
       Firmado: firmaBase64 ? 'Sí' : 'No',
       Responsable: respTI,
-      Observaciones: obsCompleto,  // ← obsCompleto
+      Observaciones: obsCompleto,
       Imagen_Base64: firmaBase64 ? 'firmado_digitalmente' : '',
       Ubicacion: destino, Estado: estadoBk,
       Persona_ID: personaId, Resp_TI: respTI,
@@ -523,6 +535,9 @@ async function _ejecutarGuardarBk(firmaBase64 = null) {
   setState('backups', lista);
   saveKey('backups');
   cerrarModal('modal-backup');
+  document.querySelectorAll('#bk-actividades-lista input[type="checkbox"]')
+    .forEach(cb => cb.checked = false);
+  document.body.style.overflow = '';
   renderLista();
 }
 
