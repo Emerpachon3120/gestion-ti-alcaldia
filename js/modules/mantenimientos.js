@@ -537,9 +537,19 @@ function _modalHTML() {
       </div>
 
       <div class="form-group">
-        <label class="form-label">Observaciones / Actividades realizadas</label>
+        <label class="form-label">Actividades realizadas</label>
+        <div id="mt-actividades-lista" style="
+          background:var(--bg2);border:1px solid var(--border);
+          border-radius:var(--radius-sm);padding:10px;
+          display:grid;grid-template-columns:1fr 1fr;gap:6px;
+          margin-bottom:8px;">
+          <div style="font-size:12px;color:var(--text3);grid-column:1/-1;">
+            Selecciona el tipo de mantenimiento para ver las actividades
+          </div>
+        </div>
+        <label class="form-label" style="margin-top:8px;">Observaciones adicionales</label>
         <textarea class="form-textarea" id="mt-obs"
-          placeholder="Describe las actividades realizadas..."></textarea>
+          placeholder="Observaciones adicionales..."></textarea>
       </div>
 
       <!-- Fotos -->
@@ -648,6 +658,10 @@ function _bindEvents() {
     if (el) alfaNumerico(el);
   });
 
+  document.getElementById('mt-tipo')?.addEventListener('change', () => {
+    window._actualizarActividades();
+  });
+
 }
 
 function abrirNuevo() {
@@ -717,6 +731,7 @@ function abrirNuevo() {
   llenarSSPersonas('mt-resp-equipo-ss', ()=>{}, _crearFuncionarioRapido);
   llenarSSPersonas('mt-nuevo-resp-ss', ()=>{}, _crearFuncionarioRapido);
 
+  setTimeout(() => window._actualizarActividades(), 100);
   abrirModal('modal-mantto');
 }
 
@@ -824,18 +839,29 @@ async function _ejecutarGuardar(firmaBase64 = null) {
   const fechaProxima  = fmt(proxRaw);
   const fechaTraslado = fmt(traslRaw);
 
-  const campos = {
-    serial, tipo, frecuencia, obs, periodo, responsable, estadoEquipo,
-    cambioResp, cambioCred, traslado, depAnterior, depNueva,
-    userWin, passWin, userAdmin, passAdmin,
-    fechaProxima, fechaTraslado, respEquipoId, nuevoRespId,
-    fotos: mtFotos,
-    firmado:    firmaBase64 ? true : false,
-    firma:      firmaBase64,
-    firmaFecha: firmaBase64 ? new Date().toISOString() : null,
-  };
+ // Primero recoger actividades
+ const actividadesMarcadas = Array.from(
+   document.querySelectorAll('#mt-actividades-lista input[type="checkbox"]:checked')
+ ).map(cb => cb.value);
 
-  const lista = [...getData('mantenimientos')];
+ const obsCompleto = actividadesMarcadas.length
+   ? 'Actividades realizadas:\n' + actividadesMarcadas.map(a => `• ${a}`).join('\n')
+     + (obs ? '\n\nObservaciones adicionales:\n' + obs : '')
+   : obs;
+
+ // Luego campos con obsCompleto
+ const campos = {
+   serial, tipo, frecuencia, obs: obsCompleto, periodo, responsable, estadoEquipo,
+   cambioResp, cambioCred, traslado, depAnterior, depNueva,
+   userWin, passWin, userAdmin, passAdmin,
+   fechaProxima, fechaTraslado, respEquipoId, nuevoRespId,
+   fotos: mtFotos,
+   firmado:    firmaBase64 ? true : false,
+   firma:      firmaBase64,
+   firmaFecha: firmaBase64 ? new Date().toISOString() : null,
+ };
+
+ const lista = [...getData('mantenimientos')];
 
   if (editId) {
     const idx = lista.findIndex(x => x.id === editId);
@@ -882,7 +908,8 @@ async function _ejecutarGuardar(firmaBase64 = null) {
 
 }
 
-window._guardarMantto = guardar;
+
+
 
 function eliminar(id) {
   if (!confirm('¿Eliminar este mantenimiento?')) return;
@@ -961,3 +988,72 @@ function _renderFotosPreview(arr, previewId) {
     });
   });
 }
+const ACTIVIDADES_POR_TIPO = {
+  'Mantenimiento Preventivo': [
+    'Limpieza física interna (polvo y residuos)',
+    'Limpieza de ventiladores y disipadores',
+    'Eliminación de archivos temporales',
+    'Limpieza y optimización del disco',
+    'Desfragmentación del disco duro',
+    'Actualización del sistema operativo',
+    'Actualización de controladores (drivers)',
+    'Verificación y limpieza del registro',
+    'Análisis y eliminación de malware/virus',
+    'Verificación del estado de la batería',
+    'Verificación de conexiones internas',
+    'Prueba de funcionamiento general',
+  ],
+  'Mantenimiento Correctivo': [
+    'Diagnóstico del fallo reportado',
+    'Reemplazo de componente dañado',
+    'Reinstalación del sistema operativo',
+    'Recuperación de datos',
+    'Reparación de conectores o puertos',
+    'Sustitución de disco duro/SSD',
+    'Sustitución de memoria RAM',
+    'Reparación de pantalla',
+    'Configuración de red/internet',
+    'Instalación de software requerido',
+  ],
+  'Mantenimiento Predictivo': [
+    'Monitoreo de temperatura del procesador',
+    'Análisis S.M.A.R.T. del disco duro',
+    'Verificación de sectores defectuosos',
+    'Prueba de estabilidad de RAM',
+    'Revisión de logs del sistema',
+    'Medición de voltajes de la fuente',
+    'Verificación de velocidad de ventiladores',
+  ],
+  'Mantenimiento Adaptativo': [
+    'Actualización de software institucional',
+    'Migración de datos',
+    'Cambio de configuración de red',
+    'Instalación de nuevas aplicaciones',
+    'Actualización de licencias',
+    'Adaptación a nuevo hardware',
+  ],
+  'Mantenimiento de Emergencia': [
+    'Atención inmediata al fallo crítico',
+    'Diagnóstico de emergencia',
+    'Restauración del sistema',
+    'Recuperación de información crítica',
+    'Reemplazo urgente de componente',
+    'Configuración de equipo temporal',
+  ],
+};
+
+window._actualizarActividades = function() {
+  const tipo  = document.getElementById('mt-tipo')?.value;
+  const lista = document.getElementById('mt-actividades-lista');
+  if (!lista) return;
+  const actividades = ACTIVIDADES_POR_TIPO[tipo] || [];
+  lista.innerHTML = actividades.map((act, i) => `
+    <label style="display:flex;align-items:center;gap:6px;
+      font-size:12px;cursor:pointer;padding:3px 0;">
+      <input type="checkbox" id="act-${i}" value="${act}"
+        style="width:14px;height:14px;cursor:pointer;">
+      ${act}
+    </label>`).join('');
+};
+
+window._guardarMantto = guardar;

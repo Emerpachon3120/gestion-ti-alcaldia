@@ -302,12 +302,12 @@ export function verActaMantenimiento(id) {
             <b style="color:#c0392b;"> Fecha de ejecución</b><br>${formatDate(m.fecha)}
           </td>
           <td style="border:1px solid #e0e0e0;padding:5px 10px;width:50%;">
-            <b style="color:#c0392b;">⏭ Próximo mantenimiento</b><br>${formatDate(m.fechaProxima) || '—'}
+            <b style="color:#c0392b;"> Próximo mantenimiento</b><br>${formatDate(m.fechaProxima) || '—'}
           </td>
         </tr>
         <tr>
           <td style="border:1px solid #e0e0e0;padding:5px 10px;">
-            <b style="color:#c0392b;">🖥 Serial del equipo</b><br>
+            <b style="color:#c0392b;"> Serial del equipo</b><br>
             <span style="font-family:monospace;font-size:11pt;font-weight:bold;">${m.serial}</span>
           </td>
           <td style="border:1px solid #e0e0e0;padding:5px 10px;">
