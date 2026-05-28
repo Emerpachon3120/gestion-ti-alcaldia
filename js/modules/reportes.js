@@ -1,4 +1,4 @@
-import { getData, getDBStatic } from '../state.js';
+ import { getData, getDBStatic } from '../state.js';
 import { showToast }            from '../ui/toast.js';
 import { formatDate, parseFecha } from '../utils.js';
 import {
