@@ -238,7 +238,7 @@ function _confirmar() {
   tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
   tempCtx.drawImage(_canvas, 0, 0);
 
-  _firmaActual = tempCanvas.toDataURL('image/png');
+  _firmaActual = tempCanvas.toDataURL('image/jpeg', 0.8);
 
   // Mostrar preview
   const img = document.getElementById('firma-preview-img');

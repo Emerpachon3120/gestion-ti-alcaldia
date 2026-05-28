@@ -80,7 +80,7 @@ function _cssDoc() {
     .footer{
       margin-top:auto;
       width:100%;
-      opacity:0.75;
+      opacity:0.35;
     }
     .footer img{
       width:100%;
@@ -273,6 +273,9 @@ function _cssDoc() {
 }
 // ── Acta de mantenimiento individual ─────────────────────────
 export function verActaMantenimiento(id) {
+  const m = getData('mantenimientos').find(x => x.id === id);
+  console.log('firma en memoria:', m?.firma?.slice(0,50));
+
   const DB  = getDBStatic();
   const m   = getData('mantenimientos').find(x => x.id === id);
   if (!m) return;
@@ -297,40 +300,40 @@ export function verActaMantenimiento(id) {
       <table style="margin-bottom:0.4cm;font-size:10pt;">
         <tr style="background:#f9f9f9;">
           <td style="border:1px solid #e0e0e0;padding:5px 10px;width:50%;">
-            <b style="color:#c0392b;">📅 Fecha de ejecución</b><br>${formatDate(m.fecha)}
+            <b style="color:#c0392b;"> Fecha de ejecución</b><br>${formatDate(m.fecha)}
           </td>
           <td style="border:1px solid #e0e0e0;padding:5px 10px;width:50%;">
-            <b style="color:#c0392b;">⏭️ Próximo mantenimiento</b><br>${formatDate(m.fechaProxima) || '—'}
+            <b style="color:#c0392b;">⏭ Próximo mantenimiento</b><br>${formatDate(m.fechaProxima) || '—'}
           </td>
         </tr>
         <tr>
           <td style="border:1px solid #e0e0e0;padding:5px 10px;">
-            <b style="color:#c0392b;">🖥️ Serial del equipo</b><br>
+            <b style="color:#c0392b;">🖥 Serial del equipo</b><br>
             <span style="font-family:monospace;font-size:11pt;font-weight:bold;">${m.serial}</span>
           </td>
           <td style="border:1px solid #e0e0e0;padding:5px 10px;">
-            <b style="color:#c0392b;">🔁 Frecuencia</b><br>${m.frecuencia || '—'}
+            <b style="color:#c0392b;"> Frecuencia</b><br>${m.frecuencia || '—'}
           </td>
         </tr>
         <tr style="background:#f9f9f9;">
           <td style="border:1px solid #e0e0e0;padding:5px 10px;">
-            <b style="color:#c0392b;">👤 Funcionario</b><br>${p?.nombre || '—'}
+            <b style="color:#c0392b;"> Funcionario</b><br>${p?.nombre || '—'}
           </td>
           <td style="border:1px solid #e0e0e0;padding:5px 10px;">
-            <b style="color:#c0392b;">🏢 Dependencia</b><br>${dep?.nombre || '—'}
+            <b style="color:#c0392b;"> Dependencia</b><br>${dep?.nombre || '—'}
           </td>
         </tr>
         <tr>
           <td style="border:1px solid #e0e0e0;padding:5px 10px;">
-            <b style="color:#c0392b;">🏠 Oficina</b><br>${of?.nombre || '—'}
+            <b style="color:#c0392b;"> Oficina</b><br>${of?.nombre || '—'}
           </td>
           <td style="border:1px solid #e0e0e0;padding:5px 10px;">
-            <b style="color:#c0392b;">👷 Responsable TI</b><br>${m.responsable || CONFIG.RESPONSABLE_TI}
+            <b style="color:#c0392b;"> Responsable TI</b><br>${m.responsable || CONFIG.RESPONSABLE_TI}
           </td>
         </tr>
         <tr style="background:#f9f9f9;">
           <td style="border:1px solid #e0e0e0;padding:5px 10px;">
-            <b style="color:#c0392b;">📊 Estado del equipo</b><br>
+            <b style="color:#c0392b;"> Estado del equipo</b><br>
             <span style="background:${m.estadoEquipo==='Operativo'?'#dcfce7':m.estadoEquipo==='Dado de baja'?'#fee2e2':'#fef3c7'};
               color:${m.estadoEquipo==='Operativo'?'#166534':m.estadoEquipo==='Dado de baja'?'#991b1b':'#92400e'};
               padding:2px 8px;border-radius:10px;font-size:9pt;font-weight:bold;">
@@ -338,7 +341,7 @@ export function verActaMantenimiento(id) {
             </span>
           </td>
           <td style="border:1px solid #e0e0e0;padding:5px 10px;">
-            <b style="color:#c0392b;">📋 Período</b><br>${m.periodo || '—'}
+            <b style="color:#c0392b;"> Período</b><br>${m.periodo || '—'}
           </td>
         </tr>
       </table>
@@ -381,7 +384,7 @@ export function verActaMantenimiento(id) {
 
       <!-- CREDENCIALES -->
       ${(m.userWin || m.userAdmin) ? `
-      <div class="sec">🔐 Datos de acceso verificados</div>
+      <div class="sec"> Datos de acceso verificados</div>
       <table style="margin-bottom:0.3cm;">
         <tr><th>Tipo</th><th>Usuario</th><th>¿Cambió?</th></tr>
         ${m.userWin ? `<tr><td>Windows</td><td style="font-family:monospace;">${m.userWin}</td><td>${m.cambioCred==='Sí'?'✅ Sí':'No'}</td></tr>` : ''}
@@ -390,7 +393,7 @@ export function verActaMantenimiento(id) {
 
       <!-- TRASLADO -->
       ${m.traslado === 'Sí' ? `
-      <div class="sec">🚚 Traslado de dependencia</div>
+      <div class="sec"> Traslado de dependencia</div>
       <table style="margin-bottom:0.3cm;">
         <tr><th>Dependencia anterior</th><th>Nueva dependencia</th><th>Fecha</th></tr>
         <tr><td>${m.depAnterior || '—'}</td><td>${m.depNueva || '—'}</td><td>${formatDate(m.fechaTraslado)}</td></tr>
@@ -398,7 +401,7 @@ export function verActaMantenimiento(id) {
 
       <!-- EVIDENCIA FOTOGRÁFICA -->
       ${m.fotos?.length ? `
-        <div class="sec">📸 Evidencia fotográfica (${m.fotos.length} foto${m.fotos.length>1?'s':''})</div>
+        <div class="sec"> Evidencia fotográfica (${m.fotos.length} foto${m.fotos.length>1?'s':''})</div>
         <div class="fotos-grid">
           ${m.fotos.slice(0,4).map(f =>
             `<img src="${f}" style="width:100%;height:5cm;object-fit:cover;border-radius:4px;border:1px solid #e0e0e0;">`
@@ -408,7 +411,7 @@ export function verActaMantenimiento(id) {
       <!-- CONSTANCIA -->
       <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:4px;
         padding:0.2cm 0.3cm;margin:0.3cm 0;font-size:10pt;color:#0c4a6e;">
-        ℹ️ En constancia de lo anterior, las partes firman la presente acta de mantenimiento
+        En constancia de lo anterior, las partes firman la presente acta de mantenimiento
         en la ciudad de Nemocón, Cundinamarca, el día <b>${fechaDoc}</b>.
       </div>
 
