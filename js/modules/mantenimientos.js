@@ -955,21 +955,6 @@ async function _ejecutarGuardar(firmaBase64 = null) {
     document.querySelectorAll('#mt-actividades-lista input[type="checkbox"]:checked')
   ).map(cb => cb.value);
 
-  // Recoger motivos si no se realizó
-const realizado = document.getElementById('mt-realizado')?.value || 'Si';
-const motivosMarcados = realizado !== 'Si'
-  ? Array.from(document.querySelectorAll('#mt-motivo-lista input[type="checkbox"]:checked'))
-      .map(cb => cb.value)
-  : [];
-
-const obsCompleto = motivosMarcados.length
-  ? 'Motivo de no realización:\n' + motivosMarcados.map(a => `• ${a}`).join('\n')
-    + (obs ? '\n\nObservaciones adicionales:\n' + obs : '')
-  : actividadesMarcadas.length
-    ? 'Actividades realizadas:\n' + actividadesMarcadas.map(a => `• ${a}`).join('\n')
-      + (obs ? '\n\nObservaciones adicionales:\n' + obs : '')
-    : obs;
-
   const obs = window._obsTemp !== undefined && window._obsTemp !== null
     ? window._obsTemp
     : (document.getElementById('mt-obs')?.value || '');
@@ -978,24 +963,34 @@ const obsCompleto = motivosMarcados.length
   window._actividadesTemp = null;
   window._obsTemp = null;
 
-  const obsCompleto = actividadesMarcadas.length
-    ? 'Actividades realizadas:\n' + actividadesMarcadas.map(a => `• ${a}`).join('\n')
+  // Recoger motivos si no se realizó
+  const realizado = document.getElementById('mt-realizado')?.value || 'Si';
+  const motivosMarcados = realizado !== 'Si'
+    ? Array.from(document.querySelectorAll('#mt-motivo-lista input[type="checkbox"]:checked'))
+        .map(cb => cb.value)
+    : [];
+
+  const obsCompleto = motivosMarcados.length
+    ? 'Motivo de no realización:\n' + motivosMarcados.map(a => `• ${a}`).join('\n')
       + (obs ? '\n\nObservaciones adicionales:\n' + obs : '')
-    : obs;
+    : actividadesMarcadas.length
+      ? 'Actividades realizadas:\n' + actividadesMarcadas.map(a => `• ${a}`).join('\n')
+        + (obs ? '\n\nObservaciones adicionales:\n' + obs : '')
+      : obs;
 
- // Preservar firma existente si es edición
-const mantActual = editId ? getData('mantenimientos').find(x => x.id === editId) : null;
+  // Preservar firma existente si es edición
+  const mantActual = editId ? getData('mantenimientos').find(x => x.id === editId) : null;
 
-const campos = {
-  serial, tipo, frecuencia, obs: obsCompleto, periodo, responsable, estadoEquipo,
-  cambioResp, cambioCred, traslado, depAnterior, depNueva,
-  userWin, passWin, userAdmin, passAdmin,
-  fechaProxima, fechaTraslado, respEquipoId, nuevoRespId,
-  fotos: mtFotos,
-  firmado:    firmaBase64 ? true : (mantActual?.firmado || false),
-  firma:      firmaBase64 || mantActual?.firma || null,
-  firmaFecha: firmaBase64 ? new Date().toISOString() : (mantActual?.firmaFecha || null),
-};
+  const campos = {
+    serial, tipo, frecuencia, obs: obsCompleto, periodo, responsable, estadoEquipo,
+    cambioResp, cambioCred, traslado, depAnterior, depNueva,
+    userWin, passWin, userAdmin, passAdmin,
+    fechaProxima, fechaTraslado, respEquipoId, nuevoRespId,
+    fotos: mtFotos,
+    firmado:    firmaBase64 ? true : (mantActual?.firmado || false),
+    firma:      firmaBase64 || mantActual?.firma || null,
+    firmaFecha: firmaBase64 ? new Date().toISOString() : (mantActual?.firmaFecha || null),
+  };
 
   const lista = [...getData('mantenimientos')];
 
