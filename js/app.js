@@ -52,7 +52,8 @@ async function init() {
   const loader = document.getElementById('page-loader');
   if (loader) loader.classList.add('hidden');
 
-  // Navegar al dashboard con datos frescos
+  // Pequeño delay antes de renderizar dashboard
+  await new Promise(resolve => setTimeout(resolve, 100));
   await navigate('dashboard');
 
   if ('serviceWorker' in navigator) {

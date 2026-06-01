@@ -97,7 +97,7 @@ export function onEnter() {
 
     renderAlertas('alertas-container');
     _renderProximos();
-  }, 50);
+  }, 200);
 }
 
 function _renderProximos() {
