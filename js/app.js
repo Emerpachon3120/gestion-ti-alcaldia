@@ -41,19 +41,17 @@ async function init() {
 
   await new Promise(resolve => setTimeout(resolve, 0));
 
-  // Siempre ir al dashboard al inicio
-  await navigate('dashboard');
+  // Sincronizar primero — el loader se ve mientras tanto
+  try {
+    await syncData();
+  } catch(err) {
+    console.warn('[Sync]', err);
+  }
 
-  // Ocultar loader
+  // Ocultar loader y mostrar dashboard
   const loader = document.getElementById('page-loader');
   if (loader) loader.classList.add('hidden');
-
-  // Sincronizar en background
-  syncData().then(() => {
-    if (getState('currentPage') === 'dashboard') {
-      navigate('dashboard');
-    }
-  }).catch(err => console.warn('[Sync]', err));
+  await navigate('dashboard');
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./service-worker.js').catch(() => {});

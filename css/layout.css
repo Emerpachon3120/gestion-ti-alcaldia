@@ -56,6 +56,7 @@ html, body {
 .page-loader.hidden {
   opacity: 0;
   pointer-events: none;
+  display: none;
 }
 
 .loader-spinner {
