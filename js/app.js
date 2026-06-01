@@ -62,6 +62,36 @@ async function init() {
 
   window.cerrarDocViewer = cerrarDocViewer;
   window.docViewerPrint  = docViewerPrint;
+
+  // Swipe entre módulos
+const pages = ['dashboard','mantenimientos','backups','inventario','incidencias'];
+let touchStartX = 0;
+let touchStartY = 0;
+
+document.getElementById('app-main').addEventListener('touchstart', e => {
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
+
+document.getElementById('app-main').addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+
+  // Solo swipe horizontal y que sea mayor a 60px
+  if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx)) return;
+
+  const current = getState('currentPage');
+  const idx = pages.indexOf(current);
+  if (idx === -1) return;
+
+  if (dx < 0 && idx < pages.length - 1) {
+    // Swipe izquierda → siguiente módulo
+    navigate(pages[idx + 1]);
+  } else if (dx > 0 && idx > 0) {
+    // Swipe derecha → módulo anterior
+    navigate(pages[idx - 1]);
+  }
+}, { passive: true });
 }
 
 // ─── SINCRONIZACIÓN ───────────────────────────────────────────
