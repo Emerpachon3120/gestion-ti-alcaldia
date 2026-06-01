@@ -303,18 +303,22 @@ function _cardHTML(m) {
 
   return `
     <div class="mant-card" data-serial="${m.serial}">
-      <div class="mant-header">
-        <div>
-          <div class="mant-serial">${m.serial}</div>
-          <div class="mant-person">${p?.nombre || 'Sin asignar'}</div>
-          <div style="font-size:11px;color:var(--text3)">${dep?.nombre || of?.nombre || ''}</div>
-        </div>
-        <div style="text-align:right;">
-          <span class="badge ${tipoBadge}">${m.tipo || 'Preventivo'}</span>
-          ${sem ? `<div class="semaforo ${sem.clase}" style="margin-top:4px">${sem.icon} ${sem.label}</div>` : ''}
-          ${m.estadoEquipo ? `<div style="font-size:10px;color:var(--text3);margin-top:2px;">🖥️ ${m.estadoEquipo}</div>` : ''}
-        </div>
+  <div class="mant-header">
+    <div style="flex:1;min-width:0;">
+      <div class="mant-serial">${m.serial}</div>
+      <div class="mant-person">${p?.nombre || 'Sin asignar'}</div>
+      <div style="font-size:11px;color:var(--text3);
+        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+        ${dep?.nombre || of?.nombre || ''}
       </div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
+      <span class="badge ${tipoBadge}" style="white-space:nowrap;">
+        ${m.tipo?.replace('Mantenimiento ','') || 'Preventivo'}
+      </span>
+      ${sem ? `<div class="semaforo ${sem.clase}">${sem.icon} ${sem.label}</div>` : ''}
+    </div>
+  </div>
 
       ${m.obs ? `<div class="mant-obs">${m.obs}</div>` : ''}
 

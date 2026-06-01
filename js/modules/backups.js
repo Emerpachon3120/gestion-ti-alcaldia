@@ -74,25 +74,21 @@ export function renderLista() {
     }[b.estadoBk] || 'badge-yellow';
 
     return `
-      <div class="backup-card" data-serial="${b.serial}">
-        <div class="mant-header">
-          <div>
-            <div class="mant-serial">${b.serial}</div>
-            <div class="mant-person">${resp}</div>
-            <div style="font-size:11px;color:var(--text3)">
-              ${dep?.nombre || of?.nombre || ''}
-            </div>
-          </div>
-          <div style="text-align:right;">
-            <span class="badge badge-purple">${b.tipo || 'Backup'}</span>
-            ${b.estadoBk
-              ? `<div style="margin-top:3px;">
-                   <span class="badge ${stColor}">${b.estadoBk}</span>
-                 </div>`
-              : ''}
-            ${sem ? `<div class="semaforo ${sem.clase}" style="margin-top:4px">${sem.icon} ${sem.label}</div>` : ''}
-          </div>
-        </div>
+      <div class="mant-header">
+  <div style="flex:1;min-width:0;">
+    <div class="mant-serial">${b.serial}</div>
+    <div class="mant-person">${resp}</div>
+    <div style="font-size:11px;color:var(--text3);
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+      ${dep?.nombre || of?.nombre || ''}
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
+    <span class="badge badge-purple" style="white-space:nowrap;">${b.tipo || 'Backup'}</span>
+    ${b.estadoBk ? `<span class="badge ${stColor}">${b.estadoBk}</span>` : ''}
+    ${sem ? `<div class="semaforo ${sem.clase}">${sem.icon} ${sem.label}</div>` : ''}
+  </div>
+</div>
 
         ${b.obs ? `<div class="mant-obs">${b.obs}</div>` : ''}
 
