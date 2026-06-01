@@ -58,3 +58,20 @@
 
 .header-sync-btn:active { transform: scale(0.92); }
 .header-sync-btn.syncing { animation: spin 1s linear infinite; }
+@media (min-width: 600px) {
+  #app-header {
+    max-width: 480px;
+    left: 50%;
+    transform: translateX(-50%);
+    right: auto;
+    width: 480px;
+  }
+
+  #bottom-nav {
+    max-width: 480px;
+    left: 50%;
+    transform: translateX(-50%);
+    right: auto;
+    width: 480px;
+  }
+}
