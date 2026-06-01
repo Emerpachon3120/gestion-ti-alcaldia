@@ -541,6 +541,48 @@ function _modalHTML() {
       </div>
 
       <div class="form-group">
+  <label class="form-label">¿Se realizó el mantenimiento?</label>
+  <select class="form-select" id="mt-realizado">
+    <option value="Si">Sí</option>
+    <option value="No realizado">No realizado</option>
+    <option value="Parcial">Parcial</option>
+  </select>
+</div>
+
+<!-- MOTIVO DE NO REALIZACIÓN -->
+  <div id="mt-motivo-wrap" style="display:none;">
+    <label class="form-label">Motivo de no realización</label>
+    <div id="mt-motivo-lista" style="
+      background:var(--bg2);border:1px solid var(--border);
+      border-radius:var(--radius-sm);padding:10px;
+      display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+        <input type="checkbox" value="Equipo dañado o en mal estado" style="width:14px;height:14px;">
+        Equipo dañado o en mal estado
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+        <input type="checkbox" value="Funcionario ausente" style="width:14px;height:14px;">
+        Funcionario ausente
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+        <input type="checkbox" value="Equipo dado de baja" style="width:14px;height:14px;">
+        Equipo dado de baja
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+        <input type="checkbox" value="Acceso denegado al equipo" style="width:14px;height:14px;">
+        Acceso denegado al equipo
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+        <input type="checkbox" value="Equipo en uso durante la jornada" style="width:14px;height:14px;">
+        Equipo en uso durante la jornada
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+        <input type="checkbox" value="Sin herramientas disponibles" style="width:14px;height:14px;">
+        Sin herramientas disponibles
+      </label>
+    </div>
+  </div>
+      <div class="form-group">
         <label class="form-label">Actividades realizadas</label>
         <div id="mt-actividades-lista" style="
           background:var(--bg2);border:1px solid var(--border);
@@ -672,6 +714,14 @@ function _bindEvents() {
     window._actualizarActividades();
   });
 
+  document.getElementById('mt-realizado')?.addEventListener('change', () => {
+  const val = document.getElementById('mt-realizado').value;
+  const motivoWrap = document.getElementById('mt-motivo-wrap');
+  if (motivoWrap) {
+    motivoWrap.style.display = val === 'Si' ? 'none' : 'block';
+  }
+});
+
 }
 
 function abrirNuevo() {
@@ -747,6 +797,13 @@ function abrirNuevo() {
     document.querySelectorAll('#mt-actividades-lista input[type="checkbox"]')
       .forEach(cb => cb.checked = false);
   }, 150);
+
+  // Reset realizado y motivos
+document.getElementById('mt-realizado').value = 'Si';
+document.getElementById('mt-motivo-wrap').style.display = 'none';
+document.querySelectorAll('#mt-motivo-lista input[type="checkbox"]')
+  .forEach(cb => cb.checked = false);
+
   abrirModal('modal-mantto');
 }
 
@@ -827,6 +884,20 @@ function editar(id) {
     }
   }, 150);
 
+// Realizado y motivos
+const realizado = m.obs?.startsWith('Motivo de no realización:') ? 'No realizado' : 'Si';
+document.getElementById('mt-realizado').value = realizado;
+const motivoWrap = document.getElementById('mt-motivo-wrap');
+if (motivoWrap) motivoWrap.style.display = realizado !== 'Si' ? 'block' : 'none';
+
+if (m.obs?.includes('Motivo de no realización:')) {
+  setTimeout(() => {
+    const lineas = m.obs.split('\n').map(l => l.replace('• ','').trim());
+    document.querySelectorAll('#mt-motivo-lista input[type="checkbox"]')
+      .forEach(cb => { cb.checked = lineas.includes(cb.value); });
+  }, 150);
+}
+
   abrirModal('modal-mantto');
 }
 
@@ -883,6 +954,21 @@ async function _ejecutarGuardar(firmaBase64 = null) {
   const actividadesMarcadas = window._actividadesTemp || Array.from(
     document.querySelectorAll('#mt-actividades-lista input[type="checkbox"]:checked')
   ).map(cb => cb.value);
+
+  // Recoger motivos si no se realizó
+const realizado = document.getElementById('mt-realizado')?.value || 'Si';
+const motivosMarcados = realizado !== 'Si'
+  ? Array.from(document.querySelectorAll('#mt-motivo-lista input[type="checkbox"]:checked'))
+      .map(cb => cb.value)
+  : [];
+
+const obsCompleto = motivosMarcados.length
+  ? 'Motivo de no realización:\n' + motivosMarcados.map(a => `• ${a}`).join('\n')
+    + (obs ? '\n\nObservaciones adicionales:\n' + obs : '')
+  : actividadesMarcadas.length
+    ? 'Actividades realizadas:\n' + actividadesMarcadas.map(a => `• ${a}`).join('\n')
+      + (obs ? '\n\nObservaciones adicionales:\n' + obs : '')
+    : obs;
 
   const obs = window._obsTemp !== undefined && window._obsTemp !== null
     ? window._obsTemp
