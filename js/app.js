@@ -216,7 +216,7 @@ export async function syncData() {
 
     saveToStorage();
     setState('syncStatus', 'idle');
-    showToast('✅ Datos sincronizados');
+    showToast('Datos sincronizados correctamente');
 // Re-renderizar dashboard si está activo
     if (typeof navigate === 'function') {
       navigate('dashboard');
