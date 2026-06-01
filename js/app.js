@@ -34,21 +34,22 @@ window._abrirFirmaGlobal = abrirFirma;
 
 async function init() {
   initStorage();
-  loadFromStorage();  // ← carga datos locales primero
+  loadFromStorage();
 
   renderHeader();
   renderMenu();
 
   await new Promise(resolve => setTimeout(resolve, 0));
 
-  // Navegar al dashboard con datos locales (rápido)
-  const hashPage = location.hash.replace('#', '') || 'dashboard';
-  await navigate(hashPage);
+  // Siempre ir al dashboard al inicio
+  await navigate('dashboard');
 
-  // Sincronizar en background y actualizar dashboard
+  // Ocultar loader
+  const loader = document.getElementById('page-loader');
+  if (loader) loader.classList.add('hidden');
+
+  // Sincronizar en background
   syncData().then(() => {
-
-    // Si estamos en dashboard, re-renderizar con datos frescos
     if (getState('currentPage') === 'dashboard') {
       navigate('dashboard');
     }
