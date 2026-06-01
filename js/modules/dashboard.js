@@ -67,30 +67,30 @@ export function render() {
       ${vencidos > 0 || bkFallidos > 0 ? `
       <div style="margin-bottom:16px;">
         ${vencidos > 0 ? `
-          <div style="background:#fee2e2;border:1px solid #fecaca;border-radius:12px;
-            padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;gap:10px;
-            cursor:pointer;" data-nav="mantenimientos">
+          <div style="background:rgba(220,38,38,.15);border:1px solid rgba(220,38,38,.3);
+            border-radius:12px;padding:12px 16px;margin-bottom:8px;
+            display:flex;align-items:center;gap:10px;cursor:pointer;" data-nav="mantenimientos">
             <div style="font-size:20px;">⚠️</div>
             <div>
-              <div style="font-weight:700;font-size:13px;color:#991b1b;">
+              <div style="font-weight:700;font-size:13px;color:#f87171;">
                 ${vencidos} mantenimiento${vencidos>1?'s':''} vencido${vencidos>1?'s':''}
               </div>
-              <div style="font-size:11px;color:#b91c1c;">Requieren atención inmediata</div>
+              <div style="font-size:11px;color:#fca5a5;">Requieren atención inmediata</div>
             </div>
-            <div style="margin-left:auto;color:#991b1b;">›</div>
+            <div style="margin-left:auto;color:#f87171;">›</div>
           </div>` : ''}
         ${bkFallidos > 0 ? `
-          <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:12px;
-            padding:12px 16px;display:flex;align-items:center;gap:10px;cursor:pointer;"
-            data-nav="backups">
+          <div style="background:rgba(234,88,12,.15);border:1px solid rgba(234,88,12,.3);
+            border-radius:12px;padding:12px 16px;display:flex;align-items:center;
+            gap:10px;cursor:pointer;" data-nav="backups">
             <div style="font-size:20px;">❌</div>
             <div>
-              <div style="font-weight:700;font-size:13px;color:#c2410c;">
+              <div style="font-weight:700;font-size:13px;color:#fb923c;">
                 ${bkFallidos} backup${bkFallidos>1?'s':''} fallido${bkFallidos>1?'s':''}
               </div>
-              <div style="font-size:11px;color:#ea580c;">Revisar copias de seguridad</div>
+              <div style="font-size:11px;color:#fdba74;">Revisar copias de seguridad</div>
             </div>
-            <div style="margin-left:auto;color:#c2410c;">›</div>
+            <div style="margin-left:auto;color:#fb923c;">›</div>
           </div>` : ''}
       </div>` : ''}
 
@@ -159,7 +159,8 @@ function _renderProximos() {
   if (!prox.length) {
     container.innerHTML = `
       <div style="background:var(--card);border:1px solid var(--border);
-        border-radius:12px;padding:20px;text-align:center;color:var(--text3);font-size:13px;">
+        border-radius:12px;padding:20px;text-align:center;
+        color:var(--text3);font-size:13px;">
         Todo al dia — sin mantenimientos pendientes
       </div>`;
     return;
