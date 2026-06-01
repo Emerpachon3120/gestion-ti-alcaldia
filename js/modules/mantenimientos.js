@@ -829,12 +829,7 @@ function editar(id) {
 async function guardar() {
   const serial = getSSValue('mt-equipo-ss');
   if (!serial) { showToast('⚠️ Selecciona un equipo', '#d97706'); return; }
-  const editId = document.getElementById('mt-edit-id').value;
-  if (!editId) {
-    _pedirFirmaYGuardar();
-  } else {
-    _ejecutarGuardar(null);
-  }
+  _ejecutarGuardar(null);
 }
 
 function _pedirFirmaYGuardar() {

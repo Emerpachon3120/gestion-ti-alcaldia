@@ -429,12 +429,7 @@ function editar(id) {
 async function _guardar() {
   const serial = getSSValue('bk-equipo-ss');
   if (!serial) { showToast('⚠️ Selecciona un equipo', '#d97706'); return; }
-  const editId = document.getElementById('bk-edit-id').value;
-  if (!editId) {
-    _pedirFirmaYGuardarBk();
-  } else {
-    _ejecutarGuardarBk(null);
-  }
+  _ejecutarGuardarBk(null);
 }
 
 function _pedirFirmaYGuardarBk() {
@@ -503,7 +498,7 @@ const campos = {
 };
 
   const lista = [...getData('backups')];
-  
+
 if (editId) {
     const idx = lista.findIndex(x => x.id === editId);
     if (idx >= 0) lista[idx] = { ...lista[idx], ...campos, fecha };

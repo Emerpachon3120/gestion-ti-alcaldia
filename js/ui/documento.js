@@ -455,7 +455,7 @@ export function verActaMantenimiento(id) {
   </body></html>`;
 
   let _htmlActa = html;
-abrirDocViewer(html, `Acta Mantenimiento — ${m.serial}`, () => {
+abrirDocViewer(html, `Acta Mantenimiento — ${m.serial}`, m.firmado ? null : () => {
   window._abrirFirmaGlobal?.('mant', m.id, (firmaBase64) => {
     const htmlConFirma = _htmlActa.replace(
       `<div style="height:2cm;border-bottom:1px solid #999;margin-bottom:4px;"></div>`,
@@ -1033,7 +1033,7 @@ export function verActaBackup(id) {
   </body></html>`;
 
   let _htmlActa = html;
-abrirDocViewer(html, `Acta Backup — ${b.serial}`, () => {
+abrirDocViewer(html, `Acta Backup — ${b.serial}`, b.firmado ? null : () => {
   window._abrirFirmaGlobal?.('backup', b.id, (firmaBase64) => {
     const htmlConFirma = _htmlActa.replace(
       `<div style="height:2cm;border-bottom:1px solid #999;margin-bottom:4px;"></div>`,
