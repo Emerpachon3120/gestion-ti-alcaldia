@@ -206,10 +206,46 @@ function _modalHTML() {
           <label class="form-label">Estado</label>
           <select class="form-select" id="bk-estado">
             <option>Completado</option>
-            <option>Pendiente</option>
             <option>Fallido</option>
-            <option>En proceso</option>
+            <option>No realizado</option>
+            <option>Pendiente</option>
           </select>
+        </div>
+      </div>
+
+      </div>
+
+      <!-- MOTIVO DE NO REALIZACIÓN -->
+      <div id="bk-motivo-wrap" style="display:none;margin-top:10px;">
+        <label class="form-label">Motivo de no realización</label>
+        <div id="bk-motivo-lista" style="
+          background:var(--bg2);border:1px solid var(--border);
+          border-radius:var(--radius-sm);padding:10px;
+          display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+            <input type="checkbox" value="No tiene información relevante" style="width:14px;height:14px;">
+            No tiene información relevante
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+            <input type="checkbox" value="Equipo dañado o en mal estado" style="width:14px;height:14px;">
+            Equipo dañado o en mal estado
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+            <input type="checkbox" value="Funcionario ausente" style="width:14px;height:14px;">
+            Funcionario ausente
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+            <input type="checkbox" value="Equipo dado de baja" style="width:14px;height:14px;">
+            Equipo dado de baja
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+            <input type="checkbox" value="Sin espacio en destino" style="width:14px;height:14px;">
+            Sin espacio en destino
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+            <input type="checkbox" value="Acceso denegado al equipo" style="width:14px;height:14px;">
+            Acceso denegado al equipo
+          </label>
         </div>
       </div>
 
@@ -334,6 +370,16 @@ function _bindEvents() {
     _procesarFotos(e.target.files, bkFotos, 'bk-fotos-preview');
     e.target.value = '';
   });
+
+  document.getElementById('bk-estado')?.addEventListener('change', () => {
+  const estado = document.getElementById('bk-estado').value;
+  const motivoWrap = document.getElementById('bk-motivo-wrap');
+  if (motivoWrap) {
+    motivoWrap.style.display = 
+      ['Fallido','No realizado'].includes(estado) ? 'block' : 'none';
+  }
+});
+
   // Validaciones
   ['bk-resp-ti'].forEach(id => {
     const el = document.getElementById(id);
@@ -402,6 +448,10 @@ function abrirNuevo() {
       .forEach(cb => cb.checked = false);
   }, 150);
 
+  document.getElementById('bk-motivo-wrap').style.display = 'none';
+document.querySelectorAll('#bk-motivo-lista input[type="checkbox"]')
+  .forEach(cb => cb.checked = false); 
+
   abrirModal('modal-backup');
 }
 
@@ -444,6 +494,32 @@ document.getElementById('bk-obs').value = obsSolo;
         });
     }
   }, 150);
+
+  // Mostrar motivos si aplica
+const motivoWrap = document.getElementById('bk-motivo-wrap');
+if (motivoWrap) {
+  motivoWrap.style.display =
+    ['Fallido','No realizado'].includes(b.estadoBk) ? 'block' : 'none';
+}
+
+// Marcar motivos guardados
+if (b.obs?.includes('Motivo de no realización:')) {
+  setTimeout(() => {
+    const lineas = b.obs.split('\n').map(l => l.replace('• ','').trim());
+    document.querySelectorAll('#bk-motivo-lista input[type="checkbox"]')
+      .forEach(cb => { cb.checked = lineas.includes(cb.value); });
+  }, 150);
+}
+
+// Limpiar obs si tiene motivos
+let obsSoloFinal = obsSolo;
+if (b.obs?.startsWith('Motivo de no realización:\n')) {
+  obsSoloFinal = b.obs.includes('Observaciones adicionales:\n')
+    ? b.obs.split('Observaciones adicionales:\n')[1] || ''
+    : '';
+}
+document.getElementById('bk-obs').value = obsSoloFinal;
+
   abrirModal('modal-backup');
 }
 
@@ -491,6 +567,21 @@ async function _ejecutarGuardarBk(firmaBase64 = null) {
   const actividadesMarcadas = window._actividadesTempBk || Array.from(
     document.querySelectorAll('#bk-actividades-lista input[type="checkbox"]:checked')
   ).map(cb => cb.value);
+
+  // Recoger motivos si estado es Fallido o No realizado
+const estadoBkVal = document.getElementById('bk-estado')?.value;
+const motivosMarcados = ['Fallido','No realizado'].includes(estadoBkVal)
+  ? Array.from(document.querySelectorAll('#bk-motivo-lista input[type="checkbox"]:checked'))
+      .map(cb => cb.value)
+  : [];
+
+const obsCompleto = motivosMarcados.length
+  ? 'Motivo de no realización:\n' + motivosMarcados.map(a => `• ${a}`).join('\n')
+    + (obs ? '\n\nObservaciones adicionales:\n' + obs : '')
+  : actividadesMarcadas.length
+    ? 'Actividades realizadas:\n' + actividadesMarcadas.map(a => `• ${a}`).join('\n')
+      + (obs ? '\n\nObservaciones adicionales:\n' + obs : '')
+    : obs;
 
   const obs = window._obsTempBk !== undefined && window._obsTempBk !== null
     ? window._obsTempBk
