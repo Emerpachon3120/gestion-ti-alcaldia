@@ -943,21 +943,21 @@ export function verActaBackup(id) {
       </table>
 
       <!-- ACTIVIDADES -->
-      <div class="sec">Actividades realizadas</div>
-      <div class="obs" style="background:#f9f9f9;border:1px solid #e0e0e0;
-        border-radius:4px;padding:0.2cm 0.3cm;margin-bottom:0.3cm;">
-        ${m.obs
-          ? m.obs.replace('Actividades realizadas:\n','')
-              .split('\n')
-              .filter(l => l.trim())
-              .map(l => l.replace('• ','').trim())
-              .filter(l => l && !l.startsWith('Observaciones'))
-              .join(' · ')
-          : 'Se realizaron actividades de mantenimiento preventivo según la programación establecida.'}
-        ${m.obs?.includes('Observaciones adicionales:')
-          ? `<br><br><b>Observaciones:</b> ${m.obs.split('Observaciones adicionales:\n')[1] || ''}`
-          : ''}
-      </div>
+<div class="sec">Actividades realizadas</div>
+<div class="obs" style="background:#f9f9f9;border:1px solid #e0e0e0;
+  border-radius:4px;padding:0.2cm 0.3cm;margin-bottom:0.3cm;">
+  ${b.obs
+    ? b.obs.replace('Actividades realizadas:\n','')
+        .split('\n')
+        .filter(l => l.trim())
+        .map(l => l.replace('• ','').trim())
+        .filter(l => l && !l.startsWith('Observaciones'))
+        .join(' · ')
+    : 'Se realizo copia de seguridad de la informacion institucional segun la programacion establecida.'}
+  ${b.obs?.includes('Observaciones adicionales:')
+    ? `<br><br><b>Observaciones:</b> ${b.obs.split('Observaciones adicionales:\n')[1] || ''}`
+    : ''}
+</div>
 
       <!-- EVIDENCIA -->
       ${b.fotos?.length ? `
