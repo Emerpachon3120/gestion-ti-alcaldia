@@ -394,7 +394,13 @@ function editar(id) {
   document.getElementById('bk-tipo').value           = b.tipo      || 'Completo';
   document.getElementById('bk-destino').value        = b.destino   || 'Disco externo';
   document.getElementById('bk-estado').value         = b.estadoBk  || 'Completado';
-  document.getElementById('bk-obs').value            = b.obs       || '';
+  let obsSolo = b.obs || '';
+if (obsSolo.includes('Observaciones adicionales:\n')) {
+  obsSolo = obsSolo.split('Observaciones adicionales:\n')[1] || '';
+} else if (obsSolo.startsWith('Actividades realizadas:\n')) {
+  obsSolo = '';
+}
+document.getElementById('bk-obs').value = obsSolo;
   document.getElementById('bk-ubicacion').value      = b.ubicacion || '';
   document.getElementById('bk-resp-ti').value        = b.respTI    || 'Emerson Judiño Pachón Ayala';
   const d  = parseFecha(b.fecha);        if(d)  document.getElementById('bk-fecha').value          = d.toISOString().split('T')[0];

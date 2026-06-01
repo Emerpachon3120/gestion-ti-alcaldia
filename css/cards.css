@@ -97,8 +97,28 @@
   font-size: 11px; font-weight: 500;
 }
 
+/* Badges */
+.badge { 
+  display: inline-block; 
+  padding: 2px 8px; 
+  border-radius: 6px; 
+  font-size: 11px; 
+  font-weight: 600;
+  font-family: var(--font-main);
+}
+.badge-green  { background: rgba(22,163,74,.2);  color: #4ade80; }
+.badge-red    { background: rgba(220,38,38,.2);  color: #f87171; }
+.badge-yellow { background: rgba(234,179,8,.2);  color: #facc15; }
+.badge-purple { background: rgba(124,58,237,.2); color: #a78bfa; }
+.badge-blue   { background: rgba(37,99,235,.2);  color: #60a5fa; }
+
 /* Semáforo */
-.semaforo { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; border-radius: 4px; padding: 2px 6px; }
+.semaforo { 
+  display: inline-flex; align-items: center; gap: 3px; 
+  font-size: 11px; font-weight: 600; border-radius: 4px; 
+  padding: 2px 6px;
+  font-family: var(--font-main);
+}
 .semaforo-verde    { background: rgba(22,163,74,.2);  color: #4ade80; }
 .semaforo-amarillo { background: rgba(234,179,8,.2);  color: #facc15; }
 .semaforo-rojo     { background: rgba(220,38,38,.2);  color: #f87171; }
