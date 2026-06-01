@@ -11,12 +11,28 @@ html, body {
 #app-main {
   padding-top: var(--header-h);
   min-height: 100vh;
+  width: 100%;
   max-width: 480px;
-  margin: 0 auto;
+  margin-left: auto;
+  margin-right: auto;
   padding-bottom: 80px;
-  position: relative;
 }
 
+@media (min-width: 600px) {
+  body {
+    background: #111;
+  }
+  #app-header {
+    max-width: 480px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  #bottom-nav {
+    max-width: 480px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}
 .page {
   padding: 16px;
   animation: fadeIn 0.18s ease;
