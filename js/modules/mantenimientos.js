@@ -302,7 +302,7 @@ function _cardHTML(m) {
                     m.tipo?.includes('Predictivo')  ? 'badge-purple' : 'badge-blue';
 
   return `
-    <div class="mant-card">
+    <div class="mant-card" data-serial="${m.serial}">
       <div class="mant-header">
         <div>
           <div class="mant-serial">${m.serial}</div>

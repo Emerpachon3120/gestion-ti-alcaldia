@@ -74,7 +74,7 @@ export function renderLista() {
     }[b.estadoBk] || 'badge-yellow';
 
     return `
-      <div class="backup-card">
+      <div class="backup-card" data-serial="${b.serial}">
         <div class="mant-header">
           <div>
             <div class="mant-serial">${b.serial}</div>
