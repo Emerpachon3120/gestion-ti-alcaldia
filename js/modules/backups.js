@@ -489,19 +489,22 @@ async function _ejecutarGuardarBk(firmaBase64 = null) {
       + (obs ? '\n\nObservaciones adicionales:\n' + obs : '')
     : obs;
 
-  const campos = {
-    serial, personaId, tipo, destino, estadoBk,
-    obs: obsCompleto,
-    ubicacion, respTI, frecuencia, fechaProxima, fotos: bkFotos,
-    responsableEquipo: p?.nombre || '',
-    firmado:    firmaBase64 ? true : false,
-    firma:      firmaBase64,
-    firmaFecha: firmaBase64 ? new Date().toISOString() : null,
-  };
+  // Preservar firma existente si es edición
+const bkActual = editId ? getData('backups').find(x => x.id === editId) : null;
+
+const campos = {
+  serial, personaId, tipo, destino, estadoBk,
+  obs: obsCompleto,
+  ubicacion, respTI, frecuencia, fechaProxima, fotos: bkFotos,
+  responsableEquipo: p?.nombre || '',
+  firmado:    firmaBase64 ? true : (bkActual?.firmado || false),
+  firma:      firmaBase64 || bkActual?.firma || null,
+  firmaFecha: firmaBase64 ? new Date().toISOString() : (bkActual?.firmaFecha || null),
+};
 
   const lista = [...getData('backups')];
-
-  if (editId) {
+  
+if (editId) {
     const idx = lista.findIndex(x => x.id === editId);
     if (idx >= 0) lista[idx] = { ...lista[idx], ...campos, fecha };
     apiPost('Backups', 'update', {
@@ -511,8 +514,8 @@ async function _ejecutarGuardarBk(firmaBase64 = null) {
       Observaciones: obsCompleto,
       Responsable: respTI, Persona_ID: personaId, Resp_TI: respTI,
       Fotos_Base64: bkFotos.length > 0 ? `${bkFotos.length} foto(s)` : '',
-      Firmado: firmaBase64 ? 'Sí' : 'No',
-      Imagen_Base64: firmaBase64 ? 'firmado_digitalmente' : '',
+      Firmado: (firmaBase64 || bkActual?.firmado) ? 'Sí' : 'No',
+      Imagen_Base64: (firmaBase64 || bkActual?.firma) ? 'firmado_digitalmente' : '',
     }, 'ID', editId).catch(console.warn);
     showToast('✅ Backup actualizado');
   } else {
@@ -529,7 +532,7 @@ async function _ejecutarGuardarBk(firmaBase64 = null) {
       Persona_ID: personaId, Resp_TI: respTI,
       Fotos_Base64: bkFotos.length > 0 ? `${bkFotos.length} foto(s)` : '',
     }).catch(console.warn);
-    showToast('💾 Backup registrado y firmado');
+    showToast('💾 Backup registrado');
   }
 
   setState('backups', lista);

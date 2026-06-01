@@ -898,16 +898,19 @@ async function _ejecutarGuardar(firmaBase64 = null) {
       + (obs ? '\n\nObservaciones adicionales:\n' + obs : '')
     : obs;
 
-  const campos = {
-    serial, tipo, frecuencia, obs: obsCompleto, periodo, responsable, estadoEquipo,
-    cambioResp, cambioCred, traslado, depAnterior, depNueva,
-    userWin, passWin, userAdmin, passAdmin,
-    fechaProxima, fechaTraslado, respEquipoId, nuevoRespId,
-    fotos: mtFotos,
-    firmado:    firmaBase64 ? true : false,
-    firma:      firmaBase64,
-    firmaFecha: firmaBase64 ? new Date().toISOString() : null,
-  };
+ // Preservar firma existente si es edición
+const mantActual = editId ? getData('mantenimientos').find(x => x.id === editId) : null;
+
+const campos = {
+  serial, tipo, frecuencia, obs: obsCompleto, periodo, responsable, estadoEquipo,
+  cambioResp, cambioCred, traslado, depAnterior, depNueva,
+  userWin, passWin, userAdmin, passAdmin,
+  fechaProxima, fechaTraslado, respEquipoId, nuevoRespId,
+  fotos: mtFotos,
+  firmado:    firmaBase64 ? true : (mantActual?.firmado || false),
+  firma:      firmaBase64 || mantActual?.firma || null,
+  firmaFecha: firmaBase64 ? new Date().toISOString() : (mantActual?.firmaFecha || null),
+};
 
   const lista = [...getData('mantenimientos')];
 
@@ -923,8 +926,8 @@ async function _ejecutarGuardar(firmaBase64 = null) {
       Traslado: traslado, Dep_Anterior: depAnterior, Dep_Nueva: depNueva,
       Fecha_Traslado: fechaTraslado, Estado_Equipo: estadoEquipo,
       Fotos_Base64: mtFotos.length > 0 ? `${mtFotos.length} foto(s)` : '',
-      Firmado: firmaBase64 ? 'Sí' : 'No',
-      Imagen_Base64: firmaBase64 ? 'firmado_digitalmente' : '',
+      Firmado: (firmaBase64 || mantActual?.firmado) ? 'Sí' : 'No',
+      Imagen_Base64: (firmaBase64 || mantActual?.firma) ? 'firmado_digitalmente' : '',
     }, 'ID', editId).catch(console.warn);
     showToast('✅ Mantenimiento actualizado');
   } else {
@@ -945,7 +948,7 @@ async function _ejecutarGuardar(firmaBase64 = null) {
       Fecha_Traslado: fechaTraslado, Estado_Equipo: estadoEquipo,
       Fotos_Base64: mtFotos.length > 0 ? `${mtFotos.length} foto(s)` : '',
     }).catch(console.warn);
-    showToast('🔧 Mantenimiento registrado y firmado');
+    showToast('🔧 Mantenimiento registrado');
   }
 
   if (cambioResp === 'Sí' && nuevoRespId && serial) {

@@ -454,7 +454,30 @@ export function verActaMantenimiento(id) {
   </div>
   </body></html>`;
 
-  abrirDocViewer(html, `Acta Mantenimiento — ${m.serial}`);
+  let _htmlActa = html;
+abrirDocViewer(html, `Acta Mantenimiento — ${m.serial}`, () => {
+  window._abrirFirmaGlobal?.('mant', m.id, (firmaBase64) => {
+    const htmlConFirma = _htmlActa.replace(
+      `<div style="height:2cm;border-bottom:1px solid #999;margin-bottom:4px;"></div>`,
+      `<img src="${firmaBase64}" alt="Firma funcionario"
+        style="height:2cm;object-fit:contain;display:block;
+               margin:0 auto 3px;max-width:6cm;mix-blend-mode:multiply;">`
+    );
+    _htmlActa = htmlConFirma;
+    abrirDocViewer(htmlConFirma, `Acta Mantenimiento — ${m.serial}`);
+
+    const lista = getData('mantenimientos').map(x => x.id !== m.id ? x : {
+      ...x, firmado: true, firma: firmaBase64,
+      firmaFecha: new Date().toISOString(),
+    });
+    setState('mantenimientos', lista);
+    saveKey('mantenimientos');
+    apiPost('Mantenimientos', 'update', {
+      Firmado: 'Sí', Imagen_Base64: 'firmado_digitalmente',
+    }, 'ID', m.id).catch(console.warn);
+    showToast('Firma registrada');
+  });
+});
 }
 
 // ── Informe mensual ───────────────────────────────────────────
@@ -946,16 +969,20 @@ export function verActaBackup(id) {
 <div class="sec">Actividades realizadas</div>
 <div class="obs" style="background:#f9f9f9;border:1px solid #e0e0e0;
   border-radius:4px;padding:0.2cm 0.3cm;margin-bottom:0.3cm;">
-  ${b.obs
-    ? b.obs.replace('Actividades realizadas:\n','')
-        .split('\n')
-        .filter(l => l.trim())
+  ${(() => {
+    if (!b.obs) return 'Se realizo copia de seguridad según la programacion establecida.';
+    // Extraer solo la primera sección de actividades
+    const partes = b.obs.split('Actividades realizadas:\n');
+    const bloque = partes[1] || partes[0];
+    const lineas = [...new Set(
+      bloque.split('\n')
         .map(l => l.replace('• ','').trim())
-        .filter(l => l && !l.startsWith('Observaciones'))
-        .join(' · ')
-    : 'Se realizo copia de seguridad de la informacion institucional segun la programacion establecida.'}
+        .filter(l => l && !l.startsWith('Observaciones') && !l.startsWith('Actividades'))
+    )];
+    return lineas.join(' · ') || 'Sin actividades registradas.';
+  })()}
   ${b.obs?.includes('Observaciones adicionales:')
-    ? `<br><br><b>Observaciones:</b> ${b.obs.split('Observaciones adicionales:\n')[1] || ''}`
+    ? `<br><br><b>Observaciones:</b> ${b.obs.split('Observaciones adicionales:\n').pop() || ''}`
     : ''}
 </div>
 
@@ -1005,5 +1032,25 @@ export function verActaBackup(id) {
   </div>
   </body></html>`;
 
-  abrirDocViewer(html, `Acta Backup — ${b.serial}`);
+  let _htmlActa = html;
+abrirDocViewer(html, `Acta Backup — ${b.serial}`, () => {
+  window._abrirFirmaGlobal?.('backup', b.id, (firmaBase64) => {
+    const htmlConFirma = _htmlActa.replace(
+      `<div style="height:2cm;border-bottom:1px solid #999;margin-bottom:4px;"></div>`,
+      `<img src="${firmaBase64}" alt="Firma funcionario"
+        style="height:2cm;object-fit:contain;display:block;
+               margin:0 auto 3px;max-width:6cm;mix-blend-mode:multiply;">`
+    );
+    _htmlActa = htmlConFirma;
+    abrirDocViewer(htmlConFirma, `Acta Backup — ${b.serial}`);
+
+    const lista = getData('backups').map(x => x.id !== b.id ? x : {
+      ...x, firmado: true, firma: firmaBase64,
+      firmaFecha: new Date().toISOString(),
+    });
+    setState('backups', lista);
+    saveKey('backups');
+    showToast('Firma registrada');
+  });
+});
 }
