@@ -39,9 +39,6 @@ export function renderMenu() {
 export function renderHeader() {
   const header = document.getElementById('app-header');
   header.innerHTML = `
-    <button class="header-menu-btn" onclick="toggleMenu()" aria-label="Menú">
-      <span></span><span></span><span></span>
-    </button>
     <span style="font-size:20px;">🏛️</span>
     <div class="header-title">${CONFIG.APP_NAME}</div>
     <div class="header-right">
