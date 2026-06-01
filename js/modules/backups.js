@@ -213,8 +213,6 @@ function _modalHTML() {
         </div>
       </div>
 
-      </div>
-
       <!-- MOTIVO DE NO REALIZACIÓN -->
       <div id="bk-motivo-wrap" style="display:none;margin-top:10px;">
         <label class="form-label">Motivo de no realización</label>
