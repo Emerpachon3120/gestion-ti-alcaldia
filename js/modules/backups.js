@@ -44,7 +44,6 @@ export function onEnter() {
   window.abrirNuevoBackup = abrirNuevo;
   window.editarBackup     = editar;
 }
-
 export function renderLista() {
   const DB  = getDBStatic();
   let data  = getData('backups').slice().reverse();
@@ -73,24 +72,44 @@ export function renderLista() {
       Pendiente: 'badge-yellow', 'En proceso': 'badge-yellow'
     }[b.estadoBk] || 'badge-yellow';
 
-    return `
-      <div class="mant-header">
-  <div style="flex:1;min-width:0;">
-    <div class="mant-serial">${b.serial}</div>
-    <div class="mant-person">${resp}</div>
-    <div style="font-size:11px;color:var(--text3);
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-      ${dep?.nombre || of?.nombre || ''}
-    </div>
-  </div>
-  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
-    <span class="badge badge-purple" style="white-space:nowrap;">${b.tipo || 'Backup'}</span>
-    ${b.estadoBk ? `<span class="badge ${stColor}">${b.estadoBk}</span>` : ''}
-    ${sem ? `<div class="semaforo ${sem.clase}">${sem.icon} ${sem.label}</div>` : ''}
-  </div>
-</div>
+    // Procesar obs para mostrar solo actividades sin el texto de viñetas
+    let obsDisplay = '';
+    if (b.obs) {
+      const partes = b.obs.split('Actividades realizadas:\n');
+      const bloque = partes[1] || partes[0];
+      const lineas = [...new Set(
+        bloque.split('\n')
+          .map(l => l.replace('• ','').trim())
+          .filter(l => l && !l.startsWith('Observaciones') && !l.startsWith('Actividades'))
+      )];
+      obsDisplay = lineas.join(' · ');
+      if (b.obs.includes('Observaciones adicionales:\n')) {
+        const obsAd = b.obs.split('Observaciones adicionales:\n').pop();
+        if (obsAd) obsDisplay += (obsDisplay ? ' — ' : '') + obsAd;
+      }
+    }
 
-        ${b.obs ? `<div class="mant-obs">${b.obs}</div>` : ''}
+    return `
+      <div class="backup-card" data-serial="${b.serial}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+          <div style="flex:1;min-width:0;">
+            <div class="mant-serial">${b.serial}</div>
+            <div class="mant-person">${resp}</div>
+            <div style="font-size:11px;color:var(--text3);
+              white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              ${dep?.nombre || of?.nombre || ''}
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;">
+            <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;">
+              <span class="badge badge-purple">${b.tipo || 'Backup'}</span>
+              ${b.estadoBk ? `<span class="badge ${stColor}">${b.estadoBk}</span>` : ''}
+            </div>
+            ${sem ? `<div class="semaforo ${sem.clase}">${sem.icon} ${sem.label}</div>` : ''}
+          </div>
+        </div>
+
+        ${obsDisplay ? `<div class="mant-obs">${obsDisplay}</div>` : ''}
 
         <div class="mant-meta">
           <span class="tag">📅 ${formatDate(b.fecha)}</span>

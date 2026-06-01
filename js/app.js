@@ -181,12 +181,28 @@ saveKey('equipos');
       };
       const local = localMantMap[base.id];
       if (local) {
-        base.firmado    = local.firmado;
-        base.firma      = local.firma;
-        base.firmaFecha = local.firmaFecha;
-        base.fotos      = local.fotos || [];
-      }
-      return base;
+          // Firma: si Sheets dice No explícitamente, resetear. Si dice Sí, preservar local
+          base.firmado    = r.Firmado === 'No' ? false : (local.firmado || r.Firmado === 'Sí');
+          base.firma      = r.Firmado === 'No' ? null : local.firma;
+          base.firmaFecha = r.Firmado === 'No' ? null : local.firmaFecha;
+          base.fotos      = local.fotos || [];
+          base.userWin       = local.userWin      || base.userWin;
+          base.passWin       = local.passWin      || base.passWin;
+          base.userAdmin     = local.userAdmin    || base.userAdmin;
+          base.passAdmin     = local.passAdmin    || base.passAdmin;
+          base.cambioCred    = local.cambioCred   || base.cambioCred;
+          base.cambioResp    = local.cambioResp   || base.cambioResp;
+          base.respEquipoId  = local.respEquipoId || base.respEquipoId;
+          base.nuevoRespId   = local.nuevoRespId  || base.nuevoRespId;
+          base.traslado      = local.traslado     || base.traslado;
+          base.depAnterior   = local.depAnterior  || base.depAnterior;
+          base.depNueva      = local.depNueva     || base.depNueva;
+          base.fechaTraslado = local.fechaTraslado|| base.fechaTraslado;
+          base.estadoEquipo  = local.estadoEquipo || base.estadoEquipo;
+          base.periodo       = local.periodo      || base.periodo;
+          base.obs           = local.obs          || base.obs;
+        }
+        return base;
     }));
 
     // Backups — preservar firmas y fotos locales
