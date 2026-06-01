@@ -49,9 +49,7 @@ export async function navigate(page, params = {}) {
 }
 
 function updateMenuActive(page) {
-  document.querySelectorAll('.menu-item').forEach(el => {
-    el.classList.toggle('active', el.dataset.page === page);
-  });
+  window._updateBottomNav?.(page);
 }
 
 function updateFab(page) {

@@ -4,41 +4,36 @@ import { navigate } from '../router.js';
 const CONFIG = window.APP_CONFIG;
 
 export function renderMenu() {
-  const nav = document.getElementById('app-menu');
+  const nav = document.getElementById('bottom-nav');
+  if (!nav) return;
 
-  nav.innerHTML = `
-    <div class="menu-header">
-      <div style="text-align:center;padding:8px 0;">
-        <div style="font-size:32px;">🏛️</div>
-        <div style="font-weight:700;font-size:13px;color:var(--text1);margin-top:4px;">
-          ${CONFIG.APP_NAME}
-        </div>
-      </div>
-      <div class="menu-entity">${CONFIG.ENTIDAD}</div>
-    </div>
-    <div class="menu-nav">
-      ${MENU_ITEMS.map(item => `
-        <button class="menu-item" data-page="${item.page}">
-          <span class="menu-icon">${item.icon}</span>
-          <span class="menu-label">${item.label}</span>
-        </button>
-      `).join('')}
-    </div>
-    <div class="menu-footer">
-      <div class="menu-version">${CONFIG.APP_NAME} v${CONFIG.VERSION}</div>
-    </div>
-  `;
+  const items = [
+    { page: 'dashboard',     icon: '🏠', label: 'Inicio' },
+    { page: 'mantenimientos',icon: '🔧', label: 'Mantto' },
+    { page: 'backups',       icon: '💾', label: 'Backups' },
+    { page: 'inventario',    icon: '💻', label: 'Equipos' },
+    { page: 'incidencias',   icon: '🚨', label: 'Incidencias' },
+  ];
 
-  nav.querySelectorAll('.menu-item').forEach(btn => {
-    btn.addEventListener('click', () => {
-      closeMenu();
-      navigate(btn.dataset.page);
+  nav.innerHTML = items.map(item => `
+    <div class="bottom-nav-item" data-page="${item.page}">
+      <span class="nav-icon">${item.icon}</span>
+      <span class="nav-label">${item.label}</span>
+    </div>
+  `).join('');
+
+  nav.querySelectorAll('.bottom-nav-item').forEach(el => {
+    el.addEventListener('click', () => {
+      import('../router.js').then(({ navigate }) => navigate(el.dataset.page));
     });
   });
 
-  document.getElementById('menu-overlay').onclick = closeMenu;
-  window.toggleMenu = toggleMenu;
-  window.closeMenu  = closeMenu;
+  // Actualizar activo cuando cambia la página
+  window._updateBottomNav = (page) => {
+    nav.querySelectorAll('.bottom-nav-item').forEach(el => {
+      el.classList.toggle('active', el.dataset.page === page);
+    });
+  };
 }
 
 export function renderHeader() {
