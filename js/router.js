@@ -66,3 +66,8 @@ window.addEventListener('popstate', e => {
   const page = e.state?.page || 'dashboard';
   navigate(page);
 });
+
+export async function forceNavigate(page, params = {}) {
+  setState('currentPage', null);
+  await navigate(page, params);
+}

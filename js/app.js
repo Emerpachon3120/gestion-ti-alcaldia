@@ -2,7 +2,7 @@ import { CONFIG }           from './config.js';
 import { initStorage, loadFromStorage, saveToStorage, saveKey } from './storage.js';
 import { setState, getState }   from './state.js';
 import { apiGet, cargarDatosDesdeSheets } from './api.js';
-import { navigate, registerRoute }        from './router.js';
+import { navigate, registerRoute, forceNavigate } from './router.js';
 import { showToast }        from './ui/toast.js';
 import { renderMenu, renderHeader } from './ui/menu.js';
 import { cerrarDocViewer, docViewerPrint } from './ui/documento.js';
@@ -54,7 +54,7 @@ async function init() {
 
   // Pequeño delay antes de renderizar dashboard
   await new Promise(resolve => setTimeout(resolve, 100));
-  await navigate('dashboard');
+  await forceNavigate('dashboard');
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./service-worker.js').catch(() => {});
