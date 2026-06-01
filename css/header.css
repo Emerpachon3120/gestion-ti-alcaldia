@@ -60,18 +60,18 @@
 .header-sync-btn.syncing { animation: spin 1s linear infinite; }
 @media (min-width: 600px) {
   #app-header {
-    max-width: 600px;
+    max-width: 700px;
     left: 50%;
     transform: translateX(-50%);
     right: auto;
-    width: 600px;
+    width: 700px;
   }
 
   #bottom-nav {
-    max-width: 600px;
+    max-width: 700px;
     left: 50%;
     transform: translateX(-50%);
+    width: 700px;
     right: auto;
-    width: 600px;
   }
 }
