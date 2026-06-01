@@ -22,3 +22,15 @@
 
   .header-menu-btn { display: none; }
 }
+
+@media (min-width: 600px) {
+  body {
+    background: #0a0a0a;
+  }
+  
+  #app-main {
+    max-width: 480px !important;
+    margin: 0 auto !important;
+    box-shadow: 0 0 40px rgba(0,0,0,0.5);
+  }
+}
