@@ -91,19 +91,33 @@ export async function syncData() {
 
     saveKey('DB_STATIC');
 
-    // Equipos
-    setState('equipos', eqs.map(r => ({
-      serial:     String(r.Serial),
-      oficina:    String(r.OficinaID),
-      usuarioId:  String(r.UsuarioID || ''),
-      so:         r.SO || '', office: r.Office || '',
-      disco:      r.Disco || '', cap: r.Capacidad || '',
-      ram:        r.RAM || '', obs: r.Observaciones || '',
-      marca:      r.Marca || '', modelo: r.Modelo || '',
-      procesador: r.Procesador || '', estado: r.Estado || 'Operativo',
-      ubicacion:  r.Ubicacion || '', fechaCompra: r.Fecha_Compra || '',
-      garantia:   r.Garantia || '', tipoEquipo: r.Tipo_Equipo || '',
-    })));
+   // Equipos — preservar fotos y componentes locales
+const localEqMap = {};
+(getState('equipos') || []).forEach(e => { localEqMap[e.serial] = e; });
+
+setState('equipos', eqs.map(r => {
+  const base = {
+    serial:     String(r.Serial),
+    oficina:    String(r.OficinaID),
+    usuarioId:  String(r.UsuarioID || ''),
+    so:         r.SO || '', office: r.Office || '',
+    disco:      r.Disco || '', cap: r.Capacidad || '',
+    ram:        r.RAM || '', obs: r.Observaciones || '',
+    marca:      r.Marca || '', modelo: r.Modelo || '',
+    procesador: r.Procesador || '', estado: r.Estado || 'Operativo',
+    ubicacion:  r.Ubicacion || '', fechaCompra: r.Fecha_Compra || '',
+    garantia:   r.Garantia || '', tipoEquipo: r.Tipo_Equipo || '',
+    componentes: r.Componentes ? r.Componentes.split(',').filter(Boolean) : [],
+  };
+  // Preservar fotos locales
+  const local = localEqMap[base.serial];
+  if (local) {
+    base.fotosComponentes = local.fotosComponentes || {};
+    base.fotos = local.fotos || [];
+  }
+  return base;
+}));
+saveKey('equipos');
 
     // Mantenimientos — preservar firmas y fotos locales
     const localMantMap = {};
