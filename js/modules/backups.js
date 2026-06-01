@@ -568,21 +568,6 @@ async function _ejecutarGuardarBk(firmaBase64 = null) {
     document.querySelectorAll('#bk-actividades-lista input[type="checkbox"]:checked')
   ).map(cb => cb.value);
 
-  // Recoger motivos si estado es Fallido o No realizado
-const estadoBkVal = document.getElementById('bk-estado')?.value;
-const motivosMarcados = ['Fallido','No realizado'].includes(estadoBkVal)
-  ? Array.from(document.querySelectorAll('#bk-motivo-lista input[type="checkbox"]:checked'))
-      .map(cb => cb.value)
-  : [];
-
-const obsCompleto = motivosMarcados.length
-  ? 'Motivo de no realización:\n' + motivosMarcados.map(a => `• ${a}`).join('\n')
-    + (obs ? '\n\nObservaciones adicionales:\n' + obs : '')
-  : actividadesMarcadas.length
-    ? 'Actividades realizadas:\n' + actividadesMarcadas.map(a => `• ${a}`).join('\n')
-      + (obs ? '\n\nObservaciones adicionales:\n' + obs : '')
-    : obs;
-
   const obs = window._obsTempBk !== undefined && window._obsTempBk !== null
     ? window._obsTempBk
     : (document.getElementById('bk-obs')?.value || '');
@@ -591,27 +576,36 @@ const obsCompleto = motivosMarcados.length
   window._actividadesTempBk = null;
   window._obsTempBk = null;
 
-  const obsCompleto = actividadesMarcadas.length
-    ? 'Actividades realizadas:\n' + actividadesMarcadas.map(a => `• ${a}`).join('\n')
+  // Recoger motivos si estado es Fallido o No realizado
+  const motivosMarcados = ['Fallido','No realizado'].includes(estadoBk)
+    ? Array.from(document.querySelectorAll('#bk-motivo-lista input[type="checkbox"]:checked'))
+        .map(cb => cb.value)
+    : [];
+
+  const obsCompleto = motivosMarcados.length
+    ? 'Motivo de no realización:\n' + motivosMarcados.map(a => `• ${a}`).join('\n')
       + (obs ? '\n\nObservaciones adicionales:\n' + obs : '')
-    : obs;
+    : actividadesMarcadas.length
+      ? 'Actividades realizadas:\n' + actividadesMarcadas.map(a => `• ${a}`).join('\n')
+        + (obs ? '\n\nObservaciones adicionales:\n' + obs : '')
+      : obs;
 
   // Preservar firma existente si es edición
-const bkActual = editId ? getData('backups').find(x => x.id === editId) : null;
+  const bkActual = editId ? getData('backups').find(x => x.id === editId) : null;
 
-const campos = {
-  serial, personaId, tipo, destino, estadoBk,
-  obs: obsCompleto,
-  ubicacion, respTI, frecuencia, fechaProxima, fotos: bkFotos,
-  responsableEquipo: p?.nombre || '',
-  firmado:    firmaBase64 ? true : (bkActual?.firmado || false),
-  firma:      firmaBase64 || bkActual?.firma || null,
-  firmaFecha: firmaBase64 ? new Date().toISOString() : (bkActual?.firmaFecha || null),
-};
+  const campos = {
+    serial, personaId, tipo, destino, estadoBk,
+    obs: obsCompleto,
+    ubicacion, respTI, frecuencia, fechaProxima, fotos: bkFotos,
+    responsableEquipo: p?.nombre || '',
+    firmado:    firmaBase64 ? true : (bkActual?.firmado || false),
+    firma:      firmaBase64 || bkActual?.firma || null,
+    firmaFecha: firmaBase64 ? new Date().toISOString() : (bkActual?.firmaFecha || null),
+  };
 
   const lista = [...getData('backups')];
 
-if (editId) {
+  if (editId) {
     const idx = lista.findIndex(x => x.id === editId);
     if (idx >= 0) lista[idx] = { ...lista[idx], ...campos, fecha };
     apiPost('Backups', 'update', {
