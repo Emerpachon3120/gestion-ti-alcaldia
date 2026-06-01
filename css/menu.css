@@ -109,7 +109,6 @@
   align-items: center;
   padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
   z-index: 100;
-  width: 100%;
 }
 
 .bottom-nav-item {
