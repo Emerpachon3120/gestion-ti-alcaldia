@@ -7,12 +7,19 @@ export function renderAlertas(containerId = 'alertas-container') {
   if (!container) return;
 
   const alertas = [];
-  const mantenimientos = getData('mantenimientos');
-  const backups        = getData('backups');
-  const incidencias    = getData('incidencias');
-  const hoy            = new Date();
+  const hoy = new Date();
 
-  mantenimientos.forEach(m => {
+  // Mantenimientos — solo el más reciente por equipo
+  const mantPorEquipo = {};
+  getData('mantenimientos').forEach(m => {
+    const d = parseFecha(m.fecha);
+    if (!mantPorEquipo[m.serial] ||
+        (d && d > parseFecha(mantPorEquipo[m.serial].fecha))) {
+      mantPorEquipo[m.serial] = m;
+    }
+  });
+
+  Object.values(mantPorEquipo).forEach(m => {
     const s = calcSemaforo(m.fechaProxima);
     if (s && s.clase !== 'semaforo-verde') {
       alertas.push({
@@ -35,7 +42,17 @@ export function renderAlertas(containerId = 'alertas-container') {
     }
   });
 
-  backups.forEach(b => {
+  // Backups — solo el más reciente por equipo
+  const bkPorEquipo = {};
+  getData('backups').forEach(b => {
+    const d = parseFecha(b.fecha);
+    if (!bkPorEquipo[b.serial] ||
+        (d && d > parseFecha(bkPorEquipo[b.serial].fecha))) {
+      bkPorEquipo[b.serial] = b;
+    }
+  });
+
+  Object.values(bkPorEquipo).forEach(b => {
     const s = calcSemaforo(b.fechaProxima);
     if (s && s.clase !== 'semaforo-verde') {
       alertas.push({
@@ -58,8 +75,10 @@ export function renderAlertas(containerId = 'alertas-container') {
     }
   });
 
-  incidencias
-    .filter(i => ['Iniciada','En proceso','Pendiente','abierta'].includes(i.estadoTexto || i.estado))
+  // Incidencias abiertas hace más de 3 días
+  getData('incidencias')
+    .filter(i => ['Iniciada','En proceso','Pendiente','abierta']
+      .includes(i.estadoTexto || i.estado))
     .forEach(i => {
       const d    = parseFecha(i.fecha);
       const dias = d ? Math.floor((hoy - d) / 86400000) : 0;
