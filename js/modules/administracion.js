@@ -2,6 +2,7 @@ import { getData, getDBStatic, setState } from '../state.js';
 import { apiPost }     from '../api.js';
 import { showToast, showConfirm, cerrarConfirm } from '../ui/toast.js';
 import { abrirModal, cerrarModal } from '../ui/modal.js';
+import { saveKey } from '../storage.js';
 
 
 let _tabActual = 'deps';
@@ -266,6 +267,7 @@ function _bindEvents() {
     } else {
       const id = 'DEP' + Date.now();
       DB.dependencias.push({ id, nombre, responsable });
+      saveKey('DB_STATIC'); // ← AGREGA
       apiPost('Dependencias','insert',{ ID:id, Nombre:nombre, Responsable:responsable }).catch(console.warn);
       showToast('Dependencia registrada');
     }
@@ -288,6 +290,7 @@ function _bindEvents() {
     } else {
       const id = 'OF' + Date.now();
       DB.oficinas.push({ id, nombre, depId });
+      saveKey('DB_STATIC'); // ← AGREGA
       apiPost('Oficinas','insert',{ ID:id, Nombre:nombre, DepID:depId }).catch(console.warn);
       showToast('Oficina registrada');
     }
@@ -312,6 +315,7 @@ function _bindEvents() {
     } else {
       const id = 'P' + Date.now();
       DB.personas.push({ id, nombre, cargo, correo, tel, imagen:'' });
+      saveKey('DB_STATIC');
       apiPost('Personas','insert',{ ID:id, Nombre:nombre, Cargo:cargo, Correo:correo, Telefono:tel }).catch(console.warn);
       showToast('Funcionario registrado');
     }
