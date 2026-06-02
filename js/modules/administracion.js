@@ -1,7 +1,8 @@
 import { getData, getDBStatic, setState } from '../state.js';
 import { apiPost }     from '../api.js';
-import { showToast }   from '../ui/toast.js';
+import { showToast, showConfirm, cerrarConfirm } from '../ui/toast.js';
 import { abrirModal, cerrarModal } from '../ui/modal.js';
+
 
 let _tabActual = 'deps';
 
@@ -336,11 +337,18 @@ function _bindAcciones() {
       }
 
       if (action === 'eliminar-dep') {
-        if (!confirm('¿Eliminar esta dependencia?')) return;
-        DB.dependencias = DB.dependencias.filter(d => d.id !== id);
-        apiPost('Dependencias','delete',{},'ID',id).catch(console.warn);
-        showToast('Eliminada');
-        _renderContenido();
+        showConfirm({
+          icon: '🗑️',
+          title: '¿Eliminar dependencia?',
+          msg: 'Esta acción no se puede deshacer.',
+          okLabel: 'Eliminar',
+          onOk: () => {
+            DB.dependencias = DB.dependencias.filter(d => d.id !== id);
+            apiPost('Dependencias','delete',{},'ID',id).catch(console.warn);
+            showToast('Eliminada');
+            _renderContenido();
+          }
+        });
       }
 
       if (action === 'editar-of') {
@@ -354,11 +362,18 @@ function _bindAcciones() {
       }
 
       if (action === 'eliminar-of') {
-        if (!confirm('¿Eliminar esta oficina?')) return;
-        DB.oficinas = DB.oficinas.filter(o => o.id !== id);
-        apiPost('Oficinas','delete',{},'ID',id).catch(console.warn);
-        showToast('Eliminada');
-        _renderContenido();
+        showConfirm({
+          icon: '🗑️',
+          title: '¿Eliminar dependencia?',
+          msg: 'Esta acción no se puede deshacer.',
+          okLabel: 'Eliminar',
+          onOk: () => {
+            DB.dependencias = DB.dependencias.filter(d => d.id !== id);
+            apiPost('Dependencias','delete',{},'ID',id).catch(console.warn);
+            showToast('Eliminada');
+            _renderContenido();
+          }
+        });
       }
 
       if (action === 'editar-persona') {
@@ -374,11 +389,18 @@ function _bindAcciones() {
       }
 
       if (action === 'eliminar-persona') {
-        if (!confirm('¿Eliminar este funcionario?')) return;
-        DB.personas = DB.personas.filter(x => x.id !== id);
-        apiPost('Personas','delete',{},'ID',id).catch(console.warn);
-        showToast('Eliminado');
-        _renderContenido();
+        showConfirm({
+          icon: '🗑️',
+          title: '¿Eliminar dependencia?',
+          msg: 'Esta acción no se puede deshacer.',
+          okLabel: 'Eliminar',
+          onOk: () => {
+            DB.dependencias = DB.dependencias.filter(d => d.id !== id);
+            apiPost('Dependencias','delete',{},'ID',id).catch(console.warn);
+            showToast('Eliminada');
+            _renderContenido();
+          }
+        });
       }
     });
   });
