@@ -710,7 +710,11 @@ export function generarActaDependencia(tipo, depId, fechaIni, fechaFin, obsExtra
   const tipoTexto = tipo === 'mantenimiento' ? 'mantenimiento' : 'copias de seguridad';
 
   // Jefe de dependencia — usar responsable de la dependencia si existe
-  const jefeDep = dep.responsable || (() => {
+  const jefePersona = dep.responsableId
+    ? DB.personas.find(x => x.id === dep.responsableId)
+    : null;
+
+  const jefeDep = jefePersona?.nombre || dep.responsable || (() => {
     for (const of_ of DB.oficinas.filter(o => o.depId === depId)) {
       const eq = getData('equipos').find(e => e.oficina === of_.id && e.usuarioId);
       if (eq) {
@@ -720,6 +724,8 @@ export function generarActaDependencia(tipo, depId, fechaIni, fechaFin, obsExtra
     }
     return `Representante ${dep.nombre}`;
   })();
+
+  const jefeCarго = jefePersona?.cargo || '';
 
   const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
   <title>${actaTitulo}</title>
@@ -818,6 +824,7 @@ export function generarActaDependencia(tipo, depId, fechaIni, fechaFin, obsExtra
           <div style="height:2cm;"></div>
           <div class="flinea">
             <div class="fnombre">${jefeDep}</div>
+            <div class="fcargo">${jefeCargo}</div>
             <div class="fcargo">${dep.nombre}</div>
           </div>
         </div>

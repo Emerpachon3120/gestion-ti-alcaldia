@@ -108,7 +108,10 @@ export async function syncData() {
     // DB_STATIC
     setState('DB_STATIC', {
       dependencias: deps.map(r => ({
-        id: String(r.ID), nombre: r.Nombre || '', responsable: r.Responsable || ''
+        id:            String(r.ID),
+        nombre:        r.Nombre || '',
+        responsable:   r.Responsable || '',
+        responsableId: String(r.ResponsableID || ''),
       })),
       oficinas: ofs.map(r => ({
         id: String(r.ID), nombre: r.Nombre || '', depId: String(r.DepID)

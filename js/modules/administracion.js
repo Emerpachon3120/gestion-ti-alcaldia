@@ -3,6 +3,7 @@ import { apiPost }     from '../api.js';
 import { showToast, showConfirm, cerrarConfirm } from '../ui/toast.js';
 import { abrirModal, cerrarModal } from '../ui/modal.js';
 import { saveKey } from '../storage.js';
+import { llenarSSPersonas, getSSValue, setSSValue } from '../ui/searchselect.js';
 
 
 let _tabActual = 'deps';
@@ -52,8 +53,7 @@ export function render() {
         </div>
         <div class="form-group">
           <label class="form-label">Responsable / Jefe</label>
-          <input type="text" class="form-input" id="dep-responsable"
-            placeholder="Nombre del jefe de dependencia">
+          <div id="dep-responsable-ss"></div>
         </div>
         <div class="modal-footer">
           <div style="display:flex;gap:8px;">
@@ -236,7 +236,7 @@ function _bindEvents() {
       document.getElementById('dep-title').textContent = 'Nueva Dependencia';
       document.getElementById('dep-edit-id').value = '';
       document.getElementById('dep-nombre').value  = '';
-      document.getElementById('dep-responsable').value = '';
+      llenarSSPersonas('dep-responsable-ss');
       abrirModal('modal-dep');
     } else if (_tabActual === 'ofs') {
       document.getElementById('of-title').textContent = 'Nueva Oficina';
@@ -254,21 +254,24 @@ function _bindEvents() {
 
   // Guardar dependencia
   document.getElementById('dep-save-btn')?.addEventListener('click', () => {
-    const nombre      = document.getElementById('dep-nombre').value.trim();
-    const responsable = document.getElementById('dep-responsable').value.trim();
-    const editId      = document.getElementById('dep-edit-id').value;
+      const nombre         = document.getElementById('dep-nombre').value.trim();
+      const responsableId  = getSSValue('dep-responsable-ss');
+      const DB2            = getDBStatic();
+      const jefe           = DB2.personas.find(x => x.id === responsableId);
+      const responsable    = jefe?.nombre || '';
+      const editId         = document.getElementById('dep-edit-id').value;
     if (!nombre) { showToast('El nombre es obligatorio','#d97706'); return; }
     const DB = getDBStatic();
     if (editId) {
       const dep = DB.dependencias.find(d => d.id === editId);
       if (dep) { dep.nombre = nombre; dep.responsable = responsable; }
-      apiPost('Dependencias','update',{ Nombre:nombre, Responsable:responsable },'ID',editId).catch(console.warn);
+      apiPost('Dependencias','update',{ Nombre:nombre, Responsable:responsable, ResponsableID:responsableId },'ID',editId).catch(console.warn);
       showToast('Dependencia actualizada');
     } else {
       const id = 'DEP' + Date.now();
-      DB.dependencias.push({ id, nombre, responsable });
-      saveKey('DB_STATIC'); // ← AGREGA
-      apiPost('Dependencias','insert',{ ID:id, Nombre:nombre, Responsable:responsable }).catch(console.warn);
+      DB.dependencias.push({ id, nombre, responsable, responsableId });
+      saveKey('DB_STATIC');
+      apiPost('Dependencias','insert',{ ID:id, Nombre:nombre, Responsable:responsable, ResponsableID:responsableId }).catch(console.warn);
       showToast('Dependencia registrada');
     }
     cerrarModal('modal-dep');
@@ -336,7 +339,11 @@ function _bindAcciones() {
         document.getElementById('dep-title').textContent = 'Editar Dependencia';
         document.getElementById('dep-edit-id').value     = id;
         document.getElementById('dep-nombre').value      = dep.nombre;
-        document.getElementById('dep-responsable').value = dep.responsable || '';
+        llenarSSPersonas('dep-responsable-ss');
+        if (dep.responsableId) {
+          const jefe = DB.personas.find(x => x.id === dep.responsableId);
+          if (jefe) setSSValue('dep-responsable-ss', jefe.id, jefe.nombre);
+        }
         abrirModal('modal-dep');
       }
 
