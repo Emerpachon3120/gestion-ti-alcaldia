@@ -124,7 +124,7 @@ export function renderLista() {
       });
       setState('incidencias', lista);
       saveKey('incidencias');
-      apiPost('Incidencias','update',{ 'Estado': nuevoEstado },'Ticket', id).catch(console.warn);
+      apiPost('Incidencias','update',{ 'Estado': nuevoEstado },'Ticket', id, CONFIG.FORMS_SPREAD_ID).catch(console.warn);
       showToast(`Estado actualizado: ${nuevoEstado}`);
       renderLista();
     });
@@ -271,7 +271,7 @@ function _resolver(id) {
   const lista = getData('incidencias').map(i => i.id === id ? { ...i, estadoTexto:'Finalizada', estado:'cerrada' } : i);
   setState('incidencias', lista);
   saveKey('incidencias');
-  apiPost('Incidencias','update',{ 'Estado':'Finalizada' },'Ticket',id).catch(console.warn);
+  apiPost('Incidencias','update',{ 'Estado':'Finalizada' },'Ticket',id, CONFIG.FORMS_SPREAD_ID).catch(console.warn);
   showToast('✅ Incidencia resuelta');
   renderLista();
 }

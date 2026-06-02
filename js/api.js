@@ -12,12 +12,12 @@ export async function apiGet(sheet, extraParams = '') {
 }
 
 // POST genérico
-export async function apiPost(sheet, action, data, keyField, keyValue) {
-  const url    = `${CONFIG.BACKEND_URL}?sheet=${encodeURIComponent(sheet)}&action=${action}`;
-  const body   = JSON.stringify({ sheet, action, data, keyField, keyValue });
-  
-  // Usar no-cors no funciona para leer respuesta
-  // Apps Script necesita que el POST vaya directo sin redirect
+export async function apiPost(sheet, action, data, keyField, keyValue, spreadId = null) {
+  const body = JSON.stringify({
+    sheet, action, data, keyField, keyValue,
+    spreadId: spreadId || null
+  });
+
   const res = await fetch(CONFIG.BACKEND_URL, {
     method:   'POST',
     headers:  { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -27,14 +27,12 @@ export async function apiPost(sheet, action, data, keyField, keyValue) {
   });
 
   const text = await res.text();
-  
   try {
     const json = JSON.parse(text);
     if (json.status !== 200) throw new Error(json.error || 'Error backend');
     return json.data;
   } catch(e) {
     console.warn('Response no es JSON:', text);
-    // Si llegó aquí pero se guardó igual, retornar ok
     return { ok: true };
   }
 }
