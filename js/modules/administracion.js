@@ -3,93 +3,45 @@ import { apiPost }     from '../api.js';
 import { showToast }   from '../ui/toast.js';
 import { abrirModal, cerrarModal } from '../ui/modal.js';
 
+let _tabActual = 'deps';
+
 export function render() {
   const DB = getDBStatic();
   return `
     <div class="page">
-      <div class="section-title">⚙️ Administración</div>
+      <div class="section-title">Administración</div>
       <div class="section-sub">Gestión de dependencias, oficinas y personas</div>
 
-      <!-- DEPENDENCIAS -->
-      <div class="card" style="margin-bottom:12px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <div style="font-weight:700;">🏛️ Dependencias (${DB.dependencias.length})</div>
-          <button class="btn btn-primary" style="margin:0;padding:6px 12px;font-size:12px;width:auto;"
-            id="btn-nueva-dep">+ Nueva</button>
-        </div>
-        <div id="lista-deps">
-          ${DB.dependencias.map(d => `
-            <div style="display:flex;justify-content:space-between;align-items:center;
-              padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;">
-              <div>
-                <div style="font-weight:600;">${d.nombre}</div>
-                <div style="font-size:11px;color:var(--text3);">ID: ${d.id}</div>
-              </div>
-              <div style="display:flex;gap:6px;">
-                <button class="action-btn" data-action="editar-dep" data-id="${d.id}">✏️</button>
-                <button class="action-btn del" data-action="eliminar-dep" data-id="${d.id}">🗑️</button>
-              </div>
-            </div>`).join('')}
-        </div>
+      <!-- TABS -->
+      <div class="filter-tabs" style="margin-bottom:12px;">
+        <button class="filter-tab ${_tabActual==='deps'?'active':''}" data-tab="deps">
+          Dependencias (${DB.dependencias.length})
+        </button>
+        <button class="filter-tab ${_tabActual==='ofs'?'active':''}" data-tab="ofs">
+          Oficinas (${DB.oficinas.length})
+        </button>
+        <button class="filter-tab ${_tabActual==='personas'?'active':''}" data-tab="personas">
+          Funcionarios (${DB.personas.length})
+        </button>
       </div>
 
-      <!-- OFICINAS -->
-      <div class="card" style="margin-bottom:12px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <div style="font-weight:700;">🏢 Oficinas (${DB.oficinas.length})</div>
-          <button class="btn btn-primary" style="margin:0;padding:6px 12px;font-size:12px;width:auto;"
-            id="btn-nueva-of">+ Nueva</button>
-        </div>
-        <div id="lista-ofs">
-          ${DB.oficinas.map(o => {
-            const dep = DB.dependencias.find(d => d.id === o.depId);
-            return `
-            <div style="display:flex;justify-content:space-between;align-items:center;
-              padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;">
-              <div>
-                <div style="font-weight:600;">${o.nombre}</div>
-                <div style="font-size:11px;color:var(--text3);">
-                  ${dep?.nombre || '—'} · ID: ${o.id}
-                </div>
-              </div>
-              <div style="display:flex;gap:6px;">
-                <button class="action-btn" data-action="editar-of" data-id="${o.id}">✏️</button>
-                <button class="action-btn del" data-action="eliminar-of" data-id="${o.id}">🗑️</button>
-              </div>
-            </div>`;
-          }).join('')}
-        </div>
+      <!-- BARRA SUPERIOR -->
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <input type="text" class="form-input" id="admin-buscar"
+          placeholder="Buscar..." style="margin:0;flex:1;">
+        <button class="btn btn-primary" style="margin:0;width:auto;padding:8px 16px;"
+          id="btn-admin-nuevo">+ Nuevo</button>
       </div>
 
-      <!-- PERSONAS -->
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <div style="font-weight:700;">👤 Funcionarios (${DB.personas.length})</div>
-          <button class="btn btn-primary" style="margin:0;padding:6px 12px;font-size:12px;width:auto;"
-            id="btn-nueva-persona">+ Nuevo</button>
-        </div>
-        <div id="lista-personas">
-          ${DB.personas.map(p => `
-            <div style="display:flex;justify-content:space-between;align-items:center;
-              padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;">
-              <div>
-                <div style="font-weight:600;">${p.nombre}</div>
-                <div style="font-size:11px;color:var(--text3);">${p.cargo || '—'}</div>
-              </div>
-              <div style="display:flex;gap:6px;">
-                <button class="action-btn" data-action="editar-persona" data-id="${p.id}">✏️</button>
-                <button class="action-btn del" data-action="eliminar-persona" data-id="${p.id}">🗑️</button>
-              </div>
-            </div>`).join('')}
-        </div>
-      </div>
+      <!-- CONTENIDO -->
+      <div id="admin-contenido"></div>
     </div>
 
     <!-- MODAL DEPENDENCIA -->
     <div class="modal-overlay" id="modal-dep">
       <div class="modal">
         <div class="modal-handle"></div>
-        <div class="modal-title" id="dep-title">🏛️ Nueva Dependencia</div>
+        <div class="modal-title" id="dep-title">Nueva Dependencia</div>
         <input type="hidden" id="dep-edit-id">
         <div class="form-group">
           <label class="form-label">Nombre *</label>
@@ -97,7 +49,7 @@ export function render() {
             placeholder="Ej: Secretaría de Hacienda">
         </div>
         <div class="form-group">
-          <label class="form-label">Responsable</label>
+          <label class="form-label">Responsable / Jefe</label>
           <input type="text" class="form-input" id="dep-responsable"
             placeholder="Nombre del jefe de dependencia">
         </div>
@@ -106,7 +58,7 @@ export function render() {
             <button class="btn btn-secondary" style="flex:1;margin-top:0;"
               onclick="cerrarModal('modal-dep')">Cancelar</button>
             <button class="btn btn-primary" style="flex:2;margin-top:0;"
-              id="dep-save-btn">💾 Guardar</button>
+              id="dep-save-btn">Guardar</button>
           </div>
         </div>
       </div>
@@ -116,7 +68,7 @@ export function render() {
     <div class="modal-overlay" id="modal-of">
       <div class="modal">
         <div class="modal-handle"></div>
-        <div class="modal-title" id="of-title">🏢 Nueva Oficina</div>
+        <div class="modal-title" id="of-title">Nueva Oficina</div>
         <input type="hidden" id="of-edit-id">
         <div class="form-group">
           <label class="form-label">Nombre *</label>
@@ -126,16 +78,18 @@ export function render() {
         <div class="form-group">
           <label class="form-label">Dependencia *</label>
           <select class="form-select" id="of-dep">
-            ${DB.dependencias.map(d =>
+            ${getDBStatic().dependencias.map(d =>
               `<option value="${d.id}">${d.nombre}</option>`
             ).join('')}
           </select>
         </div>
-        <div style="display:flex;gap:8px;margin-top:8px;">
-          <button class="btn btn-secondary" style="flex:1;margin-top:0;"
-            onclick="cerrarModal('modal-of')">Cancelar</button>
-          <button class="btn btn-primary" style="flex:2;margin-top:0;"
-            id="of-save-btn">💾 Guardar</button>
+        <div class="modal-footer">
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-secondary" style="flex:1;margin-top:0;"
+              onclick="cerrarModal('modal-of')">Cancelar</button>
+            <button class="btn btn-primary" style="flex:2;margin-top:0;"
+              id="of-save-btn">Guardar</button>
+          </div>
         </div>
       </div>
     </div>
@@ -144,7 +98,7 @@ export function render() {
     <div class="modal-overlay" id="modal-persona-admin">
       <div class="modal">
         <div class="modal-handle"></div>
-        <div class="modal-title" id="persona-title">👤 Nuevo Funcionario</div>
+        <div class="modal-title" id="persona-title">Nuevo Funcionario</div>
         <input type="hidden" id="persona-edit-id">
         <div class="form-group">
           <label class="form-label">Nombre completo *</label>
@@ -162,11 +116,13 @@ export function render() {
           <label class="form-label">Teléfono</label>
           <input type="tel" class="form-input" id="persona-tel">
         </div>
-        <div style="display:flex;gap:8px;margin-top:8px;">
-          <button class="btn btn-secondary" style="flex:1;margin-top:0;"
-            onclick="cerrarModal('modal-persona-admin')">Cancelar</button>
-          <button class="btn btn-primary" style="flex:2;margin-top:0;"
-            id="persona-save-btn">💾 Guardar</button>
+        <div class="modal-footer">
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-secondary" style="flex:1;margin-top:0;"
+              onclick="cerrarModal('modal-persona-admin')">Cancelar</button>
+            <button class="btn btn-primary" style="flex:2;margin-top:0;"
+              id="persona-save-btn">Guardar</button>
+          </div>
         </div>
       </div>
     </div>
@@ -174,34 +130,124 @@ export function render() {
 }
 
 export function onEnter() {
+  _renderContenido();
   _bindEvents();
 }
 
+function _renderContenido(busqueda = '') {
+  const DB = getDBStatic();
+  const q  = busqueda.toLowerCase();
+  const container = document.getElementById('admin-contenido');
+  if (!container) return;
+
+  if (_tabActual === 'deps') {
+    const items = DB.dependencias.filter(d =>
+      !q || d.nombre.toLowerCase().includes(q) ||
+      (d.responsable||'').toLowerCase().includes(q)
+    );
+    container.innerHTML = items.length ? items.map(d => `
+      <div style="display:flex;justify-content:space-between;align-items:center;
+        padding:10px 12px;background:var(--card);border:1px solid var(--border);
+        border-radius:var(--radius-sm);margin-bottom:6px;">
+        <div>
+          <div style="font-weight:600;font-size:13px;">${d.nombre}</div>
+          ${d.responsable ? `<div style="font-size:11px;color:var(--text3);">Jefe: ${d.responsable}</div>` : ''}
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="action-btn" data-action="editar-dep" data-id="${d.id}">✏️</button>
+          <button class="action-btn del" data-action="eliminar-dep" data-id="${d.id}">🗑️</button>
+        </div>
+      </div>`).join('')
+    : `<div class="empty"><p>Sin resultados</p></div>`;
+
+  } else if (_tabActual === 'ofs') {
+    const items = DB.oficinas.filter(o => {
+      const dep = DB.dependencias.find(d => d.id === o.depId);
+      return !q || o.nombre.toLowerCase().includes(q) ||
+        (dep?.nombre||'').toLowerCase().includes(q);
+    });
+    container.innerHTML = items.length ? items.map(o => {
+      const dep = DB.dependencias.find(d => d.id === o.depId);
+      return `
+        <div style="display:flex;justify-content:space-between;align-items:center;
+          padding:10px 12px;background:var(--card);border:1px solid var(--border);
+          border-radius:var(--radius-sm);margin-bottom:6px;">
+          <div>
+            <div style="font-weight:600;font-size:13px;">${o.nombre}</div>
+            <div style="font-size:11px;color:var(--text3);">${dep?.nombre || '—'}</div>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button class="action-btn" data-action="editar-of" data-id="${o.id}">✏️</button>
+            <button class="action-btn del" data-action="eliminar-of" data-id="${o.id}">🗑️</button>
+          </div>
+        </div>`;
+    }).join('')
+    : `<div class="empty"><p>Sin resultados</p></div>`;
+
+  } else if (_tabActual === 'personas') {
+    const items = DB.personas.filter(p =>
+      !q || p.nombre.toLowerCase().includes(q) ||
+      (p.cargo||'').toLowerCase().includes(q) ||
+      (p.correo||'').toLowerCase().includes(q)
+    );
+    container.innerHTML = items.length ? items.map(p => `
+      <div style="display:flex;justify-content:space-between;align-items:center;
+        padding:10px 12px;background:var(--card);border:1px solid var(--border);
+        border-radius:var(--radius-sm);margin-bottom:6px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:600;font-size:13px;">${p.nombre}</div>
+          <div style="font-size:11px;color:var(--text3);">
+            ${p.cargo || '—'}${p.correo ? ' · ' + p.correo : ''}
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+          <button class="action-btn" data-action="editar-persona" data-id="${p.id}">✏️</button>
+          <button class="action-btn del" data-action="eliminar-persona" data-id="${p.id}">🗑️</button>
+        </div>
+      </div>`).join('')
+    : `<div class="empty"><p>Sin resultados</p></div>`;
+  }
+
+  _bindAcciones();
+}
+
 function _bindEvents() {
-  // Nueva dependencia
-  document.getElementById('btn-nueva-dep')?.addEventListener('click', () => {
-    document.getElementById('dep-title').textContent = '🏛️ Nueva Dependencia';
-    document.getElementById('dep-edit-id').value = '';
-    document.getElementById('dep-nombre').value  = '';
-    document.getElementById('dep-responsable').value = '';
-    abrirModal('modal-dep');
+  // Tabs
+  document.querySelectorAll('.filter-tab[data-tab]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-tab[data-tab]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      _tabActual = btn.dataset.tab;
+      document.getElementById('admin-buscar').value = '';
+      _renderContenido();
+    });
   });
 
-  // Nueva oficina
-  document.getElementById('btn-nueva-of')?.addEventListener('click', () => {
-    document.getElementById('of-title').textContent = '🏢 Nueva Oficina';
-    document.getElementById('of-edit-id').value = '';
-    document.getElementById('of-nombre').value  = '';
-    abrirModal('modal-of');
+  // Buscador
+  document.getElementById('admin-buscar')?.addEventListener('input', e => {
+    _renderContenido(e.target.value);
   });
 
-  // Nuevo funcionario
-  document.getElementById('btn-nueva-persona')?.addEventListener('click', () => {
-    document.getElementById('persona-title').textContent = '👤 Nuevo Funcionario';
-    document.getElementById('persona-edit-id').value = '';
-    ['persona-nombre','persona-cargo','persona-correo','persona-tel']
-      .forEach(id => { document.getElementById(id).value = ''; });
-    abrirModal('modal-persona-admin');
+  // Botón nuevo
+  document.getElementById('btn-admin-nuevo')?.addEventListener('click', () => {
+    if (_tabActual === 'deps') {
+      document.getElementById('dep-title').textContent = 'Nueva Dependencia';
+      document.getElementById('dep-edit-id').value = '';
+      document.getElementById('dep-nombre').value  = '';
+      document.getElementById('dep-responsable').value = '';
+      abrirModal('modal-dep');
+    } else if (_tabActual === 'ofs') {
+      document.getElementById('of-title').textContent = 'Nueva Oficina';
+      document.getElementById('of-edit-id').value = '';
+      document.getElementById('of-nombre').value  = '';
+      abrirModal('modal-of');
+    } else if (_tabActual === 'personas') {
+      document.getElementById('persona-title').textContent = 'Nuevo Funcionario';
+      document.getElementById('persona-edit-id').value = '';
+      ['persona-nombre','persona-cargo','persona-correo','persona-tel']
+        .forEach(id => { document.getElementById(id).value = ''; });
+      abrirModal('modal-persona-admin');
+    }
   });
 
   // Guardar dependencia
@@ -209,21 +255,21 @@ function _bindEvents() {
     const nombre      = document.getElementById('dep-nombre').value.trim();
     const responsable = document.getElementById('dep-responsable').value.trim();
     const editId      = document.getElementById('dep-edit-id').value;
-    if (!nombre) { showToast('⚠️ El nombre es obligatorio','#d97706'); return; }
+    if (!nombre) { showToast('El nombre es obligatorio','#d97706'); return; }
     const DB = getDBStatic();
     if (editId) {
       const dep = DB.dependencias.find(d => d.id === editId);
       if (dep) { dep.nombre = nombre; dep.responsable = responsable; }
       apiPost('Dependencias','update',{ Nombre:nombre, Responsable:responsable },'ID',editId).catch(console.warn);
-      showToast('✅ Dependencia actualizada');
+      showToast('Dependencia actualizada');
     } else {
       const id = 'DEP' + Date.now();
       DB.dependencias.push({ id, nombre, responsable });
       apiPost('Dependencias','insert',{ ID:id, Nombre:nombre, Responsable:responsable }).catch(console.warn);
-      showToast('✅ Dependencia registrada');
+      showToast('Dependencia registrada');
     }
     cerrarModal('modal-dep');
-    _recargar();
+    _renderContenido();
   });
 
   // Guardar oficina
@@ -231,21 +277,21 @@ function _bindEvents() {
     const nombre = document.getElementById('of-nombre').value.trim();
     const depId  = document.getElementById('of-dep').value;
     const editId = document.getElementById('of-edit-id').value;
-    if (!nombre || !depId) { showToast('⚠️ Nombre y dependencia son obligatorios','#d97706'); return; }
+    if (!nombre || !depId) { showToast('Nombre y dependencia son obligatorios','#d97706'); return; }
     const DB = getDBStatic();
     if (editId) {
       const of = DB.oficinas.find(o => o.id === editId);
       if (of) { of.nombre = nombre; of.depId = depId; }
       apiPost('Oficinas','update',{ Nombre:nombre, DepID:depId },'ID',editId).catch(console.warn);
-      showToast('✅ Oficina actualizada');
+      showToast('Oficina actualizada');
     } else {
       const id = 'OF' + Date.now();
       DB.oficinas.push({ id, nombre, depId });
       apiPost('Oficinas','insert',{ ID:id, Nombre:nombre, DepID:depId }).catch(console.warn);
-      showToast('✅ Oficina registrada');
+      showToast('Oficina registrada');
     }
     cerrarModal('modal-of');
-    _recargar();
+    _renderContenido();
   });
 
   // Guardar persona
@@ -255,24 +301,25 @@ function _bindEvents() {
     const correo  = document.getElementById('persona-correo').value;
     const tel     = document.getElementById('persona-tel').value;
     const editId  = document.getElementById('persona-edit-id').value;
-    if (!nombre) { showToast('⚠️ El nombre es obligatorio','#d97706'); return; }
+    if (!nombre) { showToast('El nombre es obligatorio','#d97706'); return; }
     const DB = getDBStatic();
     if (editId) {
       const p = DB.personas.find(x => x.id === editId);
-      if (p) { p.nombre = nombre; p.cargo = cargo; p.correo = correo; }
+      if (p) { p.nombre = nombre; p.cargo = cargo; p.correo = correo; p.tel = tel; }
       apiPost('Personas','update',{ Nombre:nombre, Cargo:cargo, Correo:correo, Telefono:tel },'ID',editId).catch(console.warn);
-      showToast('✅ Funcionario actualizado');
+      showToast('Funcionario actualizado');
     } else {
       const id = 'P' + Date.now();
-      DB.personas.push({ id, nombre, cargo, correo, imagen:'' });
+      DB.personas.push({ id, nombre, cargo, correo, tel, imagen:'' });
       apiPost('Personas','insert',{ ID:id, Nombre:nombre, Cargo:cargo, Correo:correo, Telefono:tel }).catch(console.warn);
-      showToast('✅ Funcionario registrado');
+      showToast('Funcionario registrado');
     }
     cerrarModal('modal-persona-admin');
-    _recargar();
+    _renderContenido();
   });
+}
 
-  // Acciones de lista
+function _bindAcciones() {
   document.querySelectorAll('[data-action]').forEach(btn => {
     btn.addEventListener('click', () => {
       const { action, id } = btn.dataset;
@@ -281,7 +328,7 @@ function _bindEvents() {
       if (action === 'editar-dep') {
         const dep = DB.dependencias.find(d => d.id === id);
         if (!dep) return;
-        document.getElementById('dep-title').textContent = '✏️ Editar Dependencia';
+        document.getElementById('dep-title').textContent = 'Editar Dependencia';
         document.getElementById('dep-edit-id').value     = id;
         document.getElementById('dep-nombre').value      = dep.nombre;
         document.getElementById('dep-responsable').value = dep.responsable || '';
@@ -290,17 +337,16 @@ function _bindEvents() {
 
       if (action === 'eliminar-dep') {
         if (!confirm('¿Eliminar esta dependencia?')) return;
-        const DB = getDBStatic();
         DB.dependencias = DB.dependencias.filter(d => d.id !== id);
         apiPost('Dependencias','delete',{},'ID',id).catch(console.warn);
-        showToast('🗑️ Eliminada');
-        _recargar();
+        showToast('Eliminada');
+        _renderContenido();
       }
 
       if (action === 'editar-of') {
         const of = DB.oficinas.find(o => o.id === id);
         if (!of) return;
-        document.getElementById('of-title').textContent = '✏️ Editar Oficina';
+        document.getElementById('of-title').textContent = 'Editar Oficina';
         document.getElementById('of-edit-id').value     = id;
         document.getElementById('of-nombre').value      = of.nombre;
         document.getElementById('of-dep').value         = of.depId;
@@ -311,14 +357,14 @@ function _bindEvents() {
         if (!confirm('¿Eliminar esta oficina?')) return;
         DB.oficinas = DB.oficinas.filter(o => o.id !== id);
         apiPost('Oficinas','delete',{},'ID',id).catch(console.warn);
-        showToast('🗑️ Eliminada');
-        _recargar();
+        showToast('Eliminada');
+        _renderContenido();
       }
 
       if (action === 'editar-persona') {
         const p = DB.personas.find(x => x.id === id);
         if (!p) return;
-        document.getElementById('persona-title').textContent = '✏️ Editar Funcionario';
+        document.getElementById('persona-title').textContent = 'Editar Funcionario';
         document.getElementById('persona-edit-id').value     = id;
         document.getElementById('persona-nombre').value      = p.nombre;
         document.getElementById('persona-cargo').value       = p.cargo || '';
@@ -331,13 +377,9 @@ function _bindEvents() {
         if (!confirm('¿Eliminar este funcionario?')) return;
         DB.personas = DB.personas.filter(x => x.id !== id);
         apiPost('Personas','delete',{},'ID',id).catch(console.warn);
-        showToast('🗑️ Eliminado');
-        _recargar();
+        showToast('Eliminado');
+        _renderContenido();
       }
     });
   });
-}
-
-function _recargar() {
-  import('../router.js').then(({ navigate }) => navigate('administracion'));
 }
