@@ -725,7 +725,7 @@ export function generarActaDependencia(tipo, depId, fechaIni, fechaFin, obsExtra
     return `Representante ${dep.nombre}`;
   })();
 
-  const jefeCarго = jefePersona?.cargo || '';
+  const jefeCargo = jefePersona?.cargo || '';
 
   const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
   <title>${actaTitulo}</title>
