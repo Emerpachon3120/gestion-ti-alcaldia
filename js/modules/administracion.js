@@ -364,12 +364,12 @@ function _bindAcciones() {
       if (action === 'eliminar-of') {
         showConfirm({
           icon: '🗑️',
-          title: '¿Eliminar dependencia?',
+          title: '¿Eliminar oficina?',
           msg: 'Esta acción no se puede deshacer.',
           okLabel: 'Eliminar',
           onOk: () => {
-            DB.dependencias = DB.dependencias.filter(d => d.id !== id);
-            apiPost('Dependencias','delete',{},'ID',id).catch(console.warn);
+            DB.oficinas = DB.oficinas.filter(o => o.id !== id);
+            apiPost('Oficinas','delete',{},'ID',id).catch(console.warn);
             showToast('Eliminada');
             _renderContenido();
           }
@@ -391,13 +391,13 @@ function _bindAcciones() {
       if (action === 'eliminar-persona') {
         showConfirm({
           icon: '🗑️',
-          title: '¿Eliminar dependencia?',
+          title: '¿Eliminar funcionario?',
           msg: 'Esta acción no se puede deshacer.',
           okLabel: 'Eliminar',
           onOk: () => {
-            DB.dependencias = DB.dependencias.filter(d => d.id !== id);
-            apiPost('Dependencias','delete',{},'ID',id).catch(console.warn);
-            showToast('Eliminada');
+            DB.personas = DB.personas.filter(x => x.id !== id);
+            apiPost('Personas','delete',{},'ID',id).catch(console.warn);
+            showToast('Eliminado');
             _renderContenido();
           }
         });
