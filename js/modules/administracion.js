@@ -134,6 +134,8 @@ export function render() {
 export function onEnter() {
   _renderContenido();
   _bindEvents();
+  // Inicializar SearchSelect del modal de dependencia
+  llenarSSPersonas('dep-responsable-ss');
 }
 
 function _renderContenido(busqueda = '') {
