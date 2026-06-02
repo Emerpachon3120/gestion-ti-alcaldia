@@ -5,6 +5,7 @@ import { showToast }   from '../ui/toast.js';
 import { abrirModal, cerrarModal } from '../ui/modal.js';
 import { uid, formatDate, parseFecha } from '../utils.js';
 import { llenarSSPersonas, llenarSSEquipos, getSSValue, setSSValue } from '../ui/searchselect.js';
+const CONFIG = window.APP_CONFIG;
 
 let currentFilter = 'todas';
 
