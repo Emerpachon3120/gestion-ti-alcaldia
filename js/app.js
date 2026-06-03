@@ -266,7 +266,7 @@ saveKey('equipos');
         desc:        r['Descripción del problema'] || '',
         prioridad:   (r['Grado de importancia'] || 'media').toLowerCase(),
         estadoTexto: r['Estado'] || 'Iniciada',
-        estado:      ['Finalizada','Cancelada'].includes(r['Estado']) ? 'cerrada' : 'abierta',
+        estado:      ['Finalizado','Cancelada'].includes(r['Estado']) ? 'cerrada' : 'abierta',
         observacion: r['Observación'] || '',
         responsableAtencion: r['Responsable_Atencion'] || '',
         fechaApertura: r['Fecha_Apertura'] || '',

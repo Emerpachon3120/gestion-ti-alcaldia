@@ -133,7 +133,7 @@ function _renderEstadisticas() {
   const bkOk          = bks.filter(b => b.estadoBk === 'Completado').length;
   const bkFallidos    = bks.filter(b => b.estadoBk === 'Fallido').length;
   const incAbiertas   = incs.filter(i => ['Iniciada','En proceso','Pendiente','abierta'].includes(i.estadoTexto||i.estado)).length;
-  const incCerradas   = incs.filter(i => ['Finalizada','Cancelada','cerrada'].includes(i.estadoTexto||i.estado)).length;
+  const incCerradas   = incs.filter(i => ['Finalizado','Cancelada','cerrada'].includes(i.estadoTexto||i.estado)).length;
   const eqOperativos  = equipos.filter(e => e.estado === 'Operativo' || !e.estado).length;
   const eqBaja        = equipos.filter(e => e.estado === 'Dado de baja').length;
 

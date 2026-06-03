@@ -42,7 +42,7 @@ export function renderLista() {
   if (currentFilter === 'baja')      data = data.filter(i => i.prioridad === 'baja');
   if (currentFilter === 'abierta')   data = data.filter(i => ['Iniciada','En proceso','Pendiente','abierta'].includes(i.estadoTexto||i.estado));
   if (currentFilter === 'enproceso') data = data.filter(i => i.estadoTexto === 'En proceso');
-  if (currentFilter === 'cerrada')   data = data.filter(i => ['Finalizada','Cancelada','cerrada'].includes(i.estadoTexto||i.estado));
+  if (currentFilter === 'cerrada')   data = data.filter(i => ['Finalizado','Cancelada','cerrada'].includes(i.estadoTexto||i.estado));
 
   const container = document.getElementById('inc-list');
   if (!container) return;
@@ -53,7 +53,7 @@ export function renderLista() {
     'Iniciada':   { bg:'#eff6ff',color:'#1e40af',icon:'🆕' },
     'En proceso': { bg:'#fef9c3',color:'#854d0e',icon:'🟡' },
     'En pausa':   { bg:'#f3f4f6',color:'#374151',icon:'⏸️' },
-    'Finalizada': { bg:'#d1fae5',color:'#065f46',icon:'✅' },
+    'Finalizado': { bg:'#d1fae5',color:'#065f46',icon:'✅' },
     'Cancelada':  { bg:'#fee2e2',color:'#991b1b',icon:'❌' },
     'Pendiente':  { bg:'#f3f4f6',color:'#374151',icon:'⚪' },
     'abierta':    { bg:'#fee2e2',color:'#991b1b',icon:'🔴' },
@@ -91,7 +91,7 @@ export function renderLista() {
             <option value="Iniciada"   ${est==='Iniciada'   ?'selected':''}>Iniciada</option>
             <option value="En proceso" ${est==='En proceso' ?'selected':''}>En proceso</option>
             <option value="En pausa"   ${est==='En pausa'   ?'selected':''}>En pausa</option>
-            <option value="Finalizada" ${est==='Finalizada' ?'selected':''}>Finalizada</option>
+            <option value="Finalizado" ${est==='Finalizado' ?'selected':''}>Finalizado</option>
             <option value="Cancelada"  ${est==='Cancelada'  ?'selected':''}>Cancelada</option>
             <option value="Pendiente"  ${est==='Pendiente'  ?'selected':''}>Pendiente</option>
           </select>
@@ -117,7 +117,7 @@ export function renderLista() {
     sel.addEventListener('change', () => {
       const id = sel.dataset.id;
       const nuevoEstado = sel.value;
-      const estadoCerrado = ['Finalizada','Cancelada'].includes(nuevoEstado);
+      const estadoCerrado = ['Finalizado','Cancelada'].includes(nuevoEstado);
       const lista = getData('incidencias').map(i => i.id !== id ? i : {
         ...i,
         estadoTexto: nuevoEstado,
@@ -165,7 +165,7 @@ function _modalHTML() {
           <div class="form-group"><label class="form-label">Estado</label>
             <select class="form-select" id="inc-estado">
               <option>Iniciada</option><option>En proceso</option><option>En pausa</option>
-              <option>Finalizada</option><option>Cancelada</option><option>Pendiente</option>
+              <option>Finalizado</option><option>Cancelada</option><option>Pendiente</option>
             </select>
           </div>
           <div class="form-group"><label class="form-label">Responsable atención</label>
@@ -249,7 +249,7 @@ async function _guardar() {
   const now  = new Date();
   const pad  = n => String(n).padStart(2,'0');
   const fecha = now.toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric'});
-  const estadoCerrada = ['Finalizada','Cancelada'].includes(estadoTexto);
+  const estadoCerrada = ['Finalizado','Cancelada'].includes(estadoTexto);
   const lista = [...getData('incidencias')];
 
   if (editId) {
@@ -269,10 +269,10 @@ async function _guardar() {
 }
 
 function _resolver(id) {
-  const lista = getData('incidencias').map(i => i.id === id ? { ...i, estadoTexto:'Finalizada', estado:'cerrada' } : i);
+  const lista = getData('incidencias').map(i => i.id === id ? { ...i, estadoTexto:'Finalizado', estado:'cerrada' } : i);
   setState('incidencias', lista);
   saveKey('incidencias');
-  apiPost('Incidencias','update',{ 'Estado':'Finalizada' },'Ticket',id, CONFIG.FORMS_SPREAD_ID).catch(console.warn);
+  apiPost('Incidencias','update',{ 'Estado':'Finalizado' },'Ticket',id, CONFIG.FORMS_SPREAD_ID).catch(console.warn);
   showToast('✅ Incidencia resuelta');
   renderLista();
 }
