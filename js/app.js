@@ -102,7 +102,7 @@ export async function syncData() {
   saveKey('DB_STATIC');
 
   try {
-    const { deps, ofs, pers, eqs, mantsSheet, bksSheet } =
+    const { deps, ofs, pers, eqs, mantsSheet, bksSheet, cronogramaSheet } =
       await cargarDatosDesdeSheets();
 
     // DB_STATIC
@@ -153,9 +153,15 @@ setState('equipos', eqs.map(r => {
 saveKey('equipos');
 
     // Mantenimientos — preservar firmas y fotos locales
+    // La firma (Imagen_Base64) ahora viaja en el Sheet, así que prevalece
+    // la del Sheet si existe; si no, cae al respaldo local.
     const localMantMap = {};
     (getState('mantenimientos') || []).forEach(m => { localMantMap[m.id] = m; });
     setState('mantenimientos', mantsSheet.map(r => {
+      const firmaSheet = r.Imagen_Base64 && r.Imagen_Base64.startsWith('data:image')
+        ? r.Imagen_Base64
+        : null;
+
       const base = {
         id:           String(r.ID),
         serial:       String(r.EquipoID || r.Serial || ''),
@@ -180,14 +186,20 @@ saveKey('equipos');
         depNueva:     r.Dep_Nueva || '',
         fechaTraslado:r.Fecha_Traslado || '',
         estadoEquipo: r.Estado_Equipo || '',
-        firma: null, fotos: [],
+        firma: firmaSheet, fotos: [],
       };
       const local = localMantMap[base.id];
       if (local) {
-          // Firma: si Sheets dice No explícitamente, resetear. Si dice Sí, preservar local
-          base.firmado    = r.Firmado === 'No' ? false : (local.firmado || r.Firmado === 'Sí');
-          base.firma      = r.Firmado === 'No' ? null : local.firma;
-          base.firmaFecha = r.Firmado === 'No' ? null : local.firmaFecha;
+          // Firma: prioridad → Sheet (fuente de verdad multi-dispositivo) → local
+          if (r.Firmado === 'No') {
+            base.firmado    = false;
+            base.firma      = null;
+            base.firmaFecha = null;
+          } else {
+            base.firmado    = true;
+            base.firma      = firmaSheet || local.firma || null;
+            base.firmaFecha = local.firmaFecha || null;
+          }
           base.fotos      = local.fotos || [];
           base.userWin       = local.userWin      || base.userWin;
           base.passWin       = local.passWin      || base.passWin;
@@ -204,14 +216,22 @@ saveKey('equipos');
           base.estadoEquipo  = local.estadoEquipo || base.estadoEquipo;
           base.periodo       = local.periodo      || base.periodo;
           base.obs           = local.obs          || base.obs;
+        } else {
+          // Sin registro local: la firma viene solo del Sheet
+          base.firma = firmaSheet;
         }
         return base;
     }));
 
     // Backups — preservar firmas y fotos locales
+    // Igual que mantenimientos: el Sheet es la fuente de verdad para la firma
     const localBkMap = {};
     (getState('backups') || []).forEach(b => { localBkMap[b.id] = b; });
     setState('backups', bksSheet.map(r => {
+      const firmaSheet = r.Imagen_Base64 && r.Imagen_Base64.startsWith('data:image')
+        ? r.Imagen_Base64
+        : null;
+
       const base = {
         id:           String(r.ID),
         serial:       String(r.EquipoID || ''),
@@ -226,13 +246,20 @@ saveKey('equipos');
         frecuencia:   r.Frecuencia || '',
         respTI:       r.Resp_TI || '',
         personaId:    String(r.Persona_ID || ''),
+        firma: firmaSheet,
         fotos: [],
       };
       const local = localBkMap[base.id];
       if (local) {
-        base.firmado    = local.firmado;
-        base.firma      = local.firma;
-        base.firmaFecha = local.firmaFecha;
+        if (r.Firmado === 'No') {
+          base.firmado    = false;
+          base.firma      = null;
+          base.firmaFecha = null;
+        } else {
+          base.firmado    = true;
+          base.firma      = firmaSheet || local.firma || null;
+          base.firmaFecha = local.firmaFecha || null;
+        }
         base.fotos      = local.fotos || [];
         base.responsableEquipo = local.responsableEquipo || '';
       }
@@ -276,6 +303,20 @@ saveKey('equipos');
       const local = localIncMap[ticket];
       if (local) { base.fotos = local.fotos || []; }
       return base;
+    }));
+
+    // Cronograma anual (informativo, editable desde el módulo de Calendario)
+    setState('cronograma', (cronogramaSheet || []).map(r => {
+      const row = {
+        id:            String(r.ID || ''),
+        dependenciaId: String(r.DependenciaID || ''),
+        tipo:          (r.Tipo || '').toLowerCase() === 'mantenimiento' ? 'mantenimientos' : 'backups',
+        anio:          Number(r.Anio) || new Date().getFullYear(),
+      };
+      for (let i = 1; i <= 12; i++) {
+        row[`mes${i}`] = r[`Mes${i}`] || 'No';
+      }
+      return row;
     }));
 
     saveToStorage();

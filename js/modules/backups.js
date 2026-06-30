@@ -591,13 +591,17 @@ async function _ejecutarGuardarBk(firmaBase64 = null) {
   // Preservar firma existente si es edición
   const bkActual = editId ? getData('backups').find(x => x.id === editId) : null;
 
+  // ── FIRMA: siempre conservar la firma real (base64), nunca solo un texto ──
+  const firmaFinal   = firmaBase64 || bkActual?.firma || null;
+  const firmadoFinal = !!firmaFinal;
+
   const campos = {
     serial, personaId, tipo, destino, estadoBk,
     obs: obsCompleto,
     ubicacion, respTI, frecuencia, fechaProxima, fotos: bkFotos,
     responsableEquipo: p?.nombre || '',
-    firmado:    firmaBase64 ? true : (bkActual?.firmado || false),
-    firma:      firmaBase64 || bkActual?.firma || null,
+    firmado:    firmadoFinal,
+    firma:      firmaFinal,
     firmaFecha: firmaBase64 ? new Date().toISOString() : (bkActual?.firmaFecha || null),
   };
 
@@ -613,8 +617,8 @@ async function _ejecutarGuardarBk(firmaBase64 = null) {
       Observaciones: obsCompleto,
       Responsable: respTI, Persona_ID: personaId, Resp_TI: respTI,
       Fotos_Base64: bkFotos.length > 0 ? `${bkFotos.length} foto(s)` : '',
-      Firmado: (firmaBase64 || bkActual?.firmado) ? 'Sí' : 'No',
-      Imagen_Base64: (firmaBase64 || bkActual?.firma) ? 'firmado_digitalmente' : '',
+      Firmado: firmadoFinal ? 'Sí' : 'No',
+      Imagen_Base64: firmaFinal || '',
     }, 'ID', editId).catch(console.warn);
     showToast('✅ Backup actualizado');
   } else {
@@ -623,10 +627,10 @@ async function _ejecutarGuardarBk(firmaBase64 = null) {
     apiPost('Backups', 'insert', {
       ID: id, EquipoID: serial, Tipo: tipo, Frecuencia: frecuencia,
       Fecha_Ultima: fecha, Fecha_Proxima: fechaProxima,
-      Firmado: firmaBase64 ? 'Sí' : 'No',
+      Firmado: firmadoFinal ? 'Sí' : 'No',
       Responsable: respTI,
       Observaciones: obsCompleto,
-      Imagen_Base64: firmaBase64 ? 'firmado_digitalmente' : '',
+      Imagen_Base64: firmaFinal || '',
       Ubicacion: destino, Estado: estadoBk,
       Persona_ID: personaId, Resp_TI: respTI,
       Fotos_Base64: bkFotos.length > 0 ? `${bkFotos.length} foto(s)` : '',

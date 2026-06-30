@@ -1,5 +1,6 @@
 const CONFIG = window.APP_CONFIG;
 
+
 // GET genérico
 export async function apiGet(sheet, extraParams = '') {
   const url = `${CONFIG.BACKEND_URL}?sheet=${encodeURIComponent(sheet)}${extraParams}`;
@@ -12,14 +13,10 @@ export async function apiGet(sheet, extraParams = '') {
 
 // POST genérico
 export async function apiPost(sheet, action, data, keyField, keyValue, spreadId = null) {
-  console.log('📤 apiPost llamado:', { sheet, action, keyField, keyValue, spreadId });  // ← NUEVO
-
   const body = JSON.stringify({
     sheet, action, data, keyField, keyValue,
     spreadId: spreadId || null
   });
-
-  console.log('📦 body enviado:', body);  // ← NUEVO
 
   const res = await fetch(CONFIG.BACKEND_URL, {
     method:   'POST',
@@ -30,7 +27,6 @@ export async function apiPost(sheet, action, data, keyField, keyValue, spreadId 
   });
 
   const text = await res.text();
-  console.log('📥 respuesta backend:', text);  // ← NUEVO
   try {
     const json = JSON.parse(text);
     if (json.status !== 200) throw new Error(json.error || 'Error backend');
@@ -43,14 +39,14 @@ export async function apiPost(sheet, action, data, keyField, keyValue, spreadId 
 
 // Cargar todos los datos iniciales
 export async function cargarDatosDesdeSheets() {
-  const [deps, ofs, pers, eqs, mantsSheet, bksSheet] = await Promise.all([
+  const [deps, ofs, pers, eqs, mantsSheet, bksSheet, cronogramaSheet] = await Promise.all([
     apiGet('Dependencias'),
     apiGet('Oficinas'),
     apiGet('Personas'),
     apiGet('Equipos'),
     apiGet('Mantenimientos'),
     apiGet('Backups'),
-    apiGet('Cronograma'), 
+    apiGet('Cronograma'),
   ]);
-  return { deps, ofs, pers, eqs, mantsSheet, bksSheet };
+  return { deps, ofs, pers, eqs, mantsSheet, bksSheet, cronogramaSheet };
 }

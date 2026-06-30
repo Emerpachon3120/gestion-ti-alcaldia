@@ -981,14 +981,18 @@ async function _ejecutarGuardar(firmaBase64 = null) {
   // Preservar firma existente si es edición
   const mantActual = editId ? getData('mantenimientos').find(x => x.id === editId) : null;
 
+  // ── FIRMA: siempre conservar la firma real (base64), nunca solo un texto ──
+  const firmaFinal   = firmaBase64 || mantActual?.firma || null;
+  const firmadoFinal = !!firmaFinal;
+
   const campos = {
     serial, tipo, frecuencia, obs: obsCompleto, periodo, responsable, estadoEquipo,
     cambioResp, cambioCred, traslado, depAnterior, depNueva,
     userWin, passWin, userAdmin, passAdmin,
     fechaProxima, fechaTraslado, respEquipoId, nuevoRespId,
     fotos: mtFotos,
-    firmado:    firmaBase64 ? true : (mantActual?.firmado || false),
-    firma:      firmaBase64 || mantActual?.firma || null,
+    firmado:    firmadoFinal,
+    firma:      firmaFinal,
     firmaFecha: firmaBase64 ? new Date().toISOString() : (mantActual?.firmaFecha || null),
   };
 
@@ -1006,8 +1010,8 @@ async function _ejecutarGuardar(firmaBase64 = null) {
       Traslado: traslado, Dep_Anterior: depAnterior, Dep_Nueva: depNueva,
       Fecha_Traslado: fechaTraslado, Estado_Equipo: estadoEquipo,
       Fotos_Base64: mtFotos.length > 0 ? `${mtFotos.length} foto(s)` : '',
-      Firmado: (firmaBase64 || mantActual?.firmado) ? 'Sí' : 'No',
-      Imagen_Base64: (firmaBase64 || mantActual?.firma) ? 'firmado_digitalmente' : '',
+      Firmado: firmadoFinal ? 'Sí' : 'No',
+      Imagen_Base64: firmaFinal || '',
     }, 'ID', editId).catch(console.warn);
     showToast('✅ Mantenimiento actualizado');
   } else {
@@ -1016,9 +1020,9 @@ async function _ejecutarGuardar(firmaBase64 = null) {
     apiPost('Mantenimientos', 'insert', {
       ID: id, EquipoID: serial, Tipo: tipo, Frecuencia: frecuencia,
       Fecha_Ultima: fecha, Fecha_Proxima: fechaProxima,
-      Firmado: firmaBase64 ? 'Sí' : 'No',
+      Firmado: firmadoFinal ? 'Sí' : 'No',
       Responsable: responsable, Observaciones: obsCompleto,
-      Imagen_Base64: firmaBase64 ? 'firmado_digitalmente' : '',
+      Imagen_Base64: firmaFinal || '',
       Periodo: periodo, Resp_Equipo_ID: respEquipoId,
       Cambio_Resp: cambioResp, Nuevo_Resp_ID: nuevoRespId,
       User_Win: userWin, Pass_Win: passWin,
