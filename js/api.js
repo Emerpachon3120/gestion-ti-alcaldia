@@ -50,6 +50,7 @@ export async function cargarDatosDesdeSheets() {
     apiGet('Equipos'),
     apiGet('Mantenimientos'),
     apiGet('Backups'),
+    apiGet('Cronograma'), 
   ]);
   return { deps, ofs, pers, eqs, mantsSheet, bksSheet };
 }

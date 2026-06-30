@@ -5,6 +5,7 @@ const _state = {
   mantenimientos: [],
   backups:        [],
   incidencias:    [],
+  cronograma:     [], 
   DB_STATIC: {
     dependencias: [],
     oficinas:     [],
