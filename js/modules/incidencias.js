@@ -1,11 +1,10 @@
 import { getData, getDBStatic, setState } from '../state.js';
 import { saveKey }     from '../storage.js';
-import { apiPost }     from '../api.js';
+import { apiPost }     from '../firebase.js';
 import { showToast }   from '../ui/toast.js';
 import { abrirModal, cerrarModal } from '../ui/modal.js';
 import { uid, formatDate, parseFecha } from '../utils.js';
 import { llenarSSPersonas, llenarSSEquipos, getSSValue, setSSValue } from '../ui/searchselect.js';
-const CONFIG = window.APP_CONFIG;
 
 let currentFilter = 'todas';
 
@@ -125,7 +124,8 @@ export function renderLista() {
       });
       setState('incidencias', lista);
       saveKey('incidencias');
-      apiPost('Incidencias','update',{ 'Estado': nuevoEstado },'Ticket', id, CONFIG.FORMS_SPREAD_ID).catch(console.warn);
+      // Actualizar en Firestore
+      apiPost('Incidencias', 'update', { estadoTexto: nuevoEstado, estado: estadoCerrado ? 'cerrada' : 'abierta' }, 'id', id).catch(console.warn);
       showToast(`Estado actualizado: ${nuevoEstado}`);
       renderLista();
     });
@@ -244,24 +244,44 @@ async function _guardar() {
   const editId      = document.getElementById('inc-edit-id').value;
   if (!desc) { showToast('⚠️ Describe el problema'); return; }
 
-  const DB   = getDBStatic();
-  const p    = DB.personas.find(x => x.id === personaId);
-  const now  = new Date();
-  const pad  = n => String(n).padStart(2,'0');
+  const DB  = getDBStatic();
+  const p   = DB.personas.find(x => x.id === personaId);
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
   const fecha = now.toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric'});
   const estadoCerrada = ['Finalizado','Cancelada'].includes(estadoTexto);
   const lista = [...getData('incidencias')];
 
   if (editId) {
     const idx = lista.findIndex(x => x.id === editId);
-    if (idx >= 0) lista[idx] = { ...lista[idx], personaId, nombre:p?.nombre||lista[idx].nombre, secretaria, tipo, prioridad, estadoTexto, estado: estadoCerrada?'cerrada':'abierta', desc, observacion, responsableAtencion };
+    if (idx >= 0) {
+      lista[idx] = {
+        ...lista[idx], personaId,
+        nombre: p?.nombre || lista[idx].nombre,
+        secretaria, tipo, prioridad, estadoTexto,
+        estado: estadoCerrada ? 'cerrada' : 'abierta',
+        desc, observacion, responsableAtencion,
+      };
+      // Actualizar en Firestore
+      apiPost('Incidencias', 'update', lista[idx], 'id', editId).catch(console.warn);
+    }
     showToast('✅ Incidencia actualizada');
   } else {
-    const ticket = `TI-${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}-${Math.floor(Math.random()*9000)+1000}`;
-    lista.push({ id:ticket, ticket, personaId, nombre:p?.nombre||'—', secretaria, tipo, prioridad, estadoTexto, estado: estadoCerrada?'cerrada':'abierta', desc, observacion, responsableAtencion, fecha, fotos:[] });
-    apiPost('Incidencias','insert',{ 'Marca temporal':fecha, 'Secretaria (Secretaria de la que depende)':secretaria, 'Nombre completo del funcionario':p?.nombre||'', 'Tipo de incidencia':tipo, 'Descripción del problema':desc, 'Grado de importancia':prioridad, 'Estado':estadoTexto, 'Ticket':ticket }).catch(console.warn);
+    const ticket = `INC-${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}-${Math.floor(Math.random()*9000)+1000}`;
+    const nueva = {
+      id: ticket, ticket, personaId,
+      nombre: p?.nombre || '—',
+      secretaria, tipo, prioridad, estadoTexto,
+      estado: estadoCerrada ? 'cerrada' : 'abierta',
+      desc, observacion, responsableAtencion,
+      fecha, fromForm: false, fotos: [],
+    };
+    lista.push(nueva);
+    // Guardar en Firestore
+    apiPost('Incidencias', 'insert', nueva, 'id', ticket).catch(console.warn);
     showToast(`🚨 Incidencia creada — ${ticket}`);
   }
+
   setState('incidencias', lista);
   saveKey('incidencias');
   cerrarModal('modal-incidencia');
@@ -269,10 +289,12 @@ async function _guardar() {
 }
 
 function _resolver(id) {
-  const lista = getData('incidencias').map(i => i.id === id ? { ...i, estadoTexto:'Finalizado', estado:'cerrada' } : i);
+  const lista = getData('incidencias').map(i =>
+    i.id === id ? { ...i, estadoTexto: 'Finalizado', estado: 'cerrada' } : i
+  );
   setState('incidencias', lista);
   saveKey('incidencias');
-  apiPost('Incidencias','update',{ 'Estado':'Finalizado' },'Ticket',id, CONFIG.FORMS_SPREAD_ID).catch(console.warn);
+  apiPost('Incidencias', 'update', { estadoTexto: 'Finalizado', estado: 'cerrada' }, 'id', id).catch(console.warn);
   showToast('✅ Incidencia resuelta');
   renderLista();
 }

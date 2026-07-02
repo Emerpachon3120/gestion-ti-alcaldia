@@ -1,7 +1,7 @@
 import { CONFIG }           from './config.js';
 import { initStorage, loadFromStorage, saveToStorage, saveKey } from './storage.js';
 import { setState, getState }   from './state.js';
-import { apiGet, cargarDatosDesdeSheets } from './firebase.js';  // ← antes: ./api.js
+import { apiGet, cargarDatosDesdeSheets } from './firebase.js';
 import { navigate, registerRoute, forceNavigate } from './router.js';
 import { showToast }        from './ui/toast.js';
 import { renderMenu, renderHeader } from './ui/menu.js';
