@@ -41,13 +41,13 @@ export function render() {
         Estado
       </div>
       <div class="filter-tabs" style="flex-wrap:wrap;margin-bottom:8px;" id="inc-estado-tabs">
-        <button class="filter-tab-estado active" data-estado="todos">Todos</button>
-        <button class="filter-tab-estado" data-estado="Iniciada">🆕 Iniciada</button>
-        <button class="filter-tab-estado" data-estado="En proceso">🟡 En proceso</button>
-        <button class="filter-tab-estado" data-estado="En pausa">⏸️ En pausa</button>
-        <button class="filter-tab-estado" data-estado="Pendiente">⚪ Pendiente</button>
-        <button class="filter-tab-estado" data-estado="Finalizado">✅ Finalizado</button>
-        <button class="filter-tab-estado" data-estado="Cancelada">❌ Cancelada</button>
+        <button class="filter-tab active" data-estado="todos">Todos</button>
+        <button class="filter-tab" data-estado="Iniciada">🆕 Iniciada</button>
+        <button class="filter-tab" data-estado="En proceso">🟡 En proceso</button>
+        <button class="filter-tab" data-estado="En pausa">⏸️ En pausa</button>
+        <button class="filter-tab" data-estado="Pendiente">⚪ Pendiente</button>
+        <button class="filter-tab" data-estado="Finalizado">✅ Finalizado</button>
+        <button class="filter-tab" data-estado="Cancelada">❌ Cancelada</button>
       </div>
 
       <!-- Filtros por tipo -->
@@ -56,14 +56,14 @@ export function render() {
         Tipo
       </div>
       <div class="filter-tabs" style="flex-wrap:wrap;margin-bottom:10px;" id="inc-tipo-tabs">
-        <button class="filter-tab-tipo active" data-tipo="todos">Todos</button>
-        <button class="filter-tab-tipo" data-tipo="Hardware">💻 Hardware</button>
-        <button class="filter-tab-tipo" data-tipo="Software">🖥️ Software</button>
-        <button class="filter-tab-tipo" data-tipo="Internet / Red">🌐 Red</button>
-        <button class="filter-tab-tipo" data-tipo="Impresora">🖨️ Impresora</button>
-        <button class="filter-tab-tipo" data-tipo="Office">📄 Office</button>
-        <button class="filter-tab-tipo" data-tipo="Claves">🔑 Claves</button>
-        <button class="filter-tab-tipo" data-tipo="Otro">📦 Otro</button>
+        <button class="filter-tab active" data-tipo="todos">Todos</button>
+        <button class="filter-tab" data-tipo="Hardware">💻 Hardware</button>
+        <button class="filter-tab" data-tipo="Software">🖥️ Software</button>
+        <button class="filter-tab" data-tipo="Internet / Red">🌐 Red</button>
+        <button class="filter-tab" data-tipo="Impresora">🖨️ Impresora</button>
+        <button class="filter-tab" data-tipo="Office">📄 Office</button>
+        <button class="filter-tab" data-tipo="Claves">🔑 Claves</button>
+        <button class="filter-tab" data-tipo="Otro">📦 Otro</button>
       </div>
 
       <div id="inc-contador" style="font-size:12px;color:var(--text3);margin-bottom:8px;"></div>
@@ -318,9 +318,9 @@ function _bindEvents() {
   });
 
   // Filtros estado
-  document.querySelectorAll('.filter-tab-estado').forEach(btn => {
+  document.querySelectorAll('#inc-estado-tabs .filter-tab').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.filter-tab-estado').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('#inc-estado-tabs .filter-tab').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       filterEstado = btn.dataset.estado;
       renderLista();
@@ -328,9 +328,9 @@ function _bindEvents() {
   });
 
   // Filtros tipo
-  document.querySelectorAll('.filter-tab-tipo').forEach(btn => {
+  document.querySelectorAll('#inc-tipo-tabs .filter-tab').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.filter-tab-tipo').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('#inc-tipo-tabs .filter-tab').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       filterTipo = btn.dataset.tipo;
       renderLista();
