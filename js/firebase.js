@@ -12,6 +12,7 @@ import {
   getDoc,
   setDoc,
   updateDoc,
+  deleteDoc,
   addDoc,
   query,
   where,
@@ -123,5 +124,12 @@ export async function cargarDatosDesdeFirestore() {
 // Alias para compatibilidad con el nombre antiguo
 export { cargarDatosDesdeFirestore as cargarDatosDesdeSheets };
 
+// ─── Eliminar documento ───────────────────────────────────────
+export async function apiDelete(sheet, id) {
+  const col = COLECCION[sheet];
+  if (!col) throw new Error(`Colección desconocida: ${sheet}`);
+  await deleteDoc(doc(db, col, String(id)));
+  return { ok: true };
+}
 // ─── Exportar db por si algún módulo lo necesita directamente ─
 export { db };
