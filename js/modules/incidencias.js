@@ -28,7 +28,7 @@ export function render() {
                   text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">
         Prioridad
       </div>
-      <div class="filter-tabs" style="flex-wrap:wrap;margin-bottom:8px;">
+      <div class="filter-tabs" id="inc-prio-tabs" style="flex-wrap:wrap;margin-bottom:8px;">
         <button class="filter-tab active" data-filter="todas">Todas</button>
         <button class="filter-tab" data-filter="alta">🔴 Alta</button>
         <button class="filter-tab" data-filter="media">🟡 Media</button>
@@ -308,9 +308,9 @@ function _modalHTML() {
 
 function _bindEvents() {
   // Filtros prioridad
-  document.querySelectorAll('#page-incidencias .filter-tab').forEach(btn => {
+  document.querySelectorAll('#inc-prio-tabs .filter-tab').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('#page-incidencias .filter-tab').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('#inc-prio-tabs .filter-tab').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentFilter = btn.dataset.filter;
       renderLista();
