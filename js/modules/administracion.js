@@ -267,13 +267,13 @@ function _bindEvents() {
     if (editId) {
       const dep = DB.dependencias.find(d => d.id === editId);
       if (dep) { dep.nombre = nombre; dep.responsable = responsable; }
-      apiPost('Dependencias','update',{ Nombre:nombre, Responsable:responsable, ResponsableID:responsableId },'ID',editId).catch(console.warn);
+      apiPost('Dependencias','update',{ nombre, responsable, responsableId },'id',editId).catch(console.warn);
       showToast('Dependencia actualizada');
     } else {
       const id = 'DEP' + Date.now();
       DB.dependencias.push({ id, nombre, responsable, responsableId });
       saveKey('DB_STATIC');
-      apiPost('Dependencias','insert',{ ID:id, Nombre:nombre, Responsable:responsable, ResponsableID:responsableId }).catch(console.warn);
+      apiPost('Dependencias','insert',{ id, nombre, responsable, responsableId },'id',id).catch(console.warn);
       showToast('Dependencia registrada');
     }
     cerrarModal('modal-dep');
@@ -290,13 +290,13 @@ function _bindEvents() {
     if (editId) {
       const of = DB.oficinas.find(o => o.id === editId);
       if (of) { of.nombre = nombre; of.depId = depId; }
-      apiPost('Oficinas','update',{ Nombre:nombre, DepID:depId },'ID',editId).catch(console.warn);
+      apiPost('Oficinas','update',{ nombre, depId },'id',editId).catch(console.warn);
       showToast('Oficina actualizada');
     } else {
       const id = 'OF' + Date.now();
       DB.oficinas.push({ id, nombre, depId });
       saveKey('DB_STATIC'); // ← AGREGA
-      apiPost('Oficinas','insert',{ ID:id, Nombre:nombre, DepID:depId }).catch(console.warn);
+      apiPost('Oficinas','insert',{ id, nombre, depId },'id',id).catch(console.warn);
       showToast('Oficina registrada');
     }
     cerrarModal('modal-of');
@@ -315,13 +315,13 @@ function _bindEvents() {
     if (editId) {
       const p = DB.personas.find(x => x.id === editId);
       if (p) { p.nombre = nombre; p.cargo = cargo; p.correo = correo; p.tel = tel; }
-      apiPost('Personas','update',{ Nombre:nombre, Cargo:cargo, Correo:correo, Telefono:tel },'ID',editId).catch(console.warn);
+      apiPost('Personas','update',{ nombre, cargo, correo, telefono: tel },'id',editId).catch(console.warn);
       showToast('Funcionario actualizado');
     } else {
       const id = 'P' + Date.now();
       DB.personas.push({ id, nombre, cargo, correo, tel, imagen:'' });
       saveKey('DB_STATIC');
-      apiPost('Personas','insert',{ ID:id, Nombre:nombre, Cargo:cargo, Correo:correo, Telefono:tel }).catch(console.warn);
+      apiPost('Personas','insert',{ id, nombre, cargo, correo, telefono: tel },'id',id).catch(console.warn);
       showToast('Funcionario registrado');
     }
     cerrarModal('modal-persona-admin');
@@ -357,7 +357,7 @@ function _bindAcciones() {
           okLabel: 'Eliminar',
           onOk: () => {
             DB.dependencias = DB.dependencias.filter(d => d.id !== id);
-            apiPost('Dependencias','delete',{},'ID',id).catch(console.warn);
+            apiPost('Dependencias','delete',{},'id',id).catch(console.warn);
             showToast('Eliminada');
             _renderContenido();
           }
@@ -382,7 +382,7 @@ function _bindAcciones() {
           okLabel: 'Eliminar',
           onOk: () => {
             DB.oficinas = DB.oficinas.filter(o => o.id !== id);
-            apiPost('Oficinas','delete',{},'ID',id).catch(console.warn);
+            apiPost('Oficinas','delete',{},'id',id).catch(console.warn);
             showToast('Eliminada');
             _renderContenido();
           }
@@ -409,7 +409,7 @@ function _bindAcciones() {
           okLabel: 'Eliminar',
           onOk: () => {
             DB.personas = DB.personas.filter(x => x.id !== id);
-            apiPost('Personas','delete',{},'ID',id).catch(console.warn);
+            apiPost('Personas','delete',{},'id',id).catch(console.warn);
             showToast('Eliminado');
             _renderContenido();
           }

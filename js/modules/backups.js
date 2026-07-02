@@ -611,30 +611,26 @@ async function _ejecutarGuardarBk(firmaBase64 = null) {
     const idx = lista.findIndex(x => x.id === editId);
     if (idx >= 0) lista[idx] = { ...lista[idx], ...campos, fecha };
     apiPost('Backups', 'update', {
-      EquipoID: serial, Tipo: tipo, Frecuencia: frecuencia,
-      Fecha_Ultima: fecha, Fecha_Proxima: fechaProxima,
-      Ubicacion: destino, Estado: estadoBk,
-      Observaciones: obsCompleto,
-      Responsable: respTI, Persona_ID: personaId, Resp_TI: respTI,
-      Fotos_Base64: bkFotos.length > 0 ? `${bkFotos.length} foto(s)` : '',
-      Firmado: firmadoFinal ? 'Sí' : 'No',
-      Imagen_Base64: firmaFinal || '',
-    }, 'ID', editId).catch(console.warn);
+      serial, tipo, frecuencia, fecha, fechaProxima,
+      destino, estadoBk, obs: obsCompleto,
+      respTI, personaId,
+      fotos: bkFotos,
+      firmado: firmadoFinal,
+      firma: firmaFinal || null,
+    }, 'id', editId).catch(console.warn);
     showToast('✅ Backup actualizado');
   } else {
     const id = uid();
     lista.push({ id, fecha, ...campos });
     apiPost('Backups', 'insert', {
-      ID: id, EquipoID: serial, Tipo: tipo, Frecuencia: frecuencia,
-      Fecha_Ultima: fecha, Fecha_Proxima: fechaProxima,
-      Firmado: firmadoFinal ? 'Sí' : 'No',
-      Responsable: respTI,
-      Observaciones: obsCompleto,
-      Imagen_Base64: firmaFinal || '',
-      Ubicacion: destino, Estado: estadoBk,
-      Persona_ID: personaId, Resp_TI: respTI,
-      Fotos_Base64: bkFotos.length > 0 ? `${bkFotos.length} foto(s)` : '',
-    }).catch(console.warn);
+      id, serial, tipo, frecuencia, fecha, fechaProxima,
+      destino, estadoBk, obs: obsCompleto,
+      respTI, personaId,
+      fotos: bkFotos,
+      firmado: firmadoFinal,
+      firma: firmaFinal || null,
+      firmaFecha: firmaBase64 ? new Date().toISOString() : null,
+    }, 'id', id).catch(console.warn);
     showToast('💾 Backup registrado');
   }
 
@@ -659,7 +655,7 @@ function _firmar(id) {
     });
     setState('backups', lista);
     saveKey('backups');
-    apiPost('Backups','update',{ Firmado:'Sí', Imagen_Base64:firmaBase64 },'ID',id).catch(console.warn);
+    apiPost('Backups','update',{ firmado: true, firma: firmaBase64, firmaFecha: new Date().toISOString() },'id',id).catch(console.warn);
     showToast('✅ Firma de backup registrada');
     renderLista();
   });
@@ -670,7 +666,7 @@ function _eliminar(id) {
   const lista = getData('backups').filter(b => b.id !== id);
   setState('backups', lista);
   saveKey('backups');
-  apiPost('Backups','delete',{},'ID',id).catch(console.warn);
+  apiPost('Backups', 'delete', {}, 'id', id).catch(console.warn);
   showToast('🗑️ Eliminado');
   renderLista();
 }

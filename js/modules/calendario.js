@@ -519,7 +519,7 @@ async function _guardarCronograma() {
 
     let result;
     if (row && row.id) {
-      result = await apiPost('Cronograma', 'update', data, 'ID', row.id);
+      result = await apiPost('Cronograma', 'update', data, 'id', row.id);
     } else {
       const uid = 'CRON' + Date.now().toString(36).toUpperCase();
       data.ID = uid;

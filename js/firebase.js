@@ -1,6 +1,5 @@
 // ─── firebase.js ──────────────────────────────────────────────
 // Reemplaza api.js — usa Firebase Firestore como backend
-// Misma interfaz pública: apiGet, apiPost, cargarDatosDesdeSheets
 // ──────────────────────────────────────────────────────────────
 
 import { initializeApp }          from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
@@ -12,11 +11,8 @@ import {
   getDoc,
   setDoc,
   updateDoc,
-  deleteDoc,
   addDoc,
-  query,
-  where,
-  orderBy,
+  deleteDoc,
   serverTimestamp,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
@@ -46,30 +42,34 @@ const COLECCION = {
 };
 
 // ─── Leer colección completa ──────────────────────────────────
-// Compatibilidad con apiGet(sheet)
 export async function apiGet(sheet) {
   const col = COLECCION[sheet];
   if (!col) throw new Error(`Colección desconocida: ${sheet}`);
-
   const snap = await getDocs(collection(db, col));
   return snap.docs.map(d => ({ _id: d.id, ...d.data() }));
 }
 
-// ─── Escribir / actualizar documento ─────────────────────────
-// Compatibilidad con apiPost(sheet, action, data, keyField, keyValue)
-// action: 'insert' | 'update'
+// ─── Escribir / actualizar / eliminar documento ───────────────
 export async function apiPost(sheet, action, data, keyField, keyValue) {
   const col = COLECCION[sheet];
   if (!col) throw new Error(`Colección desconocida: ${sheet}`);
 
+  // ELIMINAR
+  if (action === 'delete') {
+    if (!keyValue) throw new Error('apiPost delete requiere keyValue');
+    await deleteDoc(doc(db, col, String(keyValue)));
+    return { ok: true };
+  }
+
+  // INSERTAR
   if (action === 'insert') {
-    // Usar keyValue como ID del documento si existe
-    if (keyValue) {
-      await setDoc(doc(db, col, String(keyValue)), {
+    const id = keyValue || data.id || data.ID || data.serial || data.Serial;
+    if (id) {
+      await setDoc(doc(db, col, String(id)), {
         ...data,
         _updatedAt: serverTimestamp(),
       });
-      return { id: keyValue };
+      return { id };
     } else {
       const ref = await addDoc(collection(db, col), {
         ...data,
@@ -79,10 +79,10 @@ export async function apiPost(sheet, action, data, keyField, keyValue) {
     }
   }
 
+  // ACTUALIZAR
   if (action === 'update') {
     if (!keyValue) throw new Error('apiPost update requiere keyValue');
-    const docRef = doc(db, col, String(keyValue));
-    await updateDoc(docRef, {
+    await updateDoc(doc(db, col, String(keyValue)), {
       ...data,
       _updatedAt: serverTimestamp(),
     });
@@ -92,20 +92,21 @@ export async function apiPost(sheet, action, data, keyField, keyValue) {
   throw new Error(`Acción desconocida: ${action}`);
 }
 
+// ─── Eliminar documento (shorthand) ──────────────────────────
+export async function apiDelete(sheet, id) {
+  return apiPost(sheet, 'delete', {}, 'id', id);
+}
+
 // ─── Leer documento individual ────────────────────────────────
 export async function apiGetDoc(sheet, id) {
   const col = COLECCION[sheet];
   if (!col) throw new Error(`Colección desconocida: ${sheet}`);
-
   const snap = await getDoc(doc(db, col, String(id)));
   if (!snap.exists()) return null;
   return { _id: snap.id, ...snap.data() };
 }
 
 // ─── Cargar todos los datos iniciales ────────────────────────
-// Misma firma que en api.js — retorna { deps, ofs, pers, eqs,
-// mantsSheet, bksSheet, cronogramaSheet }
-// Incidencias se carga por separado (viene de Firestore también)
 export async function cargarDatosDesdeFirestore() {
   const [deps, ofs, pers, eqs, mantsSheet, bksSheet, cronogramaSheet] =
     await Promise.all([
@@ -117,19 +118,10 @@ export async function cargarDatosDesdeFirestore() {
       apiGet('Backups'),
       apiGet('Cronograma'),
     ]);
-
   return { deps, ofs, pers, eqs, mantsSheet, bksSheet, cronogramaSheet };
 }
 
-// Alias para compatibilidad con el nombre antiguo
+// Alias para compatibilidad
 export { cargarDatosDesdeFirestore as cargarDatosDesdeSheets };
 
-// ─── Eliminar documento ───────────────────────────────────────
-export async function apiDelete(sheet, id) {
-  const col = COLECCION[sheet];
-  if (!col) throw new Error(`Colección desconocida: ${sheet}`);
-  await deleteDoc(doc(db, col, String(id)));
-  return { ok: true };
-}
-// ─── Exportar db por si algún módulo lo necesita directamente ─
 export { db };

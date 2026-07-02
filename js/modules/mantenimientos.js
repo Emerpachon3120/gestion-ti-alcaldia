@@ -1002,43 +1002,37 @@ async function _ejecutarGuardar(firmaBase64 = null) {
     const idx = lista.findIndex(x => x.id === editId);
     if (idx >= 0) lista[idx] = { ...lista[idx], ...campos, fecha };
     apiPost('Mantenimientos', 'update', {
-      Tipo: tipo, Frecuencia: frecuencia, Fecha_Ultima: fecha,
-      Fecha_Proxima: fechaProxima, Observaciones: obsCompleto, Responsable: responsable,
-      Periodo: periodo, Resp_Equipo_ID: respEquipoId, Cambio_Resp: cambioResp,
-      Nuevo_Resp_ID: nuevoRespId, User_Win: userWin, Pass_Win: passWin,
-      User_Admin: userAdmin, Pass_Admin: passAdmin, Cambio_Cred: cambioCred,
-      Traslado: traslado, Dep_Anterior: depAnterior, Dep_Nueva: depNueva,
-      Fecha_Traslado: fechaTraslado, Estado_Equipo: estadoEquipo,
-      Fotos_Base64: mtFotos.length > 0 ? `${mtFotos.length} foto(s)` : '',
-      Firmado: firmadoFinal ? 'Sí' : 'No',
-      Imagen_Base64: firmaFinal || '',
-    }, 'ID', editId).catch(console.warn);
+      tipo, frecuencia, fecha, fechaProxima,
+      obs: obsCompleto, responsable, periodo,
+      respEquipoId, cambioResp, nuevoRespId,
+      userWin, passWin, userAdmin, passAdmin, cambioCred,
+      traslado, depAnterior, depNueva, fechaTraslado, estadoEquipo,
+      fotos: mtFotos,
+      firmado: firmadoFinal,
+      firma: firmaFinal || null,
+    }, 'id', editId).catch(console.warn);
     showToast('✅ Mantenimiento actualizado');
   } else {
     const id = uid();
     lista.push({ id, fecha, ...campos });
     apiPost('Mantenimientos', 'insert', {
-      ID: id, EquipoID: serial, Tipo: tipo, Frecuencia: frecuencia,
-      Fecha_Ultima: fecha, Fecha_Proxima: fechaProxima,
-      Firmado: firmadoFinal ? 'Sí' : 'No',
-      Responsable: responsable, Observaciones: obsCompleto,
-      Imagen_Base64: firmaFinal || '',
-      Periodo: periodo, Resp_Equipo_ID: respEquipoId,
-      Cambio_Resp: cambioResp, Nuevo_Resp_ID: nuevoRespId,
-      User_Win: userWin, Pass_Win: passWin,
-      User_Admin: userAdmin, Pass_Admin: passAdmin,
-      Cambio_Cred: cambioCred, Traslado: traslado,
-      Dep_Anterior: depAnterior, Dep_Nueva: depNueva,
-      Fecha_Traslado: fechaTraslado, Estado_Equipo: estadoEquipo,
-      Fotos_Base64: mtFotos.length > 0 ? `${mtFotos.length} foto(s)` : '',
-    }).catch(console.warn);
+      id, serial, tipo, frecuencia, fecha, fechaProxima,
+      obs: obsCompleto, responsable, periodo,
+      respEquipoId, cambioResp, nuevoRespId,
+      userWin, passWin, userAdmin, passAdmin, cambioCred,
+      traslado, depAnterior, depNueva, fechaTraslado, estadoEquipo,
+      fotos: mtFotos,
+      firmado: firmadoFinal,
+      firma: firmaFinal || null,
+      firmaFecha: firmaBase64 ? new Date().toISOString() : null,
+    }, 'id', id).catch(console.warn);
     showToast('🔧 Mantenimiento registrado');
   }
 
   if (cambioResp === 'Sí' && nuevoRespId && serial) {
     apiPost('Equipos', 'update', {
       UsuarioID: nuevoRespId,
-    }, 'Serial', serial).catch(console.warn);
+    }, 'serial', serial).catch(console.warn);
 
     const equipos = [...getData('equipos')];
     const idx = equipos.findIndex(e => e.serial === serial);
@@ -1063,7 +1057,7 @@ function eliminar(id) {
   const lista = getData('mantenimientos').filter(m => m.id !== id);
   setState('mantenimientos', lista);
   saveKey('mantenimientos');
-  apiPost('Mantenimientos', 'delete', {}, 'ID', id).catch(console.warn);
+  apiPost('Mantenimientos', 'delete', {}, 'id', id).catch(console.warn);
   showToast('🗑️ Eliminado');
   renderLista();
 }
@@ -1086,8 +1080,8 @@ function abrirFirma(id) {
     setState('mantenimientos', lista);
     saveKey('mantenimientos');
     apiPost('Mantenimientos', 'update', {
-      Firmado: 'Sí', Imagen_Base64: firmaBase64,
-    }, 'ID', id).catch(console.warn);
+      firmado: true, firma: firmaBase64, firmaFecha: new Date().toISOString(),
+    }, 'id', id).catch(console.warn);
     showToast('✅ Firma registrada');
     renderLista();
   });

@@ -538,24 +538,23 @@ async function _guardar() {
       fotosComponentes, componentes: componentesMarcados
     };
     apiPost('Equipos', 'update', {
-      OficinaID:    oficina,
-      UsuarioID:    usuarioId,
-      SO:           vals.so,
-      RAM:          vals.ram,
-      Disco:        vals.disco,
-      Capacidad:    vals.cap,
-      Marca:        vals.marca,
-      Modelo:       vals.modelo,
-      Procesador:   vals.procesador,
-      Estado:       vals.estado,
-      Observaciones:vals.obs,
-      Fecha_Compra: vals.fechaCompra,
-      Garantia:     vals.garantia,
-      Ubicacion:    vals.ubicacion,
-      Tipo_Equipo:  vals.tipoEquipo,
-      Componentes:  componentesMarcados.join(','),
-      Fotos_Componentes: fotosStr,
-    }, 'Serial', editSerial).catch(console.warn);
+      oficina, usuarioId,
+      so:          vals.so,
+      ram:         vals.ram,
+      disco:       vals.disco,
+      cap:         vals.cap,
+      marca:       vals.marca,
+      modelo:      vals.modelo,
+      procesador:  vals.procesador,
+      estado:      vals.estado,
+      obs:         vals.obs,
+      fechaCompra: vals.fechaCompra,
+      garantia:    vals.garantia,
+      ubicacion:   vals.ubicacion,
+      tipoEquipo:  vals.tipoEquipo,
+      componentes: componentesMarcados,
+      fotosComponentes,
+    }, 'serial', editSerial).catch(console.warn);
     showToast('✅ Equipo actualizado');
   } else {
     if (lista.find(x => x.serial === serial)) {
@@ -566,26 +565,24 @@ async function _guardar() {
       fotosComponentes, componentes: componentesMarcados, fotos: []
     });
     apiPost('Equipos', 'insert', {
-      Serial:       serial,
-      OficinaID:    oficina,
-      UsuarioID:    usuarioId,
-      SO:           vals.so,
-      RAM:          vals.ram,
-      Disco:        vals.disco,
-      Capacidad:    vals.cap,
-      Marca:        vals.marca,
-      Modelo:       vals.modelo,
-      Procesador:   vals.procesador,
-      Estado:       vals.estado,
-      Observaciones:vals.obs,
-      Imagen_Base64:'',
-      Fecha_Compra: vals.fechaCompra,
-      Garantia:     vals.garantia,
-      Ubicacion:    vals.ubicacion,
-      Tipo_Equipo:  vals.tipoEquipo,
-      Componentes:  componentesMarcados.join(','),
-      Fotos_Componentes: fotosStr,
-    }).catch(console.warn);
+      serial, oficina, usuarioId,
+      so:          vals.so,
+      ram:         vals.ram,
+      disco:       vals.disco,
+      cap:         vals.cap,
+      marca:       vals.marca,
+      modelo:      vals.modelo,
+      procesador:  vals.procesador,
+      estado:      vals.estado,
+      obs:         vals.obs,
+      fechaCompra: vals.fechaCompra,
+      garantia:    vals.garantia,
+      ubicacion:   vals.ubicacion,
+      tipoEquipo:  vals.tipoEquipo,
+      componentes: componentesMarcados,
+      fotosComponentes,
+      fotos: [],
+    }, 'serial', serial).catch(console.warn);
     showToast('💻 Equipo registrado');
   }
 
@@ -599,7 +596,7 @@ function _eliminar(serial) {
   const lista = getData('equipos').filter(e => e.serial !== serial);
   setState('equipos', lista);
   saveKey('equipos');
-  apiPost('Equipos','delete',{},'Serial',serial).catch(console.warn);
+  apiPost('Equipos','delete',{},'serial',serial).catch(console.warn);
   showToast('🗑️ Equipo eliminado');
   renderLista();
 }
