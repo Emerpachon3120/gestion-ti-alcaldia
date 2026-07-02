@@ -1,5 +1,5 @@
 import { getData, getDBStatic, setState } from '../state.js';
-import { apiPost }     from '../api.js';
+import { apiPost }     from '../firebase.js';
 import { showToast, showConfirm, cerrarConfirm } from '../ui/toast.js';
 import { abrirModal, cerrarModal } from '../ui/modal.js';
 import { saveKey } from '../storage.js';

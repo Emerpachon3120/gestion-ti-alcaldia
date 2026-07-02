@@ -2,7 +2,7 @@ import { uid, formatDate, parseFecha, calcSemaforo, calcFechaProxima, soloLetras
 import { abrirFirma as _abrirFirma }     from '../ui/firma.js';
 import { getData, getDBStatic, setState } from '../state.js';
 import { saveKey }                        from '../storage.js';
-import { apiPost }                        from '../api.js';
+import { apiPost }                        from '../firebase.js';
 import { showToast }                      from '../ui/toast.js';
 import { abrirModal, cerrarModal }        from '../ui/modal.js';
 import { buildSearchSelect, getSSValue, setSSValue, llenarSSEquipos, llenarSSPersonas } from '../ui/searchselect.js';

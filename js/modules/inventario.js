@@ -1,6 +1,6 @@
 import { getData, getDBStatic, setState } from '../state.js';
 import { saveKey }     from '../storage.js';
-import { apiPost }     from '../api.js';
+import { apiPost }     from '../firebase.js';
 import { showToast }   from '../ui/toast.js';
 import { abrirModal, cerrarModal } from '../ui/modal.js';
 import { formatDate, parseFecha, calcSemaforo } from '../utils.js';

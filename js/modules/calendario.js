@@ -1,7 +1,7 @@
 import { getData, getDBStatic, setState } from '../state.js';
 import { parseFecha } from '../utils.js';
 import { navigate } from '../router.js';
-import { apiPost, apiGet } from '../api.js';
+import { apiPost, apiGet } from '../firebase.js';
 import { showToast } from '../ui/toast.js';
 const CONFIG = window.APP_CONFIG;
 
