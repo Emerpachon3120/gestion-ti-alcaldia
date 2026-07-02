@@ -2,7 +2,7 @@
 // Reemplaza api.js — usa Firebase Firestore como backend
 // ──────────────────────────────────────────────────────────────
 
-import { initializeApp }          from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import {
   getFirestore,
   collection,
@@ -13,6 +13,8 @@ import {
   updateDoc,
   addDoc,
   deleteDoc,
+  query,
+  where,
   serverTimestamp,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
@@ -31,14 +33,14 @@ const db  = getFirestore(app);
 
 // Mapa: nombre de "sheet" → colección Firestore
 const COLECCION = {
-  Dependencias:    'dependencias',
-  Oficinas:        'oficinas',
-  Personas:        'personas',
-  Equipos:         'equipos',
-  Mantenimientos:  'mantenimientos',
-  Backups:         'backups',
-  Cronograma:      'cronograma',
-  Incidencias:     'incidencias',
+  Dependencias:   'dependencias',
+  Oficinas:       'oficinas',
+  Personas:       'personas',
+  Equipos:        'equipos',
+  Mantenimientos: 'mantenimientos',
+  Backups:        'backups',
+  Cronograma:     'cronograma',
+  Incidencias:    'incidencias',
 };
 
 // ─── Leer colección completa ──────────────────────────────────
@@ -49,19 +51,48 @@ export async function apiGet(sheet) {
   return snap.docs.map(d => ({ _id: d.id, ...d.data() }));
 }
 
+// ─── Buscar documento por campo interno ──────────────────────
+// Retorna el doc de Firestore cuyo campo `keyField` === `keyValue`
+// Si no encuentra, retorna null
+async function _buscarDoc(col, keyField, keyValue) {
+  // Primero intentar acceso directo por ID del documento
+  try {
+    const directRef = doc(db, col, String(keyValue));
+    const directSnap = await getDoc(directRef);
+    if (directSnap.exists()) return directSnap;
+  } catch(e) { /* no encontrado */ }
+
+  // Si no, buscar por campo interno (documentos migrados desde Sheets)
+  const q = query(collection(db, col), where(keyField, '==', String(keyValue)));
+  const snap = await getDocs(q);
+  if (!snap.empty) return snap.docs[0];
+
+  // Buscar también por campo 'ID' mayúsculas (datos migrados)
+  const q2 = query(collection(db, col), where('ID', '==', String(keyValue)));
+  const snap2 = await getDocs(q2);
+  if (!snap2.empty) return snap2.docs[0];
+
+  return null;
+}
+
 // ─── Escribir / actualizar / eliminar documento ───────────────
-export async function apiPost(sheet, action, data, keyField, keyValue) {
+export async function apiPost(sheet, action, data, keyField = 'id', keyValue) {
   const col = COLECCION[sheet];
   if (!col) throw new Error(`Colección desconocida: ${sheet}`);
 
-  // ELIMINAR
+  // ── ELIMINAR ──────────────────────────────────────────────
   if (action === 'delete') {
     if (!keyValue) throw new Error('apiPost delete requiere keyValue');
-    await deleteDoc(doc(db, col, String(keyValue)));
-    return { ok: true };
+    const found = await _buscarDoc(col, keyField, keyValue);
+    if (found) {
+      await deleteDoc(found.ref);
+      return { ok: true };
+    }
+    console.warn(`[Firebase] No se encontró doc para eliminar: ${col}/${keyValue}`);
+    return { ok: false };
   }
 
-  // INSERTAR
+  // ── INSERTAR ──────────────────────────────────────────────
   if (action === 'insert') {
     const id = keyValue || data.id || data.ID || data.serial || data.Serial;
     if (id) {
@@ -79,10 +110,19 @@ export async function apiPost(sheet, action, data, keyField, keyValue) {
     }
   }
 
-  // ACTUALIZAR
+  // ── ACTUALIZAR ────────────────────────────────────────────
   if (action === 'update') {
     if (!keyValue) throw new Error('apiPost update requiere keyValue');
-    await updateDoc(doc(db, col, String(keyValue)), {
+    const found = await _buscarDoc(col, keyField, keyValue);
+    if (found) {
+      await updateDoc(found.ref, {
+        ...data,
+        _updatedAt: serverTimestamp(),
+      });
+      return { id: keyValue };
+    }
+    // Si no existe, crear
+    await setDoc(doc(db, col, String(keyValue)), {
       ...data,
       _updatedAt: serverTimestamp(),
     });
