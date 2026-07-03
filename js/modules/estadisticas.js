@@ -3,15 +3,20 @@ import { parseFecha, formatDate, calcSemaforo } from '../utils.js';
 
 export function render() {
   return `
-    <div class="page" id="page-estadisticas">
-      <div class="page-header">
-        <div class="section-title">Estadísticas</div>
-        <div class="section-sub">Resumen general del sistema</div>
+    <div id="page-estadisticas" class="pb-8">
+      <!-- Header -->
+      <div class="relative overflow-hidden rounded-b-3xl -mx-4 -mt-4 mb-5 px-5 pt-5 pb-6"
+        style="background:linear-gradient(135deg,#92400e,#d97706)">
+        <div class="absolute -top-6 -right-6 w-24 h-24 rounded-full" style="background:rgba(255,255,255,.07)"></div>
+        <div class="relative z-10">
+          <h1 class="text-xl font-extrabold text-white mb-0.5">📊 Estadísticas</h1>
+          <p class="text-xs" style="color:rgba(255,255,255,.7)">Resumen general del sistema</p>
+        </div>
       </div>
 
       <!-- FILTROS -->
-      <div class="card" style="margin-bottom:12px;">
-        <div style="font-weight:700;font-size:13px;margin-bottom:10px;">Filtros</div>
+      <div class="rounded-2xl p-4 mb-4" style="background:var(--card);border:1px solid var(--border)">
+        <p class="font-bold text-sm mb-3" style="color:var(--text1)">Filtros</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
           <div class="form-group" style="margin:0;">
             <label class="form-label">Desde</label>
@@ -170,22 +175,22 @@ function _renderEstadisticas() {
 
     <!-- KPIs GENERALES -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-      <div class="card" style="margin:0;text-align:center;">
+      <div class="rounded-xl p-3 text-center" style="background:var(--card);border:1px solid var(--border)">
         <div style="font-size:26px;font-weight:700;color:var(--accent);">${equipos.length}</div>
         <div style="font-size:11px;color:var(--text3);">Equipos registrados</div>
         <div style="font-size:10px;color:#16a34a;margin-top:4px;">${eqOperativos} operativos · <span style="color:#dc2626;">${eqBaja} de baja</span></div>
       </div>
-      <div class="card" style="margin:0;text-align:center;">
+      <div class="rounded-xl p-3 text-center" style="background:var(--card);border:1px solid var(--border)">
         <div style="font-size:26px;font-weight:700;color:#2563eb;">${mants.length}</div>
         <div style="font-size:11px;color:var(--text3);">Mantenimientos</div>
         <div style="font-size:10px;color:#16a34a;margin-top:4px;">${mantFirmados} firmados · <span style="color:#d97706;">${mantPendientes} pendientes</span></div>
       </div>
-      <div class="card" style="margin:0;text-align:center;">
+      <div class="rounded-xl p-3 text-center" style="background:var(--card);border:1px solid var(--border)">
         <div style="font-size:26px;font-weight:700;color:#7c3aed;">${bks.length}</div>
         <div style="font-size:11px;color:var(--text3);">Copias de seguridad</div>
         <div style="font-size:10px;color:#16a34a;margin-top:4px;">${bkOk} completados · <span style="color:#dc2626;">${bkFallidos} fallidos</span></div>
       </div>
-      <div class="card" style="margin:0;text-align:center;">
+      <div class="rounded-xl p-3 text-center" style="background:var(--card);border:1px solid var(--border)">
         <div style="font-size:26px;font-weight:700;color:#dc2626;">${incs.length}</div>
         <div style="font-size:11px;color:var(--text3);">Incidencias</div>
         <div style="font-size:10px;color:#dc2626;margin-top:4px;">${incAbiertas} abiertas · <span style="color:#16a34a;">${incCerradas} cerradas</span></div>
@@ -193,8 +198,8 @@ function _renderEstadisticas() {
     </div>
 
     <!-- CUMPLIMIENTO -->
-    <div class="card" style="margin-bottom:12px;">
-      <div style="font-weight:700;font-size:13px;margin-bottom:12px;">Indicadores de cumplimiento</div>
+    <div class="rounded-2xl p-4 mb-4" style="background:var(--card);border:1px solid var(--border)">
+      <p class="font-bold text-sm mb-3" style="color:var(--text1)">Indicadores de cumplimiento</div>
       ${_barra('Mantenimientos firmados', mantFirmados, mants.length, '#16a34a')}
       ${_barra('Backups completados', bkOk, bks.length, '#7c3aed')}
       ${_barra('Incidencias resueltas', incCerradas, incs.length, '#2563eb')}
@@ -202,8 +207,8 @@ function _renderEstadisticas() {
     </div>
 
     <!-- MANTENIMIENTOS POR DEPENDENCIA -->
-    <div class="card" style="margin-bottom:12px;">
-      <div style="font-weight:700;font-size:13px;margin-bottom:12px;">Mantenimientos por dependencia</div>
+    <div class="rounded-2xl p-4 mb-4" style="background:var(--card);border:1px solid var(--border)">
+      <p class="font-bold text-sm mb-3" style="color:var(--text1)">Mantenimientos por dependencia</div>
       ${Object.entries(mantPorDep)
         .sort((a,b) => b[1]-a[1])
         .filter(([,v]) => v > 0)
@@ -213,8 +218,8 @@ function _renderEstadisticas() {
 
     <!-- TENDENCIA MENSUAL -->
     ${meses.length > 0 ? `
-    <div class="card" style="margin-bottom:12px;">
-      <div style="font-weight:700;font-size:13px;margin-bottom:4px;">Tendencia mensual</div>
+    <div class="rounded-2xl p-4 mb-4" style="background:var(--card);border:1px solid var(--border)">
+      <p class="font-bold text-sm mb-3" style="color:var(--text1)">Tendencia mensual</div>
       <div style="display:flex;gap:4px;margin-bottom:6px;">
         <span style="display:flex;align-items:center;gap:4px;font-size:10px;">
           <span style="width:10px;height:10px;background:#2563eb;border-radius:2px;display:inline-block;"></span>Mantenimientos
@@ -246,8 +251,8 @@ function _renderEstadisticas() {
 
     <!-- INCIDENCIAS POR TIPO -->
     ${incs.length ? `
-    <div class="card" style="margin-bottom:12px;">
-      <div style="font-weight:700;font-size:13px;margin-bottom:12px;">Incidencias por tipo</div>
+    <div class="rounded-2xl p-4 mb-4" style="background:var(--card);border:1px solid var(--border)">
+      <p class="font-bold text-sm mb-3" style="color:var(--text1)">Incidencias por tipo</div>
       ${(() => {
         const porTipo = {};
         incs.forEach(i => { porTipo[i.tipo||'Otro']=(porTipo[i.tipo||'Otro']||0)+1; });
@@ -258,8 +263,8 @@ function _renderEstadisticas() {
     </div>` : ''}
 
     <!-- EQUIPOS POR ESTADO -->
-    <div class="card" style="margin-bottom:12px;">
-      <div style="font-weight:700;font-size:13px;margin-bottom:12px;">Equipos por estado</div>
+    <div class="rounded-2xl p-4 mb-4" style="background:var(--card);border:1px solid var(--border)">
+      <p class="font-bold text-sm mb-3" style="color:var(--text1)">Equipos por estado</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;">
         ${(() => {
           const porEstado = {};

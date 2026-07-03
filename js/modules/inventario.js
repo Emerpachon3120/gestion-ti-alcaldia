@@ -13,20 +13,37 @@ let currentSearch = '';
 export function render() {
   const DB = getDBStatic();
   return `
-    <div class="page" id="page-inventario">
-      <div class="page-header">
-        <div class="section-title">📦 Inventario</div>
-        <div class="section-sub">Equipos por dependencia y oficina</div>
+    <div id="page-inventario" class="pb-8">
+
+      <!-- Header -->
+      <div class="relative overflow-hidden rounded-b-3xl -mx-4 -mt-4 mb-5 px-5 pt-5 pb-6"
+        style="background:linear-gradient(135deg,#1e3a5f,#2563eb)">
+        <div class="absolute -top-6 -right-6 w-24 h-24 rounded-full" style="background:rgba(255,255,255,.07)"></div>
+        <div class="relative z-10">
+          <h1 class="text-xl font-extrabold text-white mb-0.5">📦 Inventario</h1>
+          <p class="text-xs" style="color:rgba(255,255,255,.7)">Equipos por dependencia y oficina</p>
+        </div>
       </div>
-      <div class="filter-tabs" id="dep-tabs">
-        <button class="filter-tab active" data-dep="todas">Todas</button>
-        ${DB.dependencias.map(d => `<button class="filter-tab" data-dep="${d.id}">${d.nombre.replace(/Secretar[ií]a de /i,'Sec. ')}</button>`).join('')}
+
+      <!-- Filtros dependencia -->
+      <div class="px-1 mb-3">
+        <div class="filter-tabs" id="dep-tabs" style="flex-wrap:wrap">
+          <button class="filter-tab active" data-dep="todas">Todas</button>
+          ${DB.dependencias.map(d => `<button class="filter-tab" data-dep="${d.id}">${d.nombre.replace(/Secretar[ií]a de /i,'Sec. ')}</button>`).join('')}
+        </div>
       </div>
-      <div class="search-box">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input type="text" id="inv-search" placeholder="Buscar serial, funcionario, oficina...">
+
+      <!-- Buscador -->
+      <div class="px-1 mb-4">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input type="text" id="inv-search" placeholder="Buscar serial, funcionario, oficina...">
+        </div>
       </div>
-      <div id="inv-list"></div>
+
+      <div id="inv-list" class="px-1"></div>
     </div>
     ${_modalHTML()}`;
 }
@@ -58,7 +75,10 @@ export function renderLista() {
 
   const container = document.getElementById('inv-list');
   if (!container) return;
-  if (!equips.length) { container.innerHTML = `<div class="empty"><p>No hay equipos</p></div>`; return; }
+  if (!equips.length) {
+    container.innerHTML = `<div class="flex flex-col items-center justify-center py-12 gap-3" style="color:var(--text3)"><div class="text-4xl">💻</div><p class="text-sm">No hay equipos</p></div>`;
+    return;
+  }
 
   container.innerHTML = equips.map(e => {
     const of  = DB.oficinas.find(x => x.id === e.oficina);
@@ -67,32 +87,60 @@ export function renderLista() {
     const mantsEq = getData('mantenimientos').filter(m => m.serial === e.serial);
     const ultimo  = mantsEq.sort((a,b) => (parseFecha(b.fecha)||0) - (parseFecha(a.fecha)||0))[0];
     const sem     = calcSemaforo(ultimo?.fechaProxima);
-    const estColor = { Operativo:'badge-green','Con fallas':'badge-yellow','En mantenimiento':'badge-yellow','Dado de baja':'badge-red' }[e.estado||'Operativo'] || 'badge-green';
+    const estColors = {
+      Operativo:        { bg:'#dcfce7', color:'#166534' },
+      'Con fallas':     { bg:'#fef3c7', color:'#92400e' },
+      'En mantenimiento':{ bg:'#dbeafe', color:'#1e40af' },
+      'Dado de baja':   { bg:'#fee2e2', color:'#991b1b' },
+    };
+    const estC = estColors[e.estado||'Operativo'] || estColors.Operativo;
+    const borderColor = sem?.clase === 'semaforo-rojo' ? '#dc2626'
+                      : sem?.clase === 'semaforo-amarillo' ? '#d97706' : '#2563eb';
     return `
-      <div class="card" style="margin-bottom:10px;">
-        <div class="card-header" style="margin-bottom:10px;">
-          <div class="card-icon" style="background:rgba(34,197,94,.1)">💻</div>
-          <div style="flex:1">
-            <div class="card-title mono">${e.serial}</div>
-            <div class="card-sub">${e.marca ? e.marca+' ' : ''}${e.modelo || ''} · ${of?.nombre || 'Sin oficina'}</div>
+      <div class="rounded-2xl mb-3 overflow-hidden"
+        style="background:var(--card);border:1px solid var(--border);border-left:4px solid ${borderColor}">
+        <div class="p-4">
+          <!-- Header -->
+          <div class="flex justify-between items-start gap-2 mb-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-mono font-bold text-sm" style="color:var(--text1)">${e.serial}</p>
+              <p class="text-xs mt-0.5" style="color:var(--text2)">${e.marca ? e.marca+' ' : ''}${e.modelo || ''}</p>
+              <p class="text-xs truncate mt-0.5" style="color:var(--text3)">${of?.nombre || 'Sin oficina'}</p>
+            </div>
+            <div class="flex flex-col items-end gap-1 flex-shrink-0">
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                style="background:${estC.bg};color:${estC.color}">${e.estado || 'Operativo'}</span>
+              ${sem ? `<div class="semaforo ${sem.clase}">${sem.icon} ${sem.label}</div>` : ''}
+            </div>
           </div>
-          <div style="text-align:right;">
-            <span class="badge ${estColor}">${e.estado || 'Operativo'}</span>
-            ${sem ? `<div class="semaforo ${sem.clase}" style="margin-top:4px">${sem.icon} ${sem.label}</div>` : ''}
+
+          <!-- Specs -->
+          <div class="grid grid-cols-2 gap-x-4 gap-y-1 mb-3 text-xs">
+            <div><span style="color:var(--text3)">SO:</span> <span style="color:var(--text1)">${e.so || '—'}</span></div>
+            <div><span style="color:var(--text3)">RAM:</span> <span style="color:var(--text1)">${e.ram || '—'}</span></div>
+            <div><span style="color:var(--text3)">Disco:</span> <span style="color:var(--text1)">${e.disco || '—'} ${e.cap || ''}</span></div>
+            <div><span style="color:var(--text3)">Office:</span> <span style="color:var(--text1)">${e.office || '—'}</span></div>
+            ${e.procesador ? `<div class="col-span-2"><span style="color:var(--text3)">CPU:</span> <span style="color:var(--text1)">${e.procesador}</span></div>` : ''}
           </div>
+
+          ${p ? `
+          <div class="flex items-center gap-2 pt-3 border-t text-xs" style="border-color:var(--border)">
+            <span>👤</span>
+            <span class="font-semibold" style="color:var(--text1)">${p.nombre}</span>
+            ${dep ? `<span style="color:var(--text3)">— ${dep.nombre.replace(/Secretar[ií]a de /i,'Sec. ')}</span>` : ''}
+          </div>` : ''}
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;font-size:12px;">
-          <div><span style="color:var(--text3)">SO:</span> ${e.so || '—'}</div>
-          <div><span style="color:var(--text3)">RAM:</span> ${e.ram || '—'}</div>
-          <div><span style="color:var(--text3)">Disco:</span> ${e.disco || '—'} ${e.cap || ''}</div>
-          <div><span style="color:var(--text3)">Office:</span> ${e.office || '—'}</div>
-          ${e.procesador ? `<div style="grid-column:1/-1"><span style="color:var(--text3)">CPU:</span> ${e.procesador}</div>` : ''}
-        </div>
-        ${p ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:12px;">👤 <b>${p.nombre}</b> — ${dep?.nombre || ''}</div>` : ''}
-        <div class="card-actions">
-          <button class="action-btn" data-action="editar" data-serial="${e.serial}">✏️ Editar</button>
-          <button class="action-btn" data-action="historial" data-serial="${e.serial}">📄 Historial</button>
-          <button class="action-btn del" data-action="eliminar" data-serial="${e.serial}">🗑️</button>
+
+        <!-- Acciones -->
+        <div class="flex border-t" style="border-color:var(--border)">
+          <button data-action="editar" data-serial="${e.serial}"
+            class="flex-1 py-2.5 text-xs font-semibold" style="color:var(--text2)">✏️ Editar</button>
+          <div style="width:1px;background:var(--border)"></div>
+          <button data-action="historial" data-serial="${e.serial}"
+            class="flex-1 py-2.5 text-xs font-semibold" style="color:#2563eb">📄 Ficha</button>
+          <div style="width:1px;background:var(--border)"></div>
+          <button data-action="eliminar" data-serial="${e.serial}"
+            class="flex-1 py-2.5 text-xs font-semibold" style="color:#dc2626">🗑️</button>
         </div>
       </div>`;
   }).join('');
@@ -538,23 +586,24 @@ async function _guardar() {
       fotosComponentes, componentes: componentesMarcados
     };
     apiPost('Equipos', 'update', {
-      oficina, usuarioId,
-      so:          vals.so,
-      ram:         vals.ram,
-      disco:       vals.disco,
-      cap:         vals.cap,
-      marca:       vals.marca,
-      modelo:      vals.modelo,
-      procesador:  vals.procesador,
-      estado:      vals.estado,
-      obs:         vals.obs,
-      fechaCompra: vals.fechaCompra,
-      garantia:    vals.garantia,
-      ubicacion:   vals.ubicacion,
-      tipoEquipo:  vals.tipoEquipo,
-      componentes: componentesMarcados,
-      fotosComponentes,
-    }, 'serial', editSerial).catch(console.warn);
+      OficinaID:    oficina,
+      UsuarioID:    usuarioId,
+      SO:           vals.so,
+      RAM:          vals.ram,
+      Disco:        vals.disco,
+      Capacidad:    vals.cap,
+      Marca:        vals.marca,
+      Modelo:       vals.modelo,
+      Procesador:   vals.procesador,
+      Estado:       vals.estado,
+      Observaciones:vals.obs,
+      Fecha_Compra: vals.fechaCompra,
+      Garantia:     vals.garantia,
+      Ubicacion:    vals.ubicacion,
+      Tipo_Equipo:  vals.tipoEquipo,
+      Componentes:  componentesMarcados.join(','),
+      Fotos_Componentes: fotosStr,
+    }, 'Serial', editSerial).catch(console.warn);
     showToast('✅ Equipo actualizado');
   } else {
     if (lista.find(x => x.serial === serial)) {
@@ -565,24 +614,26 @@ async function _guardar() {
       fotosComponentes, componentes: componentesMarcados, fotos: []
     });
     apiPost('Equipos', 'insert', {
-      serial, oficina, usuarioId,
-      so:          vals.so,
-      ram:         vals.ram,
-      disco:       vals.disco,
-      cap:         vals.cap,
-      marca:       vals.marca,
-      modelo:      vals.modelo,
-      procesador:  vals.procesador,
-      estado:      vals.estado,
-      obs:         vals.obs,
-      fechaCompra: vals.fechaCompra,
-      garantia:    vals.garantia,
-      ubicacion:   vals.ubicacion,
-      tipoEquipo:  vals.tipoEquipo,
-      componentes: componentesMarcados,
-      fotosComponentes,
-      fotos: [],
-    }, 'serial', serial).catch(console.warn);
+      Serial:       serial,
+      OficinaID:    oficina,
+      UsuarioID:    usuarioId,
+      SO:           vals.so,
+      RAM:          vals.ram,
+      Disco:        vals.disco,
+      Capacidad:    vals.cap,
+      Marca:        vals.marca,
+      Modelo:       vals.modelo,
+      Procesador:   vals.procesador,
+      Estado:       vals.estado,
+      Observaciones:vals.obs,
+      Imagen_Base64:'',
+      Fecha_Compra: vals.fechaCompra,
+      Garantia:     vals.garantia,
+      Ubicacion:    vals.ubicacion,
+      Tipo_Equipo:  vals.tipoEquipo,
+      Componentes:  componentesMarcados.join(','),
+      Fotos_Componentes: fotosStr,
+    }).catch(console.warn);
     showToast('💻 Equipo registrado');
   }
 
@@ -596,7 +647,7 @@ function _eliminar(serial) {
   const lista = getData('equipos').filter(e => e.serial !== serial);
   setState('equipos', lista);
   saveKey('equipos');
-  apiPost('Equipos','delete',{},'serial',serial).catch(console.warn);
+  apiPost('Equipos','delete',{},'Serial',serial).catch(console.warn);
   showToast('🗑️ Equipo eliminado');
   renderLista();
 }

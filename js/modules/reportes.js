@@ -10,13 +10,21 @@ import {
 export function render() {
   const DB = getDBStatic();
   return `
-    <div class="page">
-      <div class="section-title">📋 Reportes</div>
-      <div class="section-sub">Informes, actas y exportaciones</div>
+    <div id="page-reportes" class="pb-8">
+      <!-- Header -->
+      <div class="relative overflow-hidden rounded-b-3xl -mx-4 -mt-4 mb-5 px-5 pt-5 pb-6"
+        style="background:linear-gradient(135deg,#164e63,#0891b2)">
+        <div class="absolute -top-6 -right-6 w-24 h-24 rounded-full" style="background:rgba(255,255,255,.07)"></div>
+        <div class="relative z-10">
+          <h1 class="text-xl font-extrabold text-white mb-0.5">📋 Reportes</h1>
+          <p class="text-xs" style="color:rgba(255,255,255,.7)">Informes, actas y exportaciones</p>
+        </div>
+      </div>
+      <div class="px-1">
 
       <!-- Informe mensual -->
-      <div class="card" style="margin-bottom:12px;">
-        <div style="font-weight:700;margin-bottom:10px;">📄 Informe mensual PDF</div>
+      <div class="rounded-2xl p-4 mb-4" style="background:var(--card);border:1px solid var(--border)">
+        <p class="font-bold text-sm mb-3" style="color:var(--text1)">📄 Informe mensual PDF</p>
         <div class="form-group">
           <label class="form-label">Mes del informe</label>
           <input type="month" class="form-input" id="informe-mes">
@@ -27,8 +35,8 @@ export function render() {
       </div>
 
       <!-- Actas por dependencia -->
-      <div class="card" style="margin-bottom:12px;">
-        <div style="font-weight:700;margin-bottom:10px;">📝 Actas por dependencia</div>
+      <div class="rounded-2xl p-4 mb-4" style="background:var(--card);border:1px solid var(--border)">
+        <p class="font-bold text-sm mb-3" style="color:var(--text1)">📝 Actas por dependencia</p>
         <div class="form-group">
           <label class="form-label">Dependencia</label>
           <select class="form-select" id="acta-dep">
@@ -62,8 +70,8 @@ export function render() {
       </div>
 
       <!-- Reportes rápidos -->
-      <div class="card" style="margin-bottom:12px;">
-        <div style="font-weight:700;margin-bottom:10px;">⚡ Reportes rápidos</div>
+      <div class="rounded-2xl p-4 mb-4" style="background:var(--card);border:1px solid var(--border)">
+        <p class="font-bold text-sm mb-3" style="color:var(--text1)">⚡ Reportes rápidos</p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
           <button class="btn btn-secondary" style="margin-top:0;font-size:11px;"
             data-reporte="mant-pendientes">🔴 Mant. pendientes</button>
@@ -82,7 +90,7 @@ export function render() {
 
       <!-- Exportar CSV -->
       <div class="card">
-        <div style="font-weight:700;margin-bottom:10px;">📊 Exportar CSV</div>
+        <p class="font-bold text-sm mb-3" style="color:var(--text1)">📊 Exportar CSV</p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
           <button class="btn btn-secondary" style="margin-top:0;" data-export="mantenimientos">🔧 Mantenimientos</button>
           <button class="btn btn-secondary" style="margin-top:0;" data-export="backups">💾 Backups</button>
