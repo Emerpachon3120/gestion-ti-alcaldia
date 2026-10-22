@@ -187,7 +187,8 @@ export async function syncData() {
         fechaTraslado:r.fechaTraslado|| r.Fecha_Traslado|| '',
         estadoEquipo: r.estadoEquipo || r.Estado_Equipo || '',
         firma: firmaFS,
-        fotos: [],
+        // Las fotos se guardan en Firestore: leerlas de ahí
+        fotos: Array.isArray(r.fotos) ? r.fotos.filter(Boolean) : [],
       };
 
       const local = localMantMap[base.id];
@@ -200,7 +201,8 @@ export async function syncData() {
           base.firma      = firmaFS || local.firma || null;
           base.firmaFecha = local.firmaFecha || null;
         }
-        base.fotos         = local.fotos         || [];
+        // La copia local manda solo si trae fotos; si no, las de Firestore
+        if (local.fotos?.length) base.fotos = local.fotos;
         base.userWin       = local.userWin       || base.userWin;
         base.passWin       = local.passWin       || base.passWin;
         base.userAdmin     = local.userAdmin     || base.userAdmin;
@@ -246,7 +248,8 @@ export async function syncData() {
         respTI:       r.respTI       || r.Resp_TI      || '',
         personaId:    String(r.personaId || r.Persona_ID || ''),
         firma: firmaFS,
-        fotos: [],
+        // Las fotos se guardan en Firestore: leerlas de ahí
+        fotos: Array.isArray(r.fotos) ? r.fotos.filter(Boolean) : [],
       };
 
       const local = localBkMap[base.id];
@@ -259,7 +262,8 @@ export async function syncData() {
           base.firma      = firmaFS || local.firma || null;
           base.firmaFecha = local.firmaFecha || null;
         }
-        base.fotos             = local.fotos             || [];
+        // La copia local manda solo si trae fotos; si no, las de Firestore
+        if (local.fotos?.length) base.fotos = local.fotos;
         base.responsableEquipo = local.responsableEquipo || '';
       }
       return base;

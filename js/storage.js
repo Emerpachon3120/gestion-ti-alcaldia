@@ -39,22 +39,54 @@ export function loadFromStorage() {
   });
 }
 
+// ─── Escritura segura ─────────────────────────────────────────
+// localStorage tiene un tope (~5 MB). Las fotos de mantenimientos y backups
+// ya viven en Firestore, así que si no caben se guarda la caché local sin
+// ellas (se vuelven a leer de Firestore en cada sincronización).
+// Nunca lanza error: un fallo de caché no debe romper el guardado.
+const KEYS_FOTOS_EN_FIRESTORE = ['mantenimientos', 'backups'];
+
+function _sinFotos(data) {
+  if (!Array.isArray(data)) return data;
+  return data.map(r => {
+    if (!r || typeof r !== 'object') return r;
+    const { fotos, ...resto } = r;
+    return { ...resto, fotos: [] };
+  });
+}
+
+function _persistir(key, data) {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+    return true;
+  } catch (e) {
+    if (KEYS_FOTOS_EN_FIRESTORE.includes(key)) {
+      try {
+        localStorage.setItem(key, JSON.stringify(_sinFotos(data)));
+        console.warn('[Storage] Sin espacio: caché de', key, 'guardada sin fotos');
+        return true;
+      } catch (e2) {
+        console.warn('[Storage] No se pudo guardar', key, e2);
+        return false;
+      }
+    }
+    console.warn('[Storage] No se pudo guardar', key, e);
+    return false;
+  }
+}
+
 // ─── Persistir todo el estado en localStorage ─────────────────
 export function saveToStorage() {
   KEYS.forEach(key => {
     const data = getState(key);
-    if (data !== undefined) {
-      localStorage.setItem(key, JSON.stringify(data));
-    }
+    if (data !== undefined) _persistir(key, data);
   });
 }
 
 // ─── Guardar una clave específica ─────────────────────────────
 export function saveKey(key) {
   const data = getState(key);
-  if (data !== undefined) {
-    localStorage.setItem(key, JSON.stringify(data));
-  }
+  if (data !== undefined) _persistir(key, data);
 }
 
 // ─── Limpiar todo el caché ────────────────────────────────────
