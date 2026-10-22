@@ -89,13 +89,25 @@ async function _dedupImagenes(html) {
 }
 
 // ── Construcción del documento combinado ─────────────────────
+const _fechaLarga = d =>
+  d.toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' });
+
 async function _construir(sel, { fotos }, onProgreso) {
+  const hoyLargo = _fechaLarga(new Date());
   let css = '';
   const paginas = [];
 
   for (let i = 0; i < sel.length; i++) {
     const { tipo, r } = sel[i];
     let html = tipo === 'mant' ? armarActaMantenimiento(r) : armarActaBackup(r);
+    if (html) {
+      // La constancia final trae la fecha de hoy; en el lote debe ser la
+      // fecha en que se realizó el registro.
+      const fReg = parseFecha(r.fecha);
+      if (fReg) {
+        html = html.replace(`el día <b>${hoyLargo}</b>`, `el día <b>${_fechaLarga(fReg)}</b>`);
+      }
+    }
     if (html && !fotos) {
       // Quita el bloque de evidencia fotográfica (título + grilla de imágenes)
       html = html.replace(
@@ -165,9 +177,12 @@ function _actualizar() {
 
   const nM = sel.filter(x => x.tipo === 'mant').length;
   const nB = sel.length - nM;
+  const conFirma = sel.filter(x => String(x.r.firma || '').startsWith('data:image')).length;
+  const marcadas = sel.filter(x => x.r.firmado).length;
   res.textContent =
-    `Se generarán ${sel.length} actas (${nM} mantenimientos · ${nB} backups)` +
-    (f.fotos && sel.length > 40 ? ' — con fotos puede tardar y pesar bastante.' : '');
+    `Se generarán ${sel.length} actas (${nM} mantenimientos · ${nB} backups). ` +
+    `Marcadas como firmadas: ${marcadas} · con imagen de firma disponible: ${conFirma}.` +
+    (f.fotos && sel.length > 40 ? ' Con fotos puede tardar y pesar bastante.' : '');
   btn.disabled = false;
   btn.style.opacity = '1';
 }
