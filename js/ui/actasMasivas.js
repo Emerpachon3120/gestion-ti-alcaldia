@@ -138,7 +138,9 @@ async function _construir(sel, { fotos }, onProgreso) {
     }
   </style></head><body>${paginas.join('\n')}</body></html>`;
 
-  return _dedupImagenes(doc);
+  // view: versión liviana para el visor (imágenes repetidas como blob:)
+  // full: versión autocontenida (imágenes embebidas) para descargar tal cual
+  return { view: await _dedupImagenes(doc), full: doc };
 }
 
 // ── Formulario ───────────────────────────────────────────────
@@ -197,11 +199,12 @@ async function _generar() {
   btn.textContent = `Generando 0/${sel.length}…`;
 
   try {
-    const html = await _construir(sel, f, n => {
+    const { view, full } = await _construir(sel, f, n => {
       btn.textContent = `Generando ${n}/${sel.length}…`;
     });
     _cerrar();
-    abrirDocViewer(html, `Actas masivas — ${sel.length} actas`);
+    abrirDocViewer(view, `Actas masivas — ${sel.length} actas`);
+    _inyectarBotonDescargar(full, sel.length);
     import('./toast.js').then(({ showToast }) =>
       showToast('Listo. Usa imprimir → Guardar como PDF')
     );
@@ -211,6 +214,45 @@ async function _generar() {
     btn.textContent = 'Generar actas';
     import('./toast.js').then(({ showToast }) => showToast('Error generando las actas'));
   }
+}
+
+// Botón "Descargar" en la barra del visor, solo mientras se ve el lote.
+// Baja el documento completo (con las imágenes embebidas) para abrirlo
+// después en cualquier navegador exactamente como se ve aquí.
+function _inyectarBotonDescargar(htmlCompleto, nActas) {
+  const overlay = document.getElementById('doc-viewer-overlay');
+  if (!overlay) return;
+  overlay.querySelector('#doc-viewer-descargar-btn')?.remove();
+
+  const imprimir = [...overlay.querySelectorAll('button')]
+    .find(b => /imprimir/i.test(b.textContent));
+  if (!imprimir) return;
+
+  const btn = imprimir.cloneNode(true);
+  btn.id = 'doc-viewer-descargar-btn';
+  btn.removeAttribute('onclick');
+  btn.textContent = 'Descargar';
+  btn.addEventListener('click', () => {
+    const blob = new Blob([htmlCompleto], { type: 'text/html;charset=utf-8' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `Actas_${_iso(new Date())}_${nActas}-actas.html`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  });
+  imprimir.parentNode.insertBefore(btn, imprimir);
+
+  // Quitar el botón cuando se cierre el visor
+  const obs = new MutationObserver(() => {
+    if (!overlay.classList.contains('open')) {
+      btn.remove();
+      obs.disconnect();
+    }
+  });
+  obs.observe(overlay, { attributes: true, attributeFilter: ['class'] });
 }
 
 function _cerrar() {

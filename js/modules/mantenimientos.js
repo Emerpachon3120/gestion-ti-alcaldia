@@ -1002,7 +1002,7 @@ async function _ejecutarGuardar(firmaBase64 = null) {
     const idx = lista.findIndex(x => x.id === editId);
     if (idx >= 0) lista[idx] = { ...lista[idx], ...campos, fecha };
     apiPost('Mantenimientos', 'update', {
-      tipo, frecuencia, fecha, fechaProxima,
+      serial, tipo, frecuencia, fecha, fechaProxima,
       obs: obsCompleto, responsable, periodo,
       respEquipoId, cambioResp, nuevoRespId,
       userWin, passWin, userAdmin, passAdmin, cambioCred,
