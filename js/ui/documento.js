@@ -2,8 +2,20 @@ import { CONFIG }    from '../config.js';
 import { getData, getDBStatic } from '../state.js';
 import { formatDate, parseFecha } from '../utils.js';
 
+// ── Captura de HTML (para generación masiva de actas) ─────────
+// Permite a otros módulos obtener el HTML que una acta enviaría al visor,
+// sin abrirlo. Fuera de capturarActaHTML() no tiene ningún efecto.
+let _capturando = null;
+export function capturarActaHTML(fn) {
+  let html = null;
+  _capturando = h => { html = h; };
+  try { fn(); } finally { _capturando = null; }
+  return html;
+}
+
 // ── Visor de documentos ───────────────────────────────────────
 export function abrirDocViewer(htmlContent, titulo, onFirmar = null) {
+  if (_capturando) { _capturando(htmlContent); return; }
   const overlay = document.getElementById('doc-viewer-overlay');
   const iframe  = document.getElementById('doc-viewer-iframe');
   const titleEl = document.getElementById('doc-viewer-title');

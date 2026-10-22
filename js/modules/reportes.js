@@ -6,6 +6,7 @@ import {
   generarActaDependencia,
   abrirDocViewer,
 } from '../ui/documento.js';
+import { abrirActasMasivas } from '../ui/actasMasivas.js';
 
 export function render() {
   const DB = getDBStatic();
@@ -61,6 +62,18 @@ export function render() {
         </div>
       </div>
 
+      <!-- Actas individuales en lote -->
+      <div class="card" style="margin-bottom:12px;">
+        <div style="font-weight:700;margin-bottom:4px;">Actas individuales en lote</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:10px;">
+          Genera todas las actas de mantenimiento y/o backup de una o varias
+          dependencias (o de todas) en un período, en un solo documento.
+        </div>
+        <button class="btn btn-primary" style="margin-top:0;" id="btn-actas-lote">
+          Generar actas en lote
+        </button>
+      </div>
+
       <!-- Reportes rápidos -->
       <div class="card" style="margin-bottom:12px;">
         <div style="font-weight:700;margin-bottom:10px;">⚡ Reportes rápidos</div>
@@ -113,6 +126,9 @@ export function onEnter() {
       generarActaDependencia(btn.dataset.acta, depId, ini, fin, obs);
     });
   });
+
+  // Actas individuales en lote
+  document.getElementById('btn-actas-lote')?.addEventListener('click', abrirActasMasivas);
 
   // Reportes rápidos
   document.querySelectorAll('[data-reporte]').forEach(btn => {
