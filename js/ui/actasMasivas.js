@@ -181,9 +181,10 @@ function _actualizar() {
   const nB = sel.length - nM;
   const conFirma = sel.filter(x => String(x.r.firma || '').startsWith('data:image')).length;
   const marcadas = sel.filter(x => x.r.firmado).length;
+  const conFotos = sel.filter(x => Array.isArray(x.r.fotos) && x.r.fotos.length).length;
   res.textContent =
     `Se generarán ${sel.length} actas (${nM} mantenimientos · ${nB} backups). ` +
-    `Marcadas como firmadas: ${marcadas} · con imagen de firma disponible: ${conFirma}.` +
+    `Marcadas como firmadas: ${marcadas} · con imagen de firma disponible: ${conFirma} · con fotos: ${conFotos}.` +
     (f.fotos && sel.length > 40 ? ' Con fotos puede tardar y pesar bastante.' : '');
   btn.disabled = false;
   btn.style.opacity = '1';
@@ -317,7 +318,7 @@ export function abrirActasMasivas() {
       </div>
 
       <label style="${rowStyle}margin-top:10px;">
-        <input type="checkbox" id="am-fotos"> Incluir evidencia fotográfica (pesa mucho)
+        <input type="checkbox" id="am-fotos" checked> Incluir evidencia fotográfica (pesa más)
       </label>
 
       <div id="am-resumen" style="font-size:12px;color:var(--text2);margin:14px 0;min-height:16px;"></div>
