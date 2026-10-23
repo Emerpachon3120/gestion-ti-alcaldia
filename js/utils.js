@@ -104,6 +104,18 @@ export function ultimosPorSerial(lista) {
   return out;
 }
 
+// Datos de acceso de un equipo: los guardados en el propio equipo; si no tiene,
+// los del mantenimiento más reciente que los tenga (histórico).
+export function credencialesDeEquipo(eq, mantenimientos, hastaFecha = null, excluirId = null) {
+  if (eq && (eq.userWin || eq.passWin || eq.userAdmin || eq.passAdmin)) {
+    return {
+      userWin: eq.userWin || '', passWin: eq.passWin || '',
+      userAdmin: eq.userAdmin || '', passAdmin: eq.passAdmin || '',
+    };
+  }
+  return credencialesPrevias(mantenimientos, eq?.serial, hastaFecha, excluirId);
+}
+
 // Credenciales (usuario/clave Windows y Admin) del mantenimiento más reciente
 // del equipo que las tenga registradas. Se prefieren las de fecha anterior o
 // igual a `hastaFecha`; si no hay, se usa cualquiera. `excluirId` omite un registro.

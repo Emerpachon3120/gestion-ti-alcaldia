@@ -3,7 +3,7 @@ import { saveKey }     from '../storage.js';
 import { apiPost }     from '../firebase.js';
 import { showToast }   from '../ui/toast.js';
 import { abrirModal, cerrarModal } from '../ui/modal.js';
-import { formatDate, parseFecha, calcSemaforo, coincide, ultimosPorSerial } from '../utils.js';
+import { formatDate, parseFecha, calcSemaforo, coincide, ultimosPorSerial, credencialesPrevias } from '../utils.js';
 import { llenarSSOficinas, llenarSSPersonas, getSSValue, setSSValue } from '../ui/searchselect.js';
 import { abrirDocViewer } from '../ui/documento.js';
 
@@ -35,11 +35,36 @@ export function onEnter() {
   // La pantalla se dibuja con filtros limpios; el estado del módulo debe coincidir
   currentDep = 'todas';
   currentSearch = '';
+  _asociarCredencialesAvisando();
   _bindEvents();
   _bindModalEvents();
   renderLista();
   window.abrirNuevoEquipo = abrirNuevo;
   window.editarEquipo     = editar;
+}
+
+// Copia a cada equipo SIN datos de acceso los del mantenimiento más reciente que
+// los tenga (una sola vez por equipo: los equipos que ya los tienen no se tocan).
+export function asociarCredencialesAEquipos() {
+  const mants = getData('mantenimientos') || [];
+  if (!mants.length) return 0;
+  const equipos = [...(getData('equipos') || [])];
+  let n = 0;
+  equipos.forEach((e, i) => {
+    if (e.userWin || e.passWin || e.userAdmin || e.passAdmin) return;
+    const c = credencialesPrevias(mants, e.serial);
+    if (!(c.userWin || c.passWin || c.userAdmin || c.passAdmin)) return;
+    equipos[i] = { ...e, ...c };
+    n++;
+    apiPost('Equipos', 'update', c, 'serial', e.serial).catch(console.warn);
+  });
+  if (n) { setState('equipos', equipos); saveKey('equipos'); }
+  return n;
+}
+
+export function _asociarCredencialesAvisando() {
+  const n = asociarCredencialesAEquipos();
+  if (n) showToast(`🔐 Datos de acceso asociados a ${n} equipo${n > 1 ? 's' : ''}`);
 }
 
 export function renderLista() {
@@ -361,6 +386,32 @@ function _modalHTML() {
         `).join('')}
       </div>
 
+      <!-- DATOS DE ACCESO DEL EQUIPO -->
+      <div style="font-size:11px;font-weight:700;color:var(--accent);
+        text-transform:uppercase;letter-spacing:.5px;
+        margin:12px 0 10px;padding-bottom:4px;
+        border-bottom:2px solid var(--accent-bg);">
+        🔐 Datos de acceso
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="form-group">
+          <label class="form-label">Usuario Windows</label>
+          <input type="text" class="form-input" id="eq-user-win" placeholder="usuario" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contraseña Windows</label>
+          <input type="text" class="form-input" id="eq-pass-win" placeholder="••••••" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Usuario Admin</label>
+          <input type="text" class="form-input" id="eq-user-admin" placeholder="admin" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contraseña Admin</label>
+          <input type="text" class="form-input" id="eq-pass-admin" placeholder="••••••" autocomplete="off">
+        </div>
+      </div>
+
       <!-- SECCIÓN 4: ADQUISICIÓN -->
       <div style="font-size:11px;font-weight:700;color:var(--accent);
         text-transform:uppercase;letter-spacing:.5px;
@@ -448,7 +499,8 @@ export function abrirNuevo() {
 
   // Limpiar campos
   ['eq-marca','eq-modelo','eq-so','eq-ram','eq-cap',
-   'eq-procesador','eq-obs','eq-ubicacion','eq-office'].forEach(id => {
+   'eq-procesador','eq-obs','eq-ubicacion','eq-office',
+   'eq-user-win','eq-pass-win','eq-user-admin','eq-pass-admin'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -493,6 +545,10 @@ function editar(serial) {
   document.getElementById('eq-obs').value = e.obs || '';
   document.getElementById('eq-estado').value = e.estado || 'Operativo';
   document.getElementById('eq-disco').value  = e.disco || 'SSD';
+  document.getElementById('eq-user-win').value   = e.userWin   || '';
+  document.getElementById('eq-pass-win').value   = e.passWin   || '';
+  document.getElementById('eq-user-admin').value = e.userAdmin || '';
+  document.getElementById('eq-pass-admin').value = e.passAdmin || '';
   llenarSSOficinas('eq-oficina-ss', ()=>{}, _crearOficinaRapida);
   llenarSSPersonas('eq-usuario-ss', ()=>{}, _crearFuncionarioRapido);
   const DB = getDBStatic();
@@ -520,6 +576,10 @@ async function _guardar() {
   vals.garantia     = document.getElementById('eq-garantia')?.value || '';
   vals.ubicacion    = document.getElementById('eq-ubicacion')?.value || '';
   vals.tipoEquipo   = document.getElementById('eq-tipo')?.value || '';
+  vals.userWin      = document.getElementById('eq-user-win')?.value.trim()   || '';
+  vals.passWin      = document.getElementById('eq-pass-win')?.value          || '';
+  vals.userAdmin    = document.getElementById('eq-user-admin')?.value.trim() || '';
+  vals.passAdmin    = document.getElementById('eq-pass-admin')?.value        || '';
 
   if (!serial || !oficina) { showToast('⚠️ Serial y oficina son obligatorios', '#d97706'); return; }
 
@@ -555,6 +615,10 @@ async function _guardar() {
       garantia:    vals.garantia,
       ubicacion:   vals.ubicacion,
       tipoEquipo:  vals.tipoEquipo,
+      userWin:     vals.userWin,
+      passWin:     vals.passWin,
+      userAdmin:   vals.userAdmin,
+      passAdmin:   vals.passAdmin,
       componentes: componentesMarcados,
       fotosComponentes,
     }, 'serial', editSerial).catch(console.warn);
@@ -582,6 +646,10 @@ async function _guardar() {
       garantia:    vals.garantia,
       ubicacion:   vals.ubicacion,
       tipoEquipo:  vals.tipoEquipo,
+      userWin:     vals.userWin,
+      passWin:     vals.passWin,
+      userAdmin:   vals.userAdmin,
+      passAdmin:   vals.passAdmin,
       componentes: componentesMarcados,
       fotosComponentes,
       fotos: [],

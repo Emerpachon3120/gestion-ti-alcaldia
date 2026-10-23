@@ -139,6 +139,10 @@ export async function syncData() {
         fechaCompra: r.fechaCompra || r.Fecha_Compra|| '',
         garantia:    r.garantia    || r.Garantia    || '',
         tipoEquipo:  r.tipoEquipo  || r.Tipo_Equipo || '',
+        userWin:     r.userWin     || '',
+        passWin:     r.passWin     || '',
+        userAdmin:   r.userAdmin   || '',
+        passAdmin:   r.passAdmin   || '',
         componentes: Array.isArray(r.componentes)
           ? r.componentes
           : (r.Componentes ? r.Componentes.split(',').filter(Boolean) : []),

@@ -1,4 +1,4 @@
-import { uid, formatDate, parseFecha, calcSemaforo, calcFechaProxima, soloLetras, alfaNumerico, coincide, ultimosPorSerial, credencialesPrevias } from '../utils.js';
+import { uid, formatDate, parseFecha, calcSemaforo, calcFechaProxima, soloLetras, alfaNumerico, coincide, ultimosPorSerial, credencialesDeEquipo } from '../utils.js';
 import { abrirFirma as _abrirFirma }     from '../ui/firma.js';
 import { getData, getDBStatic, setState } from '../state.js';
 import { saveKey }                        from '../storage.js';
@@ -8,7 +8,7 @@ import { abrirModal, cerrarModal }        from '../ui/modal.js';
 import { verActaMantenimiento }           from '../ui/documento.js';
 import { buildSearchSelect, getSSValue, setSSValue, llenarSSEquipos, llenarSSPersonas } from '../ui/searchselect.js';
 import { navigate } from '../router.js';
-import { abrirNuevo as abrirNuevoEquipo } from './inventario.js';
+import { abrirNuevo as abrirNuevoEquipo, _asociarCredencialesAvisando } from './inventario.js';
 
 let currentFilter = 'todos';
 let currentSearch = '';
@@ -236,6 +236,7 @@ export function onEnter() {
   currentFilter = 'todos';
   currentSearch = '';
   fDesde = ''; fHasta = '';
+  _asociarCredencialesAvisando();
   _bindEvents();
   renderLista();
   window.abrirNuevoMantto = abrirNuevo;
@@ -472,6 +473,9 @@ function _modalHTML() {
                   margin:12px 0 10px;padding-bottom:4px;
                   border-bottom:2px solid var(--accent-bg);">
         🔐 Datos de acceso
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin:-4px 0 8px;">
+        Se traen del equipo. Si cambian, se actualizan en el equipo al guardar.
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
@@ -778,10 +782,10 @@ function abrirNuevo() {
   const p   = DB.personas.find(x => x.id === eq.usuarioId);
   if (p) setSSValue('mt-resp-equipo-ss', p.id, p.nombre);
 
-  // Datos de acceso: se traen del último mantenimiento de este equipo
-  // (si no se cambiaron, siguen siendo los mismos)
+  // Datos de acceso: se traen del equipo (donde quedan guardados);
+  // si el equipo aún no los tiene, del último mantenimiento que sí los tenga.
   if (!document.getElementById('mt-edit-id').value) {
-    const cred = credencialesPrevias(getData('mantenimientos'), serial);
+    const cred = credencialesDeEquipo(eq, getData('mantenimientos'));
     document.getElementById('mt-user-win').value   = cred.userWin;
     document.getElementById('mt-pass-win').value   = cred.passWin;
     document.getElementById('mt-user-admin').value = cred.userAdmin;
@@ -1063,6 +1067,23 @@ async function _ejecutarGuardar(firmaBase64 = null) {
       equipos[idx].usuarioId = nuevoRespId;
       setState('equipos', equipos);
       saveKey('equipos');
+    }
+  }
+
+  // Datos de acceso: quedan guardados en el equipo (se registran una sola vez).
+  // Solo se actualiza si este es el mantenimiento más reciente del equipo.
+  const credEq = { userWin, passWin, userAdmin, passAdmin };
+  if (serial && Object.values(credEq).some(Boolean)) {
+    const idActual = editId || lista[lista.length - 1]?.id;
+    if (ultimosPorSerial(lista).get(serial)?.id === idActual) {
+      const equipos = [...getData('equipos')];
+      const ie = equipos.findIndex(e => e.serial === serial);
+      if (ie >= 0 && Object.keys(credEq).some(k => (equipos[ie][k] || '') !== credEq[k])) {
+        equipos[ie] = { ...equipos[ie], ...credEq };
+        setState('equipos', equipos);
+        saveKey('equipos');
+        apiPost('Equipos', 'update', credEq, 'serial', serial).catch(console.warn);
+      }
     }
   }
 

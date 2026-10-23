@@ -1,6 +1,6 @@
 import { CONFIG }    from '../config.js';
 import { getData, getDBStatic } from '../state.js';
-import { formatDate, parseFecha, credencialesPrevias } from '../utils.js';
+import { formatDate, parseFecha, credencialesDeEquipo } from '../utils.js';
 
 // ── Captura de HTML (para generación masiva de actas) ─────────
 // Permite a otros módulos obtener el HTML que una acta enviaría al visor,
@@ -308,10 +308,10 @@ export function verActaMantenimiento(id) {
   const fechaDoc = new Date().toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'});
 
   // Datos de acceso: los del propio mantenimiento; si quedaron vacíos, los del
-  // mantenimiento más reciente del mismo equipo que sí los tenga.
+  // equipo (o, si no los tiene, el mantenimiento más reciente que sí los tenga).
   const cred = (m.userWin || m.userAdmin)
     ? { userWin: m.userWin, userAdmin: m.userAdmin }
-    : credencialesPrevias(getData('mantenimientos'), m.serial, m.fecha, m.id);
+    : credencialesDeEquipo(eq || { serial: m.serial }, getData('mantenimientos'), m.fecha, m.id);
 
   const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
   <title>Acta Mantenimiento ${m.serial}</title>
