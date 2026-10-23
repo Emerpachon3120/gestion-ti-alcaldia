@@ -1,4 +1,5 @@
 import { getData, getDBStatic } from '../state.js';
+import { normTxt } from '../utils.js';
 
 // Construir un SearchSelect genérico
 export function buildSearchSelect(containerId, items, placeholder, onSelect, selectedValue='', onCrear=null) {
@@ -35,8 +36,8 @@ export function buildSearchSelect(containerId, items, placeholder, onSelect, sel
       });
 
       inp.addEventListener('input', () => {
-        const q = inp.value.toLowerCase();
-        const filtered = allItems.filter(i => i.label.toLowerCase().includes(q));
+        const q = normTxt(inp.value);
+        const filtered = allItems.filter(i => normTxt(i.label).includes(q));
         _fillDrop(filtered, drop, onSelectItem, onCrear);
         drop.style.display = 'block';
       });
@@ -66,7 +67,7 @@ function _showDrop(inp, drop, items, onSelect) {
 }
 
 function _filterDrop(q, drop, items, onSelect) {
-  const filtered = items.filter(i => i.label.toLowerCase().includes(q.toLowerCase()));
+  const filtered = items.filter(i => normTxt(i.label).includes(normTxt(q)));
   _fillDrop(filtered, drop, onSelect);
   drop.style.display = 'block';
 }
@@ -131,4 +132,4 @@ export function llenarSSOficinas(containerId, onSelect = () => {}) {
     return { value: o.id, label: `${o.nombre} — ${dep?.nombre?.replace(/Secretar[ií]a de /i,'Sec. ')||''}` };
   });
   buildSearchSelect(containerId, items, 'Buscar oficina...', onSelect);
-}
+}

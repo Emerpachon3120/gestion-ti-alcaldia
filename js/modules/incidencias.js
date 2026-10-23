@@ -3,7 +3,7 @@ import { saveKey }     from '../storage.js';
 import { apiPost }     from '../firebase.js';
 import { showToast }   from '../ui/toast.js';
 import { abrirModal, cerrarModal } from '../ui/modal.js';
-import { uid, formatDate, parseFecha } from '../utils.js';
+import { uid, formatDate, parseFecha, coincide } from '../utils.js';
 import { llenarSSPersonas, getSSValue, setSSValue } from '../ui/searchselect.js';
 
 let currentFilter = 'todas';
@@ -76,6 +76,11 @@ let filterEstado = 'todos';
 let filterTipo   = 'todos';
 
 export function onEnter() {
+  // La pantalla se dibuja con filtros limpios; el estado del módulo debe coincidir
+  currentFilter = 'todas';
+  busqueda = '';
+  filterEstado = 'todos';
+  filterTipo   = 'todos';
   _bindEvents();
   renderLista();
   window.abrirNuevaIncidencia = abrirNuevo;
@@ -102,17 +107,11 @@ export function renderLista() {
 
   // Búsqueda libre
   if (busqueda.trim()) {
-    const q = busqueda.toLowerCase();
-    data = data.filter(i =>
-      (i.nombre      || '').toLowerCase().includes(q) ||
-      (i.tipo        || '').toLowerCase().includes(q) ||
-      (i.secretaria  || '').toLowerCase().includes(q) ||
-      (i.ticket      || '').toLowerCase().includes(q) ||
-      (i.desc        || '').toLowerCase().includes(q) ||
-      (i.observacion || '').toLowerCase().includes(q) ||
-      (i.oficina     || '').toLowerCase().includes(q) ||
-      (i.cargo       || '').toLowerCase().includes(q)
-    );
+    const DBs = getDBStatic();
+    data = data.filter(i => coincide(busqueda,
+      i.nombre, DBs.personas.find(x => x.id === i.personaId)?.nombre,
+      i.tipo, i.secretaria, i.ticket, i.desc, i.observacion, i.oficina, i.cargo
+    ));
   }
 
   const container = document.getElementById('inc-list');

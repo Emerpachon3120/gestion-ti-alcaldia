@@ -3,7 +3,7 @@ import { saveKey }     from '../storage.js';
 import { apiPost }     from '../firebase.js';
 import { showToast }   from '../ui/toast.js';
 import { abrirModal, cerrarModal } from '../ui/modal.js';
-import { formatDate, parseFecha, calcSemaforo } from '../utils.js';
+import { formatDate, parseFecha, calcSemaforo, coincide, ultimosPorSerial } from '../utils.js';
 import { llenarSSOficinas, llenarSSPersonas, getSSValue, setSSValue } from '../ui/searchselect.js';
 import { abrirDocViewer } from '../ui/documento.js';
 
@@ -32,6 +32,9 @@ export function render() {
 }
 
 export function onEnter() {
+  // La pantalla se dibuja con filtros limpios; el estado del módulo debe coincidir
+  currentDep = 'todas';
+  currentSearch = '';
   _bindEvents();
   _bindModalEvents();
   renderLista();
@@ -47,12 +50,12 @@ export function renderLista() {
     const ofIds = DB.oficinas.filter(o => o.depId === currentDep).map(o => o.id);
     equips = equips.filter(e => ofIds.includes(e.oficina));
   }
-  if (currentSearch) {
-    const q = currentSearch.toLowerCase();
+  if (currentSearch.trim()) {
     equips = equips.filter(e => {
-      const of = DB.oficinas.find(x => x.id === e.oficina);
-      const p  = DB.personas.find(x => x.id === e.usuarioId);
-      return e.serial.toLowerCase().includes(q) || (of?.nombre||'').toLowerCase().includes(q) || (p?.nombre||'').toLowerCase().includes(q);
+      const of  = DB.oficinas.find(x => x.id === e.oficina);
+      const p   = DB.personas.find(x => x.id === e.usuarioId);
+      const dep = of ? DB.dependencias.find(x => x.id === of.depId) : null;
+      return coincide(currentSearch, e.serial, of?.nombre, p?.nombre, dep?.nombre, e.marca, e.modelo);
     });
   }
 
@@ -60,12 +63,12 @@ export function renderLista() {
   if (!container) return;
   if (!equips.length) { container.innerHTML = `<div class="empty"><p>No hay equipos</p></div>`; return; }
 
+  const ultimos = ultimosPorSerial(getData('mantenimientos'));
   container.innerHTML = equips.map(e => {
     const of  = DB.oficinas.find(x => x.id === e.oficina);
     const p   = DB.personas.find(x => x.id === e.usuarioId);
     const dep = DB.dependencias.find(x => x.id === of?.depId);
-    const mantsEq = getData('mantenimientos').filter(m => m.serial === e.serial);
-    const ultimo  = mantsEq.sort((a,b) => (parseFecha(b.fecha)||0) - (parseFecha(a.fecha)||0))[0];
+    const ultimo  = ultimos.get(e.serial);
     const sem     = calcSemaforo(ultimo?.fechaProxima);
     const estColor = { Operativo:'badge-green','Con fallas':'badge-yellow','En mantenimiento':'badge-yellow','Dado de baja':'badge-red' }[e.estado||'Operativo'] || 'badge-green';
     return `

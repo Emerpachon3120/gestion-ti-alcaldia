@@ -1,4 +1,4 @@
-import { uid, formatDate, parseFecha, calcSemaforo, calcFechaProxima, soloLetras, alfaNumerico } from '../utils.js';
+import { uid, formatDate, parseFecha, calcSemaforo, calcFechaProxima, soloLetras, alfaNumerico, coincide, ultimosPorSerial } from '../utils.js';
 import { abrirFirma as _abrirFirma }     from '../ui/firma.js';
 import { getData, getDBStatic, setState } from '../state.js';
 import { saveKey }                        from '../storage.js';
@@ -10,6 +10,7 @@ import { verActaBackup } from '../ui/documento.js';
 import { abrirNuevo as abrirNuevoEquipo } from './inventario.js';
 
 let currentFilter = 'todos';
+let currentSearch = '';
 let fDesde = '', fHasta = '';
 let bkFotos = [];
 
@@ -27,6 +28,12 @@ export function render() {
         <button class="filter-tab" data-filter="completado">✅ Completados</button>
         <button class="filter-tab" data-filter="fallido">❌ Fallidos</button>
       </div>
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input type="text" id="bk-search" placeholder="Buscar serial, funcionario, dependencia...">
+      </div>
       <div class="date-filter">
         <span class="date-filter-label">Desde:</span>
         <input type="date" id="bk-desde" class="form-input">
@@ -39,6 +46,10 @@ export function render() {
 }
 
 export function onEnter() {
+  // La pantalla se dibuja con filtros limpios; el estado del módulo debe coincidir
+  currentFilter = 'todos';
+  currentSearch = '';
+  fDesde = ''; fHasta = '';
   _bindEvents();
   renderLista();
   window.abrirNuevoBackup = abrirNuevo;
@@ -47,10 +58,24 @@ export function onEnter() {
 export function renderLista() {
   const DB  = getDBStatic();
   let data  = getData('backups').slice().reverse();
+  // Solo el backup más reciente de cada equipo muestra semáforo
+  const ultimos = ultimosPorSerial(getData('backups'));
   if (currentFilter === 'pendiente')  data = data.filter(b => !b.firmado);
   if (currentFilter === 'firmado')    data = data.filter(b => b.firmado);
   if (currentFilter === 'completado') data = data.filter(b => b.estadoBk === 'Completado');
   if (currentFilter === 'fallido')    data = data.filter(b => b.estadoBk === 'Fallido');
+  if (currentSearch.trim()) {
+    const equipos = getData('equipos');
+    data = data.filter(b => {
+      const eq  = equipos.find(e => e.serial === b.serial);
+      const of  = eq ? DB.oficinas.find(x => x.id === eq.oficina) : null;
+      const dep = of ? DB.dependencias.find(x => x.id === of.depId) : null;
+      const per = DB.personas.find(x => x.id === b.personaId);
+      const usr = eq ? DB.personas.find(x => x.id === eq.usuarioId) : null;
+      return coincide(currentSearch, b.serial, b.responsableEquipo, per?.nombre,
+                      usr?.nombre, of?.nombre, dep?.nombre, b.tipo, b.destino, b.estadoBk);
+    });
+  }
   if (fDesde) data = data.filter(b => { const d=parseFecha(b.fecha); return d&&d>=new Date(fDesde); });
   if (fHasta) data = data.filter(b => { const d=parseFecha(b.fecha); return d&&d<=new Date(fHasta); });
 
@@ -66,7 +91,7 @@ export function renderLista() {
     const of   = eq ? DB.oficinas.find(x => x.id === eq.oficina) : null;
     const dep  = of ? DB.dependencias.find(x => x.id === of.depId) : null;
     const resp = b.responsableEquipo || DB.personas.find(x => x.id === b.personaId)?.nombre || '—';
-    const sem  = calcSemaforo(b.fechaProxima);
+    const sem  = ultimos.get(b.serial) === b ? calcSemaforo(b.fechaProxima) : null;
     const stColor = {
       Completado: 'badge-green', Fallido: 'badge-red',
       Pendiente: 'badge-yellow', 'En proceso': 'badge-yellow'
@@ -345,6 +370,9 @@ function _bindEvents() {
       currentFilter = btn.dataset.filter;
       renderLista();
     });
+  });
+  document.getElementById('bk-search')?.addEventListener('input', e => {
+    currentSearch = e.target.value; renderLista();
   });
   document.getElementById('bk-desde')?.addEventListener('change', e => { fDesde=e.target.value; renderLista(); });
   document.getElementById('bk-hasta')?.addEventListener('change', e => { fHasta=e.target.value; renderLista(); });

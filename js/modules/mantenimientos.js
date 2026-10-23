@@ -1,4 +1,4 @@
-import { uid, formatDate, parseFecha, calcSemaforo, calcFechaProxima, soloLetras, alfaNumerico } from '../utils.js';
+import { uid, formatDate, parseFecha, calcSemaforo, calcFechaProxima, soloLetras, alfaNumerico, coincide, ultimosPorSerial, credencialesPrevias } from '../utils.js';
 import { abrirFirma as _abrirFirma }     from '../ui/firma.js';
 import { getData, getDBStatic, setState } from '../state.js';
 import { saveKey }                        from '../storage.js';
@@ -232,6 +232,10 @@ function _crearFuncionarioRapido() {
 }
 
 export function onEnter() {
+  // La pantalla se dibuja con filtros limpios; el estado del módulo debe coincidir
+  currentFilter = 'todos';
+  currentSearch = '';
+  fDesde = ''; fHasta = '';
   _bindEvents();
   renderLista();
   window.abrirNuevoMantto = abrirNuevo;
@@ -242,23 +246,31 @@ export function onEnter() {
 export function renderLista() {
   const DB  = getDBStatic();
   let data  = getData('mantenimientos').slice().reverse();
+  // Solo el mantenimiento más reciente de cada equipo cuenta para "vencido":
+  // los anteriores ya fueron reemplazados por uno nuevo.
+  const ultimos = ultimosPorSerial(getData('mantenimientos'));
+  const esVigente = m => ultimos.get(m.serial) === m;
 
   if (currentFilter === 'pendiente')  data = data.filter(m => !m.firmado);
   if (currentFilter === 'firmado')    data = data.filter(m => m.firmado);
   if (currentFilter === 'preventivo') data = data.filter(m => m.tipo?.toLowerCase().includes('preventivo'));
   if (currentFilter === 'correctivo') data = data.filter(m => m.tipo?.toLowerCase().includes('correctivo'));
   if (currentFilter === 'vencido')    data = data.filter(m => {
+    if (!esVigente(m)) return false;
     const s = calcSemaforo(m.fechaProxima);
     return s?.clase === 'semaforo-rojo';
   });
 
-  if (currentSearch) {
-    const q = currentSearch.toLowerCase();
+  if (currentSearch.trim()) {
+    const equipos = getData('equipos');
     data = data.filter(m => {
-      const eq = getData('equipos').find(e => e.serial === m.serial);
-      const p  = eq ? DB.personas.find(x => x.id === eq.usuarioId) : null;
-      return m.serial.toLowerCase().includes(q) ||
-             (p?.nombre || '').toLowerCase().includes(q);
+      const eq  = equipos.find(e => e.serial === m.serial);
+      const p   = eq ? DB.personas.find(x => x.id === eq.usuarioId) : null;
+      const rp  = m.respEquipoId ? DB.personas.find(x => x.id === m.respEquipoId) : null;
+      const of  = eq ? DB.oficinas.find(x => x.id === eq.oficina) : null;
+      const dep = of ? DB.dependencias.find(x => x.id === of.depId) : null;
+      return coincide(currentSearch, m.serial, p?.nombre, rp?.nombre,
+                      of?.nombre, dep?.nombre, m.tipo, m.responsable);
     });
   }
   if (fDesde) data = data.filter(m => { const d = parseFecha(m.fecha); return d && d >= new Date(fDesde); });
@@ -277,7 +289,7 @@ export function renderLista() {
     return;
   }
 
-  container.innerHTML = data.map(m => _cardHTML(m)).join('');
+  container.innerHTML = data.map(m => _cardHTML(m, esVigente(m))).join('');
 
   container.querySelectorAll('[data-action]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -291,13 +303,14 @@ export function renderLista() {
 }
 
 // ── Card HTML ─────────────────────────────────────────────────
-function _cardHTML(m) {
+function _cardHTML(m, vigente = true) {
   const DB  = getDBStatic();
   const eq  = getData('equipos').find(e => e.serial === m.serial);
   const p   = eq ? DB.personas.find(x => x.id === eq.usuarioId) : null;
   const of  = eq ? DB.oficinas.find(x => x.id === eq.oficina) : null;
   const dep = of ? DB.dependencias.find(x => x.id === of.depId) : null;
-  const sem = calcSemaforo(m.fechaProxima);
+  // Un mantenimiento reemplazado por otro más reciente no muestra semáforo
+  const sem = vigente ? calcSemaforo(m.fechaProxima) : null;
   const tipoBadge = m.tipo?.includes('Correctivo') ? 'badge-red' :
                     m.tipo?.includes('Predictivo')  ? 'badge-purple' : 'badge-blue';
 
@@ -764,6 +777,16 @@ function abrirNuevo() {
 
   const p   = DB.personas.find(x => x.id === eq.usuarioId);
   if (p) setSSValue('mt-resp-equipo-ss', p.id, p.nombre);
+
+  // Datos de acceso: se traen del último mantenimiento de este equipo
+  // (si no se cambiaron, siguen siendo los mismos)
+  if (!document.getElementById('mt-edit-id').value) {
+    const cred = credencialesPrevias(getData('mantenimientos'), serial);
+    document.getElementById('mt-user-win').value   = cred.userWin;
+    document.getElementById('mt-pass-win').value   = cred.passWin;
+    document.getElementById('mt-user-admin').value = cred.userAdmin;
+    document.getElementById('mt-pass-admin').value = cred.passAdmin;
+  }
 
   const of  = DB.oficinas.find(x => x.id === eq.oficina);
   const dep = of ? DB.dependencias.find(x => x.id === of.depId) : null;

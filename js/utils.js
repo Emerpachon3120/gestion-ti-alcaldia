@@ -25,7 +25,10 @@ export function calcSemaforo(fechaProxima) {
   if (!fechaProxima) return null;
   const d = parseFecha(fechaProxima);
   if (!d) return null;
-  const diff = Math.floor((d - new Date()) / 86400000);
+  // Se compara por día (no por hora): un mantenimiento programado para hoy
+  // todavía no está vencido.
+  const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+  const diff = Math.round((d - hoy) / 86400000);
   if (diff < 0)   return { clase: 'semaforo-rojo',    icon: '🔴', label: 'Vencido' };
   if (diff <= 30) return { clase: 'semaforo-amarillo', icon: '🟡', label: 'Próximo' };
   return             { clase: 'semaforo-verde',    icon: '🟢', label: 'Al día' };
@@ -71,4 +74,51 @@ export function alfaNumerico(input) {
   input.addEventListener('input', () => {
     input.value = input.value.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]/g, '');
   });
+}
+
+// Texto para comparar/buscar: sin tildes, sin mayúsculas, sin espacios sobrantes
+// ("Angélica" == "angelica"; "Muñoz" == "munoz")
+export function normTxt(str) {
+  return String(str ?? '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().trim();
+}
+
+// ¿El texto `q` aparece en alguno de los campos? (insensible a tildes/mayúsculas)
+export function coincide(q, ...campos) {
+  const n = normTxt(q);
+  if (!n) return true;
+  return campos.some(c => normTxt(c).includes(n));
+}
+
+// Último registro (por fecha) de cada serial. Devuelve Map(serial → registro).
+// En empate de fecha gana el que está más adelante en la lista.
+export function ultimosPorSerial(lista) {
+  const out = new Map();
+  const t = r => { const d = parseFecha(r?.fecha); return d ? d.getTime() : -Infinity; };
+  for (const r of lista || []) {
+    if (!r || !r.serial) continue;
+    const prev = out.get(r.serial);
+    if (!prev || t(r) >= t(prev)) out.set(r.serial, r);
+  }
+  return out;
+}
+
+// Credenciales (usuario/clave Windows y Admin) del mantenimiento más reciente
+// del equipo que las tenga registradas. Se prefieren las de fecha anterior o
+// igual a `hastaFecha`; si no hay, se usa cualquiera. `excluirId` omite un registro.
+export function credencialesPrevias(mantenimientos, serial, hastaFecha = null, excluirId = null) {
+  const vacio = { userWin: '', passWin: '', userAdmin: '', passAdmin: '' };
+  const t = r => { const d = parseFecha(r.fecha); return d ? d.getTime() : -Infinity; };
+  const tope = hastaFecha ? (parseFecha(hastaFecha)?.getTime() ?? Infinity) : Infinity;
+  const con = (mantenimientos || [])
+    .filter(m => m.serial === serial && m.id !== excluirId &&
+      (m.userWin || m.userAdmin || m.passWin || m.passAdmin))
+    .sort((a, b) => t(b) - t(a));
+  const m = con.find(x => t(x) <= tope) || con[0];
+  if (!m) return vacio;
+  return {
+    userWin: m.userWin || '', passWin: m.passWin || '',
+    userAdmin: m.userAdmin || '', passAdmin: m.passAdmin || '',
+  };
 }

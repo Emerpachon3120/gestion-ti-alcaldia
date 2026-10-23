@@ -1,7 +1,20 @@
 import { navigate }      from '../router.js';
-import { formatDate, calcSemaforo } from '../utils.js';
+import { formatDate, parseFecha, calcSemaforo, ultimosPorSerial } from '../utils.js';
 import { renderAlertas } from '../ui/alerts.js';
 import { getData, getDBStatic } from '../state.js';
+
+// Mantenimiento vigente de cada equipo: el más reciente. Los anteriores ya
+// fueron "reemplazados" por uno nuevo y no deben contar como vencidos.
+// Se omiten equipos eliminados o dados de baja.
+function _vigentes() {
+  const equipos = getData('equipos') || [];
+  const bySerial = new Map(equipos.map(e => [e.serial, e]));
+  return [...ultimosPorSerial(getData('mantenimientos') || []).values()]
+    .filter(m => {
+      const eq = bySerial.get(m.serial);
+      return eq && eq.estado !== 'Dado de baja';
+    });
+}
 
 export function render() {
   const m   = getData('mantenimientos') || [];
@@ -13,7 +26,7 @@ export function render() {
   const abiertas    = inc.filter(i =>
     ['Iniciada','En proceso','abierta'].includes(i.estadoTexto || i.estado)
   ).length;
-  const vencidos    = m.filter(x => {
+  const vencidos    = _vigentes().filter(x => {
     const s = calcSemaforo(x.fechaProxima);
     return s?.clase === 'semaforo-rojo';
   }).length;
@@ -149,8 +162,11 @@ export function onEnter() {
 
 function _renderProximos() {
   const DB   = getDBStatic();
-  const prox = (getData('mantenimientos') || [])
-    .filter(m => !m.firmado)
+  // Los 5 equipos con la próxima fecha más cercana (o más atrasada),
+  // según su mantenimiento más reciente.
+  const prox = _vigentes()
+    .filter(m => parseFecha(m.fechaProxima))
+    .sort((a, b) => parseFecha(a.fechaProxima) - parseFecha(b.fechaProxima))
     .slice(0, 5);
 
   const container = document.getElementById('proximos-container');
@@ -161,7 +177,7 @@ function _renderProximos() {
       <div style="background:var(--card);border:1px solid var(--border);
         border-radius:12px;padding:20px;text-align:center;
         color:var(--text3);font-size:13px;">
-        Todo al dia — sin mantenimientos pendientes
+        Todo al día — sin mantenimientos próximos
       </div>`;
     return;
   }
@@ -202,4 +218,4 @@ function _renderProximos() {
   container.querySelectorAll('[data-nav]').forEach(card => {
     card.addEventListener('click', () => navigate(card.dataset.nav));
   });
-}
+}
