@@ -1,6 +1,6 @@
 import { CONFIG }    from '../config.js';
 import { getData, getDBStatic } from '../state.js';
-import { formatDate, parseFecha, credencialesDeEquipo } from '../utils.js';
+import { formatDate, parseFecha, credencialesDeEquipo, funcionarioDeMant } from '../utils.js';
 
 // ── Captura de HTML (para generación masiva de actas) ─────────
 // Permite a otros módulos obtener el HTML que una acta enviaría al visor,
@@ -302,10 +302,14 @@ export function verActaMantenimiento(id) {
   if (!m) return;
 
   const eq  = getData('equipos').find(e => e.serial === m.serial);
-  const p   = eq ? DB.personas.find(x => x.id === eq.usuarioId) : null;
+  // Funcionario de ese mantenimiento (el de ese momento, no el actual del equipo)
+  const p   = funcionarioDeMant(m, eq, DB.personas);
   const of  = eq ? DB.oficinas.find(x => x.id === eq.oficina)   : null;
   const dep = of ? DB.dependencias.find(x => x.id === of.depId) : null;
   const fechaDoc = new Date().toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'});
+
+  // Cambio de responsable (si lo hubo en este mantenimiento)
+  const nombreDe = (id, snap) => snap || DB.personas.find(x => x.id === id)?.nombre || '—';
 
   // Datos de acceso: los del propio mantenimiento; si quedaron vacíos, los del
   // equipo (o, si no los tiene, el mantenimiento más reciente que sí los tenga).
@@ -419,6 +423,14 @@ export function verActaMantenimiento(id) {
       </table>` : ''}
 
       <!-- TRASLADO -->
+      <!-- CAMBIO DE RESPONSABLE -->
+      ${m.cambioResp === 'Sí' && (m.nuevoRespId || m.nuevoRespNombre) ? `
+      <div class="sec"> Cambio de responsable del equipo</div>
+      <table style="margin-bottom:0.3cm;">
+        <tr><th>Responsable anterior</th><th>Nuevo responsable</th><th>Fecha</th></tr>
+        <tr><td>${nombreDe(m.respEquipoId, m.respEquipoNombre)}</td><td>${nombreDe(m.nuevoRespId, m.nuevoRespNombre)}</td><td>${formatDate(m.fecha)}</td></tr>
+      </table>` : ''}
+
       ${m.traslado === 'Sí' ? `
       <div class="sec"> Traslado de dependencia</div>
       <table style="margin-bottom:0.3cm;">

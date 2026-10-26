@@ -143,6 +143,7 @@ export async function syncData() {
         passWin:     r.passWin     || '',
         userAdmin:   r.userAdmin   || '',
         passAdmin:   r.passAdmin   || '',
+        historialResp: Array.isArray(r.historialResp) ? r.historialResp : [],
         componentes: Array.isArray(r.componentes)
           ? r.componentes
           : (r.Componentes ? r.Componentes.split(',').filter(Boolean) : []),
@@ -178,6 +179,8 @@ export async function syncData() {
         obs:          r.obs          || r.Observaciones  || '',
         periodo:      r.periodo      || r.Periodo        || '',
         respEquipoId: String(r.respEquipoId  || r.Resp_Equipo_ID || ''),
+        respEquipoNombre: r.respEquipoNombre || '',
+        nuevoRespNombre:  r.nuevoRespNombre  || '',
         cambioResp:   r.cambioResp   || r.Cambio_Resp   || 'No',
         nuevoRespId:  String(r.nuevoRespId   || r.Nuevo_Resp_ID  || ''),
         userWin:      r.userWin      || r.User_Win      || '',

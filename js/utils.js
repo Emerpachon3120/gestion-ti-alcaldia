@@ -104,6 +104,57 @@ export function ultimosPorSerial(lista) {
   return out;
 }
 
+// ── Funcionario / cambios de responsable ─────────────────────
+// Funcionario de un mantenimiento "en el momento": el responsable guardado en el
+// propio mantenimiento; si no hay, el actual del equipo (registros antiguos).
+export function funcionarioDeMant(m, eq, personas) {
+  const porId = id => (id ? (personas || []).find(x => String(x.id) === String(id)) : null);
+  const snap = porId(m?.respEquipoId);
+  if (m?.respEquipoNombre || snap) {
+    return { id: m.respEquipoId || '', nombre: m.respEquipoNombre || snap.nombre, cargo: snap?.cargo || '' };
+  }
+  const u = eq ? porId(eq.usuarioId) : null;
+  return u ? { id: u.id, nombre: u.nombre, cargo: u.cargo || '' } : null;
+}
+
+const _ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+// Devuelve el historial del equipo con un cambio de responsable agregado
+export function registrarCambioResp(eq, deId, aId, personas, origen, fechaISO = null) {
+  const nom = id => (personas || []).find(p => String(p.id) === String(id))?.nombre || '';
+  const hist = Array.isArray(eq?.historialResp) ? [...eq.historialResp] : [];
+  hist.push({
+    fecha: fechaISO || _ymd(new Date()),
+    deId: deId || '', deNombre: nom(deId),
+    aId: aId || '',   aNombre: nom(aId),
+    origen,
+  });
+  return hist;
+}
+
+// Historial de asignaciones de un equipo (más reciente primero): el guardado en el
+// equipo + los cambios de responsable que constan en sus mantenimientos.
+export function historialAsignaciones(eq, mantenimientos, personas) {
+  if (!eq) return [];
+  const nom = id => (personas || []).find(p => String(p.id) === String(id))?.nombre || '';
+  const t = f => { const d = parseFecha(f); return d ? d.getTime() : null; };
+  const lista = (Array.isArray(eq.historialResp) ? eq.historialResp : []).map(h => ({ ...h }));
+  for (const m of mantenimientos || []) {
+    if (m.serial !== eq.serial || m.cambioResp !== 'Sí' || !m.nuevoRespId) continue;
+    const yaEsta = lista.some(h =>
+      String(h.aId) === String(m.nuevoRespId) && t(h.fecha) === t(m.fecha));
+    if (yaEsta) continue;
+    const d = parseFecha(m.fecha);
+    lista.push({
+      fecha: d ? _ymd(d) : '',
+      deId: m.respEquipoId || '', deNombre: m.respEquipoNombre || nom(m.respEquipoId),
+      aId: m.nuevoRespId, aNombre: m.nuevoRespNombre || nom(m.nuevoRespId),
+      origen: 'Mantenimiento',
+    });
+  }
+  return lista.sort((a, b) => (t(b.fecha) ?? 0) - (t(a.fecha) ?? 0));
+}
+
 // Datos de acceso de un equipo: los guardados en el propio equipo; si no tiene,
 // los del mantenimiento más reciente que los tenga (histórico).
 export function credencialesDeEquipo(eq, mantenimientos, hastaFecha = null, excluirId = null) {

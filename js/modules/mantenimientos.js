@@ -1,4 +1,4 @@
-import { uid, formatDate, parseFecha, calcSemaforo, calcFechaProxima, soloLetras, alfaNumerico, coincide, ultimosPorSerial, credencialesDeEquipo } from '../utils.js';
+import { uid, formatDate, parseFecha, calcSemaforo, calcFechaProxima, soloLetras, alfaNumerico, coincide, ultimosPorSerial, credencialesDeEquipo, funcionarioDeMant, registrarCambioResp } from '../utils.js';
 import { abrirFirma as _abrirFirma }     from '../ui/firma.js';
 import { getData, getDBStatic, setState } from '../state.js';
 import { saveKey }                        from '../storage.js';
@@ -271,7 +271,7 @@ export function renderLista() {
       const of  = eq ? DB.oficinas.find(x => x.id === eq.oficina) : null;
       const dep = of ? DB.dependencias.find(x => x.id === of.depId) : null;
       return coincide(currentSearch, m.serial, p?.nombre, rp?.nombre,
-                      of?.nombre, dep?.nombre, m.tipo, m.responsable);
+                      m.respEquipoNombre, m.nuevoRespNombre, of?.nombre, dep?.nombre, m.tipo, m.responsable);
     });
   }
   if (fDesde) data = data.filter(m => { const d = parseFecha(m.fecha); return d && d >= new Date(fDesde); });
@@ -307,7 +307,8 @@ export function renderLista() {
 function _cardHTML(m, vigente = true) {
   const DB  = getDBStatic();
   const eq  = getData('equipos').find(e => e.serial === m.serial);
-  const p   = eq ? DB.personas.find(x => x.id === eq.usuarioId) : null;
+  // Funcionario de ese mantenimiento (el de ese momento, no el actual del equipo)
+  const p   = funcionarioDeMant(m, eq, DB.personas);
   const of  = eq ? DB.oficinas.find(x => x.id === eq.oficina) : null;
   const dep = of ? DB.dependencias.find(x => x.id === of.depId) : null;
   // Un mantenimiento reemplazado por otro más reciente no muestra semáforo
@@ -343,6 +344,12 @@ function _cardHTML(m, vigente = true) {
         ${m.responsable  ? `<span class="tag">👷 ${m.responsable}</span>` : ''}
         ${m.fotos?.length ? `<span class="tag">📸 ${m.fotos.length}</span>` : ''}
       </div>
+
+      ${m.cambioResp === 'Sí' && (m.nuevoRespId || m.nuevoRespNombre) ? `
+        <div style="font-size:11px;background:#e0f2fe;color:#075985;padding:4px 8px;border-radius:6px;margin-top:6px;">
+          👤 Cambio de responsable: ${m.respEquipoNombre || DB.personas.find(x => x.id === m.respEquipoId)?.nombre || '—'}
+          → ${m.nuevoRespNombre || DB.personas.find(x => x.id === m.nuevoRespId)?.nombre || '—'}
+        </div>` : ''}
 
       ${m.traslado === 'Sí' ? `
         <div style="font-size:11px;background:#fef3c7;color:#92400e;padding:4px 8px;border-radius:6px;margin-top:6px;">
@@ -967,7 +974,12 @@ async function _ejecutarGuardar(firmaBase64 = null) {
   const traslRaw     = document.getElementById('mt-fecha-traslado')?.value;
   const editId       = document.getElementById('mt-edit-id').value;
   const respEquipoId = getSSValue('mt-resp-equipo-ss');
-  const nuevoRespId  = getSSValue('mt-nuevo-resp-ss');
+  const nuevoRespId  = cambioResp === 'Sí' ? getSSValue('mt-nuevo-resp-ss') : '';
+  // Nombres "congelados" en el registro: así el historial no cambia si luego
+  // el equipo pasa a otro funcionario
+  const _pers = getDBStatic().personas || [];
+  const respEquipoNombre = _pers.find(x => x.id === respEquipoId)?.nombre || '';
+  const nuevoRespNombre  = _pers.find(x => x.id === nuevoRespId)?.nombre  || '';
 
   const fmt = r => r
     ? new Date(r+'T00:00:00').toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric'})
@@ -1017,6 +1029,7 @@ async function _ejecutarGuardar(firmaBase64 = null) {
     cambioResp, cambioCred, traslado, depAnterior, depNueva,
     userWin, passWin, userAdmin, passAdmin,
     fechaProxima, fechaTraslado, respEquipoId, nuevoRespId,
+    respEquipoNombre, nuevoRespNombre,
     fotos: mtFotos,
     firmado:    firmadoFinal,
     firma:      firmaFinal,
@@ -1031,7 +1044,7 @@ async function _ejecutarGuardar(firmaBase64 = null) {
     apiPost('Mantenimientos', 'update', {
       serial, tipo, frecuencia, fecha, fechaProxima,
       obs: obsCompleto, responsable, periodo,
-      respEquipoId, cambioResp, nuevoRespId,
+      respEquipoId, cambioResp, nuevoRespId, respEquipoNombre, nuevoRespNombre,
       userWin, passWin, userAdmin, passAdmin, cambioCred,
       traslado, depAnterior, depNueva, fechaTraslado, estadoEquipo,
       fotos: mtFotos,
@@ -1045,7 +1058,7 @@ async function _ejecutarGuardar(firmaBase64 = null) {
     apiPost('Mantenimientos', 'insert', {
       id, serial, tipo, frecuencia, fecha, fechaProxima,
       obs: obsCompleto, responsable, periodo,
-      respEquipoId, cambioResp, nuevoRespId,
+      respEquipoId, cambioResp, nuevoRespId, respEquipoNombre, nuevoRespNombre,
       userWin, passWin, userAdmin, passAdmin, cambioCred,
       traslado, depAnterior, depNueva, fechaTraslado, estadoEquipo,
       fotos: mtFotos,
@@ -1056,17 +1069,25 @@ async function _ejecutarGuardar(firmaBase64 = null) {
     showToast('🔧 Mantenimiento registrado');
   }
 
+  // Cambio de responsable: el equipo pasa al nuevo funcionario y queda en su
+  // historial. Solo si este es el mantenimiento más reciente del equipo (editar
+  // uno viejo no debe devolver el equipo a un funcionario anterior).
   if (cambioResp === 'Sí' && nuevoRespId && serial) {
-    apiPost('Equipos', 'update', {
-      UsuarioID: nuevoRespId,
-    }, 'serial', serial).catch(console.warn);
-
-    const equipos = [...getData('equipos')];
-    const idx = equipos.findIndex(e => e.serial === serial);
-    if (idx >= 0) {
-      equipos[idx].usuarioId = nuevoRespId;
-      setState('equipos', equipos);
-      saveKey('equipos');
+    const idActual = editId || lista[lista.length - 1]?.id;
+    if (ultimosPorSerial(lista).get(serial)?.id === idActual) {
+      const equipos = [...getData('equipos')];
+      const idx = equipos.findIndex(e => e.serial === serial);
+      if (idx >= 0 && String(equipos[idx].usuarioId || '') !== String(nuevoRespId)) {
+        const historialResp = registrarCambioResp(
+          equipos[idx], equipos[idx].usuarioId, nuevoRespId, _pers,
+          'Mantenimiento', fechaRaw || null
+        );
+        equipos[idx] = { ...equipos[idx], usuarioId: nuevoRespId, historialResp };
+        setState('equipos', equipos);
+        saveKey('equipos');
+        apiPost('Equipos', 'update', { usuarioId: nuevoRespId, historialResp },
+          'serial', serial).catch(console.warn);
+      }
     }
   }
 

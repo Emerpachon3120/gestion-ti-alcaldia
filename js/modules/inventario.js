@@ -3,7 +3,7 @@ import { saveKey }     from '../storage.js';
 import { apiPost }     from '../firebase.js';
 import { showToast }   from '../ui/toast.js';
 import { abrirModal, cerrarModal } from '../ui/modal.js';
-import { formatDate, parseFecha, calcSemaforo, coincide, ultimosPorSerial, credencialesPrevias } from '../utils.js';
+import { formatDate, parseFecha, calcSemaforo, coincide, ultimosPorSerial, credencialesPrevias, registrarCambioResp, historialAsignaciones } from '../utils.js';
 import { llenarSSOficinas, llenarSSPersonas, getSSValue, setSSValue } from '../ui/searchselect.js';
 import { abrirDocViewer } from '../ui/documento.js';
 
@@ -596,8 +596,16 @@ async function _guardar() {
 
   if (editSerial) {
     const idx = lista.findIndex(x => x.serial === editSerial);
+    // Cambio de funcionario → queda en el historial del equipo
+    let historialResp = idx >= 0 ? lista[idx].historialResp : undefined;
+    const usuarioAnterior = idx >= 0 ? (lista[idx].usuarioId || '') : '';
+    if (idx >= 0 && String(usuarioAnterior) !== String(usuarioId || '')) {
+      historialResp = registrarCambioResp(
+        lista[idx], usuarioAnterior, usuarioId, getDBStatic().personas, 'Inventario');
+    }
     if (idx >= 0) lista[idx] = {
       ...lista[idx], ...vals, oficina, usuarioId,
+      ...(historialResp ? { historialResp } : {}),
       fotosComponentes, componentes: componentesMarcados
     };
     apiPost('Equipos', 'update', {
@@ -619,6 +627,7 @@ async function _guardar() {
       passWin:     vals.passWin,
       userAdmin:   vals.userAdmin,
       passAdmin:   vals.passAdmin,
+      ...(historialResp ? { historialResp } : {}),
       componentes: componentesMarcados,
       fotosComponentes,
     }, 'serial', editSerial).catch(console.warn);
@@ -996,6 +1005,7 @@ function _verFichaEquipo(serial) {
   const tienesFotos = Object.values(fotosComp).some(f => f?.length > 0);
 
   const val = v => v && v !== '' ? v : '—';
+  const historial = historialAsignaciones(eq, getData('mantenimientos'), DB.personas);
 
   const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
   <title>Ficha Técnica ${serial}</title>
@@ -1156,6 +1166,23 @@ function _verFichaEquipo(serial) {
           padding:0.2cm 0.3cm;font-size:10pt;margin-bottom:0.3cm;">
           ${eq.obs}
         </div>` : ''}
+
+      <!-- HISTORIAL DE ASIGNACIÓN -->
+      <div class="sec">Historial de asignación del equipo</div>
+      ${historial.length ? `
+        <table style="margin-bottom:0.4cm;">
+          <tr><th>Fecha</th><th>Funcionario anterior</th><th>Nuevo funcionario</th><th>Registrado en</th></tr>
+          ${historial.map(h => `
+            <tr>
+              <td>${val(formatDate(h.fecha))}</td>
+              <td>${val(h.deNombre)}</td>
+              <td>${val(h.aNombre)}</td>
+              <td>${val(h.origen)}</td>
+            </tr>`).join('')}
+        </table>` :
+        `<p style="font-size:10pt;color:#666;margin-bottom:0.3cm;">
+          Sin cambios de funcionario registrados.
+        </p>`}
 
       <!-- FOTOS POR COMPONENTE -->
       ${tienesFotos ? `
