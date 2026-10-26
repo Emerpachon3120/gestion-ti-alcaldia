@@ -4,7 +4,7 @@
 // documento con una acta por página, listo para imprimir / guardar como PDF.
 
 import { getData, getDBStatic } from '../state.js';
-import { parseFecha, escHtml } from '../utils.js';
+import { parseFecha, escHtml, funcionarioDeMant } from '../utils.js';
 import {
   abrirDocViewer,
   capturarActaHTML,
@@ -287,7 +287,8 @@ export function armarHojasResumen(f) {
     for (const { r, dep } of selM) {
       const c = ctx(r.serial);
       aoa.push([
-        dep?.nombre || '(Sin dependencia)', c.of?.nombre || '', c.per?.nombre || '',
+        dep?.nombre || '(Sin dependencia)', c.of?.nombre || '',
+        funcionarioDeMant(r, c.eq, DB.personas)?.nombre || '',
         r.serial, c.eq?.marca || '', c.eq?.modelo || '', r.tipo || '',
         parseFecha(r.fecha) || '', parseFecha(r.fechaProxima) || '',
         r.frecuencia || '', r.estadoEquipo || '',
